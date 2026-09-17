@@ -60,7 +60,7 @@ The sysupgrade and state backups are stored locally under
 `luci-app-open-hotspot 1.2.0-r16`, built for `noarch` as an OpenWrt APK:
 
 ```text
-sha256 04778451a1fb5a9a293ca8ed80a617bdde7bfa6b68a31c54889999902740d643
+sha256 cfc03526e5e8c9cfe6dace0968b24ff4e63aabeab72144232196ed0ded7ad16a
 ```
 
 The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
@@ -68,6 +68,15 @@ The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
 `http://192.168.70.1:2080/nds/fas.php`, and uhttpd listens on port 2080.
 The gateway client-status hostname is set to `status.client`; dnsmasq resolves
 it to `192.168.70.1` for captive clients.
+
+The custom FAS page is packaged at `/www/nds/fas.php` with its stylesheet at
+`/www/nds/open-hotspot-fas.css`. It is intentionally fail-closed: the page
+requires the FAS context supplied by openNDS. A direct request to
+`http://192.168.70.1:2080/nds/fas.php` (or a captive-client probe that omits
+the FAS payload) displays the styled missing-data diagnostic and cannot
+authenticate a client. The supported manual entry point is the built-in
+openNDS status hostname, `http://status.client`, which then starts the portal
+→ FAS flow.
 The WAN lease is `192.168.50.156/24` with gateway/DNS `192.168.50.1`; the
 reported `udhcpc: no lease` occurred during a service restart and did not
 replace the active lease. `dnsmasq-full` is installed and provides the required

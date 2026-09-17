@@ -61,11 +61,28 @@ installed with nftset support. The package intentionally does not replace
 The tested APK is available at
 [`dist/luci-app-open-hotspot-1.2.0-r16.apk`](dist/luci-app-open-hotspot-1.2.0-r16.apk)
 with SHA-256
-`04778451a1fb5a9a293ca8ed80a617bdde7bfa6b68a31c54889999902740d643`.
+`cfc03526e5e8c9cfe6dace0968b24ff4e63aabeab72144232196ed0ded7ad16a`.
 
 Release r16 also accepts the documented openNDS `hid` field and the
 `client_hid` compatibility spelling observed in some captive-client flows.
 Requests without a verified FAS payload remain rejected.
+
+### Captive-portal URL contract
+
+The built-in openNDS client-status page is available at
+`http://status.client`; the package configures this hostname to resolve to the
+router LAN address (`192.168.70.1`). The custom Arabic/English login page is
+served by the local FAS endpoint at `/nds/fas.php`, but it must be opened by
+the openNDS captive-portal flow so that the documented FAS context is present.
+Opening `/nds/fas.php` directly, or when a captive-client probe omits the FAS
+payload, intentionally shows the styled “missing FAS data” page and does not
+authenticate the client. Use the page's **Open portal** button or navigate to
+`http://status.client` over plain HTTP, then submit the login form.
+
+The screenshot showing the “missing FAS data” card is therefore a captured
+fail-closed diagnostic page, not evidence that the FAS page is absent from the
+APK. The remaining physical-router gate is a successful disposable-client
+session: portal → FAS login → openNDS `Authenticated` state.
 
 ## Distribution
 

@@ -64,6 +64,12 @@ function decode_fas_payload(string $encoded): array
         }
     }
 
+    // The documented name is hid. Accept client_hid as a compatibility alias
+    // for deployments/clients that expose the same hashed token under that
+    // label, but never continue without a verified hid value.
+    if (!isset($values['hid']) && isset($values['client_hid'])) {
+        $values['hid'] = $values['client_hid'];
+    }
     foreach (['hid', 'clientmac', 'gatewayaddress', 'authdir'] as $required) {
         if (!isset($values[$required]) || $values[$required] === '') {
             fail_page('بيانات FAS الناقصة.');

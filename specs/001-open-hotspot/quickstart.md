@@ -57,10 +57,10 @@ The old application state was archived, not destroyed, at:
 
 The sysupgrade and state backups are stored locally under
 `.build/backups/20260917T003034Z.*`. The installed package is
-`luci-app-open-hotspot 1.2.0-r14`, built for `noarch` as an OpenWrt APK:
+`luci-app-open-hotspot 1.2.0-r15`, built for `noarch` as an OpenWrt APK:
 
 ```text
-sha256 a2b2cb0021bcdd7238b4b6c29351731d6f897b7063bfcdb3f4314eba86970ca8
+sha256 6e3b14cd68ff77dee35f4069506a37dc98d6f8d250c07c3f3992b951d18994fb
 ```
 
 The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and

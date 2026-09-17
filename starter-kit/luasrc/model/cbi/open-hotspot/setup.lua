@@ -3,7 +3,8 @@ local uci = require("luci.model.uci").cursor()
 local m = Map("open-hotspot", translate("Open-HotSpot setup"))
 m.description = translate(
 	"Local-only account, quota, and speed management for openNDS. " ..
-	"The current stage prepares the base without changing an existing FAS.")
+	"The current stage prepares the base without changing an existing FAS.") ..
+	'<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">'
 
 local s = m:section(NamedSection, "global", "manager",
 	translate("Installation state"))

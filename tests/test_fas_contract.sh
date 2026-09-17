@@ -60,9 +60,27 @@ print(urllib.parse.quote(base64.b64encode(payload.encode()).decode(), safe=''))
 PY
 )
 
+encoded_client_hid=$(python3 - <<'PY'
+import base64
+import urllib.parse
+
+payload = (
+    'clientip=192.168.70.21, '
+    'clientmac=11:22:33:44:55:66, '
+    'gatewayname=Open-HotSpot, '
+    'client_hid=compat-hid, '
+    'gatewayaddress=192.168.70.1:2050, '
+    'authdir=opennds_auth, '
+    'originurl=http%3A%2F%2Fexample.test%2F, '
+    'clientif=br-lan'
+)
+print(urllib.parse.quote(base64.b64encode(payload.encode()).decode(), safe=''))
+PY
+)
+
 run_fas() {
 	OPEN_HOTSPOT_FAS_SCRIPT="$root/starter-kit/root/www/nds/fas.php" \
-	QUERY_STRING="fas=$encoded" \
+	QUERY_STRING="${OH_QUERY:-fas=$encoded}" \
 	REQUEST_METHOD="${REQUEST_METHOD:-GET}" \
 	OH_BODY="${OH_BODY:-}" \
 	php -r 'parse_str(getenv("QUERY_STRING") ?: "", $_GET); parse_str(getenv("OH_BODY") ?: "", $_POST); $_SERVER["REQUEST_METHOD"] = getenv("REQUEST_METHOD") ?: "GET"; $_SERVER["SCRIPT_NAME"] = "/nds/fas.php"; require getenv("OPEN_HOTSPOT_FAS_SCRIPT");'
@@ -74,6 +92,13 @@ printf '%s' "$wrong" | grep -F 'بيانات الدخول غير صحيحة.' >/
 success=$(REQUEST_METHOD=POST OH_BODY="username=ahmed&pin=123456&fas=$encoded" run_fas)
 printf '%s' "$success" | grep -F '/opennds_auth/' >/dev/null
 printf '%s' "$success" | grep -Eq 'name="custom" value="[0-9a-f]{32}"'
+
+compat=$(REQUEST_METHOD=POST OH_BODY="username=ahmed&pin=123456&fas=$encoded_client_hid" run_fas)
+printf '%s' "$compat" | grep -F '/opennds_auth/' >/dev/null
+printf '%s' "$compat" | grep -Eq 'name="custom" value="[0-9a-f]{32}"'
+
+missing=$(REQUEST_METHOD=GET OH_QUERY='' OH_BODY='' run_fas || true)
+printf '%s' "$missing" | grep -F 'بيانات FAS الناقصة.' >/dev/null
 
 python3 - "$OPEN_HOTSPOT_DB_PATH" <<'PY'
 import sqlite3

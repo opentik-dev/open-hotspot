@@ -1,4 +1,5 @@
 <%+header%>
+<div class="oh-page">
 <h2><%:Open-HotSpot vouchers%></h2>
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 <% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
@@ -14,6 +15,7 @@
 </form>
 </fieldset>
 
+<div class="oh-table-wrap">
 <table class="table cbi-section-table">
 <tr class="tr table-titles"><th><%:Code%></th><th><%:Profile%></th><th><%:Validity%></th><th><%:Status%></th><th><%:Redeemed at%></th><th><%:Actions%></th></tr>
 <% for _, voucher in ipairs(vouchers) do %>
@@ -23,4 +25,7 @@
 </tr>
 <% end %>
 </table>
+ </div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+</div>
 <%+footer%>

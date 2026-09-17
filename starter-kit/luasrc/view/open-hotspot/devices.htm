@@ -1,9 +1,11 @@
 <%+header%>
+<div class="oh-page">
 <h2><%:Open-HotSpot devices%></h2>
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 <% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
 
 <p><%:A blocked device cannot authenticate. Removing is allowed only when no session or usage history references the device.%></p>
+<div class="oh-table-wrap">
 <table class="table cbi-section-table">
 <tr class="tr table-titles"><th><%:Account%></th><th><%:MAC address%></th><th><%:Status%></th><th><%:First seen%></th><th><%:Last seen%></th><th><%:Live sessions%></th><th><%:Actions%></th></tr>
 <% for _, device in ipairs(devices) do %>
@@ -24,4 +26,7 @@
 </tr>
 <% end %>
 </table>
+ </div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+</div>
 <%+footer%>

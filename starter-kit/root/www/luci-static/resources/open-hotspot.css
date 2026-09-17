@@ -1,0 +1,32 @@
+/* Open-HotSpot LuCI layout: consistent labels, controls, and responsive tables. */
+.oh-page { max-width: 1120px; }
+.oh-page h2 { margin-bottom: 1.25rem; }
+.oh-page fieldset.cbi-section { padding: 1rem 1.25rem 1.25rem; border-radius: .35rem; }
+.oh-page fieldset form { max-width: 860px; }
+.oh-page .cbi-value {
+	display: grid;
+	grid-template-columns: minmax(13rem, 31%) minmax(14rem, 1fr);
+	gap: .75rem 1.25rem;
+	align-items: center;
+	margin: .7rem 0;
+}
+.oh-page .cbi-value > label, .oh-page .oh-field > span, .oh-page .oh-compact-field > span { font-weight: 600; }
+.oh-page input:not([type="hidden"]), .oh-page select { box-sizing: border-box; width: 100%; min-height: 2.25rem; }
+.oh-page fieldset form > input[type="submit"] { margin-top: .7rem; margin-inline-start: calc(31% + 1.25rem); }
+.oh-page .oh-record-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: .8rem; align-items: end; }
+.oh-page .oh-record-form > label, .oh-page .oh-field, .oh-page .oh-compact-field { display: grid; gap: .3rem; }
+.oh-page .oh-record-form > input[type="submit"] { min-height: 2.25rem; }
+.oh-page .oh-inline-form, .oh-page .oh-delete-form { display: inline-grid; grid-template-columns: minmax(150px, 1fr) auto; gap: .6rem; align-items: end; margin: .35rem .75rem .35rem 0; }
+.oh-page .oh-delete-form { display: inline-block; }
+.oh-page .oh-table-wrap { overflow-x: auto; margin-top: 1.25rem; }
+.oh-page table { min-width: 720px; width: 100%; }
+.oh-page th, .oh-page td { padding: .7rem .55rem; vertical-align: middle; }
+.oh-page tr:nth-child(even) { background: rgba(127, 127, 127, .08); }
+.oh-page .oh-account-update { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
+@media (max-width: 700px) {
+	.oh-page .cbi-value { grid-template-columns: 1fr; gap: .35rem; }
+	.oh-page fieldset form > input[type="submit"] { margin-inline-start: 0; }
+	.oh-page fieldset.cbi-section { padding-inline: .8rem; }
+	.oh-page .oh-record-form { grid-template-columns: 1fr; }
+	.oh-page .oh-inline-form { display: grid; grid-template-columns: 1fr; width: 100%; }
+}

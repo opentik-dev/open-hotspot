@@ -8,14 +8,18 @@
 - الراوتر الاختباري: Linksys EA8300، إصدار OpenWrt 25.12.5.
 - عنوان الإدارة: `192.168.70.1`.
 - WAN يعمل بعنوان `192.168.50.156/24` والبوابة وDNS هما `192.168.50.1`.
-- الحزمة المثبتة: `luci-app-open-hotspot 1.2.0-r14`.
+- الحزمة المثبتة: `luci-app-open-hotspot 1.2.0-r15`.
 - openNDS يعمل، وFAS المحلي يعمل على المنفذ `2080` والمسار `/nds/fas.php`.
 - `dnsmasq-full` مثبت مع دعم `nftset`.
 
 الحزمة المختبرة موجودة في
-[`dist/luci-app-open-hotspot-1.2.0-r14.apk`](dist/luci-app-open-hotspot-1.2.0-r14.apk)،
+[`dist/luci-app-open-hotspot-1.2.0-r15.apk`](dist/luci-app-open-hotspot-1.2.0-r15.apk)،
 وبصمة SHA-256 هي:
-`a2b2cb0021bcdd7238b4b6c29351731d6f897b7063bfcdb3f4314eba86970ca8`.
+`6e3b14cd68ff77dee35f4069506a37dc98d6f8d250c07c3f3992b951d18994fb`.
+
+يتحقق الإصدار r15 من حمولة FAS الموثقة التي تستخدم الحقل `hid`، ويقبل أيضاً
+التسمية التوافقية `client_hid` التي ظهرت في بعض مسارات العميل captive portal.
+أما الطلبات التي لا تحمل سياق FAS موثقاً فتبقى مرفوضة لأسباب أمنية.
 
 ## التوزيع عبر GitHub
 
@@ -30,9 +34,9 @@ Workflow ينشرها تلقائياً كملف مرفق في **Releases** عن�
 ## التثبيت
 
 ```sh
-tar -C .build -cf - luci-app-open-hotspot-1.2.0-r14.apk | \
+tar -C .build -cf - luci-app-open-hotspot-1.2.0-r15.apk | \
   ssh root@192.168.70.1 'tar -xf - -C /tmp'
-ssh root@192.168.70.1 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r14.apk'
+ssh root@192.168.70.1 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r15.apk'
 ```
 
 بعدها افتح: **Services → Open-HotSpot → Setup**. التفعيل المحلي الصريح:
@@ -67,6 +71,11 @@ ssh root@192.168.70.1 '/usr/lib/open-hotspot/activate-local-fas.sh rollback'
 BinAuth → جلسة openNDS، ثم اختبار الحصص وتعدد الأجهزة والقسائم. كما يجب تعيين
 كلمة مرور root. تفاصيل الاختبارات ونسخ الاستعادة وSHA-256 موجودة في
 [`specs/001-open-hotspot/quickstart.md`](specs/001-open-hotspot/quickstart.md).
+
+للتجربة الحالية اتصل بالشبكة المفتوحة `Open-HotSpot-Test`، ثم أعد فتح صفحة
+الدخول إذا كانت مفتوحة قبل تثبيت r15، وسجّل بالحساب التجريبي الذي أُنشئ على
+الراوتر. لا تُعدّ التجربة مكتملة حتى يظهر العميل `Authenticated` في
+`ndsctl status`.
 
 طريقة بناء SDK/feeds موثقة مع روابط OpenWrt الرسمية في النسخة الإنجليزية من
 هذا الملف.

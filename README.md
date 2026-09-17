@@ -58,6 +58,11 @@ The router's WAN is online through `192.168.50.1`, and `dnsmasq-full` is
 installed with nftset support. The package intentionally does not replace
 `dnsmasq` or silently alter the existing FAS configuration.
 
+The tested APK is available at
+[`dist/luci-app-open-hotspot-1.2.0-r13.apk`](dist/luci-app-open-hotspot-1.2.0-r13.apk)
+with SHA-256
+`af505ab0b2e031c9a841993545e0c8a0a030447eec6c657d3046b68eabc098ae`.
+
 ## LuCI screenshots
 
 These screenshots were captured from the installed package on the test router.

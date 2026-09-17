@@ -1,0 +1,41 @@
+<%+header%>
+<h2><%:Open-HotSpot accounts%></h2>
+<% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
+<% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
+
+<fieldset class="cbi-section">
+<legend><%:Create account%></legend>
+<form method="post" action="<%=url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="create" />
+<div class="cbi-value"><label><%:Username%></label><input name="username" required maxlength="64" /></div>
+<div class="cbi-value"><label><%:PIN%></label><input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" /></div>
+<div class="cbi-value"><label><%:Profile%></label><select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"><%=pcdata(p.name)%></option><% end %></select></div>
+<div class="cbi-value"><label><%:Expiry (UTC ISO-8601)%></label><input name="expires_at" placeholder="YYYY-MM-DDTHH:MM:SSZ" /></div>
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Create%>" />
+</form>
+</fieldset>
+
+<table class="table cbi-section-table">
+<tr class="tr table-titles"><th><%:Username%></th><th><%:Profile%></th><th><%:Status%></th><th><%:Expiry%></th><th><%:Actions%></th></tr>
+<% for _, account in ipairs(accounts) do %>
+<tr class="tr">
+<td colspan="5">
+<form method="post" action="<%=url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=account.id%>" />
+<input name="username" value="<%=pcdata(account.username)%>" maxlength="64" />
+<select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"<% if p.id == account.profile_id then %> selected<% end %>><%=pcdata(p.name)%></option><% end %></select>
+<select name="status"><option value="active"<% if account.status == "active" then %> selected<% end %>><%:active%></option><option value="suspended"<% if account.status == "suspended" then %> selected<% end %>><%:suspended%></option></select>
+<input name="expires_at" value="<%=pcdata(account.expires_at or "")%>" placeholder="YYYY-MM-DDTHH:MM:SSZ" />
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
+</form>
+<form method="post" action="<%=url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="set-pin" /><input type="hidden" name="id" value="<%=account.id%>" />
+<input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" placeholder="<%:New PIN%>" />
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Set PIN%>" />
+</form>
+<form method="post" action="<%=url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=account.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Suspend this account?%>');" /></form>
+</td>
+</tr>
+<% end %>
+</table>
+<%+footer%>

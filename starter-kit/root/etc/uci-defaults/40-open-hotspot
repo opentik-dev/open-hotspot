@@ -1,0 +1,39 @@
+#!/bin/sh
+# Idempotent: safe on every sysupgrade -k. Never overwrites an existing DB
+# or an admin-edited config section.
+
+[ -f /etc/open-hotspot/hotspot.db ] || {
+	. /usr/lib/open-hotspot/db.sh
+	db_init
+}
+
+uci -q get open-hotspot.global >/dev/null || {
+	uci set open-hotspot.global='manager'
+	uci set open-hotspot.global.check_interval='300'
+	uci set open-hotspot.global.default_profile='1'
+	uci set open-hotspot.global.active_template='default'
+	uci set open-hotspot.global.history_retention='90'
+	uci set open-hotspot.global.log_retention_kb='256'
+	uci set open-hotspot.global.pin_iterations='100000'
+	uci set open-hotspot.global.setup_state='new'
+	uci set open-hotspot.global.setup_last_error=''
+	uci set open-hotspot.global.fas_mode='local-level1'
+	uci set open-hotspot.global.fas_port='2080'
+	uci set open-hotspot.global.fas_path='/nds/fas.php'
+	uci set open-hotspot.global.local_fas_enabled='0'
+	uci commit open-hotspot
+}
+
+# The base setup is safe to retry and records blockers for the LuCI setup
+# screen. It never activates local FAS or rewrites an existing openNDS FAS.
+if [ -x /usr/lib/open-hotspot/setup.sh ]; then
+	/usr/lib/open-hotspot/setup.sh base >/tmp/open-hotspot-setup.log 2>&1 || true
+fi
+
+# rpcd discovers executable plugins at startup/reload. Reloading rpcd is
+# bounded and does not restart openNDS or alter the captive-portal state.
+if [ -x /etc/init.d/rpcd ]; then
+	/etc/init.d/rpcd reload >/dev/null 2>&1 || true
+fi
+
+exit 0

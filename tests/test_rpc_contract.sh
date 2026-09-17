@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+rpc="$root/starter-kit/root/usr/libexec/rpcd/open_hotspot"
+acl="$root/starter-kit/root/usr/share/rpcd/acl.d/luci-app-open-hotspot.json"
+
+sh -n "$rpc"
+grep -F 'profile_list' "$rpc" >/dev/null
+grep -F 'account_set_pin' "$rpc" >/dev/null
+grep -F 'device_list' "$rpc" >/dev/null
+grep -F 'device_block' "$rpc" >/dev/null
+grep -F 'device_remove' "$rpc" >/dev/null
+grep -F 'voucher_list' "$rpc" >/dev/null
+grep -F 'voucher_generate' "$rpc" >/dev/null
+grep -F 'voucher_revoke' "$rpc" >/dev/null
+grep -F 'json_load "$input"' "$rpc" >/dev/null
+grep -F 'printf' "$rpc" | grep -F '"$pin"' >/dev/null
+grep -F '"$ADMIN" account-create' "$rpc" >/dev/null
+! grep -Eq 'ndsctl|opennds[[:space:]]+auth|opennds[[:space:]]+deauth' "$rpc"
+python3 -m json.tool "$acl" >/dev/null

@@ -1,0 +1,9 @@
+#!/bin/sh
+# This legacy CGI endpoint is intentionally disabled. Authentication belongs
+# to the local FAS at /nds/fas.php, which receives and validates the complete
+# openNDS HID payload before creating an opaque auth transaction. Keeping this
+# endpoint fail-closed prevents an unverified direct username/PIN redirect.
+
+printf 'Status: 410 Gone\r\n'
+printf 'Content-Type: text/plain; charset=UTF-8\r\n\r\n'
+printf 'Use the openNDS local FAS endpoint.\n'

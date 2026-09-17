@@ -1,0 +1,229 @@
+#!/bin/sh
+# rpcd plugin for the local Open-HotSpot management boundary.
+# JSON is carried over stdin; secrets are never command-line arguments.
+
+. /usr/share/libubox/jshn.sh
+
+ADMIN=/usr/lib/open-hotspot/admin.sh
+
+rpc_error() {
+	json_init
+	json_add_boolean ok 0
+	json_add_string error "$1"
+	json_dump
+	exit 1
+}
+
+rpc_ok() {
+	json_init
+	json_add_boolean ok 1
+	json_dump
+}
+
+rpc_profile_list() {
+	rows=$($ADMIN profile-list 2>/dev/null) || rpc_error database
+	json_init
+	json_add_array profiles
+	old_ifs="$IFS"
+	IFS="$(printf '\t')"
+	while read -r id name period time_limit upload_limit download_limit upload_rate download_rate max_devices; do
+		[ -n "$id" ] || continue
+		json_add_object
+		json_add_int id "$id"
+		json_add_string name "$name"
+		json_add_string period_type "$period"
+		json_add_int time_limit_s "$time_limit"
+		json_add_int upload_limit_b "$upload_limit"
+		json_add_int download_limit_b "$download_limit"
+		json_add_int upload_rate_kbps "$upload_rate"
+		json_add_int download_rate_kbps "$download_rate"
+		json_add_int max_devices "$max_devices"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
+rpc_account_list() {
+	rows=$($ADMIN account-list 2>/dev/null) || rpc_error database
+	json_init
+	json_add_array accounts
+	old_ifs="$IFS"
+	IFS="$(printf '\t')"
+	while read -r id username profile_id profile_name status expires_at; do
+		[ -n "$id" ] || continue
+		json_add_object
+		json_add_int id "$id"
+		json_add_string username "$username"
+		json_add_int profile_id "$profile_id"
+		json_add_string profile_name "$profile_name"
+		json_add_string status "$status"
+		json_add_string expires_at "${expires_at:-}"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
+rpc_device_list() {
+	rows=$($ADMIN device-list 2>/dev/null) || rpc_error database
+	json_init
+	json_add_array devices
+	old_ifs="$IFS"
+	IFS='|'
+	while read -r id account_id username mac status first_seen last_seen live_sessions; do
+		[ -n "$id" ] || continue
+		json_add_object
+		json_add_int id "$id"
+		json_add_int account_id "$account_id"
+		json_add_string username "$username"
+		json_add_string mac "$mac"
+		json_add_string status "$status"
+		json_add_string first_seen "$first_seen"
+		json_add_string last_seen "${last_seen:-}"
+		json_add_int live_sessions "$live_sessions"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
+rpc_voucher_list() {
+	rows=$($ADMIN voucher-list 2>/dev/null) || rpc_error database
+	json_init
+	json_add_array vouchers
+	old_ifs="$IFS"
+	IFS='|'
+	while read -r id code profile_id profile_name validity_seconds status redeemed_by redeemed_at expires_at; do
+		[ -n "$id" ] || continue
+		json_add_object
+		json_add_int id "$id"
+		json_add_string code "$code"
+		json_add_int profile_id "$profile_id"
+		json_add_string profile_name "$profile_name"
+		json_add_int validity_seconds "$validity_seconds"
+		json_add_string status "$status"
+		json_add_string redeemed_by "${redeemed_by:-}"
+		json_add_string redeemed_at "${redeemed_at:-}"
+		json_add_string expires_at "${expires_at:-}"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
+rpc_voucher_generate() {
+	count="$1"; profile_id="$2"; validity_seconds="$3"
+	codes=$($ADMIN voucher-generate "$count" "$profile_id" "$validity_seconds" 2>/dev/null) || rpc_error validation
+	json_init
+	json_add_array codes
+	while read -r code; do
+		[ -n "$code" ] || continue
+		json_add_string "" "$code"
+	done <<EOF
+$codes
+EOF
+	json_close_array
+	json_dump
+}
+
+rpc_mutation() {
+	command_name="$1"
+	shift
+	if "$ADMIN" "$command_name" "$@" >/dev/null 2>&1; then
+		rpc_ok
+	else
+		rpc_error validation
+	fi
+}
+
+case "${1:-}" in
+	list)
+		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0}}'
+		;;
+	call)
+		method="${2:-}"
+		input=$(cat)
+		json_load "$input" || rpc_error invalid-json
+		case "$method" in
+			profile_list) rpc_profile_list ;;
+			account_list) rpc_account_list ;;
+			device_list) rpc_device_list ;;
+			voucher_list) rpc_voucher_list ;;
+			profile_create|profile_update)
+				json_get_var name name
+				json_get_var period period_type
+				json_get_var time_limit time_limit_s
+				json_get_var upload_limit upload_limit_b
+				json_get_var download_limit download_limit_b
+				json_get_var upload_rate upload_rate_kbps
+				json_get_var download_rate download_rate_kbps
+				json_get_var max_devices max_devices
+				if [ "$method" = profile_create ]; then
+					rpc_mutation profile-create "$name" "$period" "$time_limit" "$upload_limit" "$download_limit" "$upload_rate" "$download_rate" "$max_devices"
+				else
+					json_get_var id id
+					rpc_mutation profile-update "$id" "$name" "$period" "$time_limit" "$upload_limit" "$download_limit" "$upload_rate" "$download_rate" "$max_devices"
+				fi
+				;;
+			profile_delete|account_delete)
+				json_get_var id id
+				[ "$method" = profile_delete ] && command_name=profile-delete || command_name=account-delete
+				rpc_mutation "$command_name" "$id"
+				;;
+			device_block|device_unblock|device_remove)
+			json_get_var id id
+			case "$method" in
+				device_block) command_name=device-block ;;
+				device_unblock) command_name=device-unblock ;;
+				device_remove) command_name=device-remove ;;
+			esac
+			rpc_mutation "$command_name" "$id"
+				;;
+			voucher_generate)
+				json_get_var count count
+				json_get_var profile_id profile_id
+				json_get_var validity_seconds validity_seconds
+				rpc_voucher_generate "$count" "$profile_id" "$validity_seconds"
+				;;
+			voucher_revoke)
+				json_get_var id id
+				rpc_mutation voucher-revoke "$id"
+				;;
+			account_create)
+				json_get_var username username
+				json_get_var profile_id profile_id
+				json_get_var expires_at expires_at
+				json_get_var pin pin
+				if printf '%s\n' "$pin" | "$ADMIN" account-create "$username" "$profile_id" "$expires_at" >/dev/null 2>&1; then rpc_ok; else rpc_error validation; fi
+				;;
+			account_update)
+				json_get_var id id
+				json_get_var username username
+				json_get_var profile_id profile_id
+				json_get_var status status
+				json_get_var expires_at expires_at
+				rpc_mutation account-update "$id" "$username" "$profile_id" "$status" "$expires_at"
+				;;
+			account_set_pin)
+				json_get_var id id
+				json_get_var pin pin
+				if printf '%s\n' "$pin" | "$ADMIN" account-set-pin "$id" >/dev/null 2>&1; then rpc_ok; else rpc_error validation; fi
+				;;
+			*) rpc_error unknown-method ;;
+		esac
+		;;
+	*) exit 2 ;;
+esac

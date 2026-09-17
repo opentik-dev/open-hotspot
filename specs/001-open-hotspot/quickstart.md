@@ -57,10 +57,10 @@ The old application state was archived, not destroyed, at:
 
 The sysupgrade and state backups are stored locally under
 `.build/backups/20260917T003034Z.*`. The installed package is
-`luci-app-open-hotspot 1.2.0-r13`, built for `noarch` as an OpenWrt APK:
+`luci-app-open-hotspot 1.2.0-r14`, built for `noarch` as an OpenWrt APK:
 
 ```text
-sha256 af505ab0b2e031c9a841993545e0c8a0a030447eec6c657d3046b68eabc098ae
+sha256 a2b2cb0021bcdd7238b4b6c29351731d6f897b7063bfcdb3f4314eba86970ca8
 ```
 
 The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
@@ -74,6 +74,11 @@ The FAS login was tested with a temporary account using a real HTTP POST; the
 response contained the `tok`, `custom`, and `redir` handoff fields and created
 one pending SQLite transaction. The account was then suspended and the test
 transaction expired; database integrity remained `ok`.
+
+For the current Wi-Fi trial, all three radio interfaces are enabled with the
+open SSID `Open-HotSpot-Test` on the LAN bridge. The first active account is
+`firstuser` on `default-unlimited`; its credentials are intentionally not
+stored in repository documentation.
 
 Submitting those handoff fields from the management host to `/nds/` returned
 HTTP 511 and did not create an openNDS client, which is expected because the

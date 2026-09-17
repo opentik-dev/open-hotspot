@@ -5,7 +5,7 @@
 
 <fieldset class="cbi-section">
 <legend><%:Create account%></legend>
-<form method="post" action="<%=url%>">
+<form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="create" />
 <div class="cbi-value"><label><%:Username%></label><input name="username" required maxlength="64" /></div>
 <div class="cbi-value"><label><%:PIN%></label><input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" /></div>
@@ -20,7 +20,7 @@
 <% for _, account in ipairs(accounts) do %>
 <tr class="tr">
 <td colspan="5">
-<form method="post" action="<%=url%>">
+<form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=account.id%>" />
 <input name="username" value="<%=pcdata(account.username)%>" maxlength="64" />
 <select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"<% if p.id == account.profile_id then %> selected<% end %>><%=pcdata(p.name)%></option><% end %></select>
@@ -28,12 +28,12 @@
 <input name="expires_at" value="<%=pcdata(account.expires_at or "")%>" placeholder="YYYY-MM-DDTHH:MM:SSZ" />
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
 </form>
-<form method="post" action="<%=url%>">
+<form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="set-pin" /><input type="hidden" name="id" value="<%=account.id%>" />
 <input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" placeholder="<%:New PIN%>" />
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Set PIN%>" />
 </form>
-<form method="post" action="<%=url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=account.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Suspend this account?%>');" /></form>
+<form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=account.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Suspend this account?%>');" /></form>
 </td>
 </tr>
 <% end %>

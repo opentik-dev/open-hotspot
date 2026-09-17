@@ -5,7 +5,7 @@
 
 <fieldset class="cbi-section">
 <legend><%:Create profile%></legend>
-<form method="post" action="<%=url%>">
+<form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" />
 <input type="hidden" name="action" value="create" />
 <div class="cbi-value"><label><%:Name%></label><input name="name" required maxlength="64" /></div>
@@ -24,7 +24,7 @@
 <tr class="tr table-titles"><th><%:Name%></th><th><%:Period%></th><th><%:Time%></th><th><%:Data up/down%></th><th><%:Rates%></th><th><%:Devices%></th><th></th></tr>
 <% for _, p in ipairs(profiles) do %>
 <tr class="tr">
-<td colspan="6"><form method="post" action="<%=url%>">
+<td colspan="6"><form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=p.id%>" />
 <label><%:Name%> <input name="name" value="<%=pcdata(p.name)%>" maxlength="64" /></label>
 <label><%:Period%> <select name="period_type"><% for _, period in ipairs({"none","hourly","daily","monthly","yearly"}) do %><option value="<%=period%>"<% if p.period_type == period then %> selected<% end %>><%=period%></option><% end %></select></label>
@@ -36,7 +36,7 @@
 <label><%:Devices%> <input name="max_devices" type="number" min="1" value="<%=p.max_devices%>" /></label>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
 </form>
-</td><td><form method="post" action="<%=url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=p.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Delete this profile?%>');" /></form></td>
+</td><td><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=p.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Delete this profile?%>');" /></form></td>
 </tr>
 <% end %>
 </table>

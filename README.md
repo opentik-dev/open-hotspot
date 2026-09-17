@@ -48,7 +48,7 @@ two concurrency guarantees — see commit history / test output).
 ## Physical-router checkpoint
 
 The OpenWrt 25.12.5 SDK package was built as
-`luci-app-open-hotspot 1.2.0-r13` and installed/tested on the Linksys EA8300 at
+`luci-app-open-hotspot 1.2.0-r14` and installed/tested on the Linksys EA8300 at
 `192.168.70.1`. The local FAS listener is active on port `2080`; the exact
 installation record, backup locations, SHA-256, rollback command, SDK/feed
 procedure, and remaining live-client gates are in
@@ -59,9 +59,17 @@ installed with nftset support. The package intentionally does not replace
 `dnsmasq` or silently alter the existing FAS configuration.
 
 The tested APK is available at
-[`dist/luci-app-open-hotspot-1.2.0-r13.apk`](dist/luci-app-open-hotspot-1.2.0-r13.apk)
+[`dist/luci-app-open-hotspot-1.2.0-r14.apk`](dist/luci-app-open-hotspot-1.2.0-r14.apk)
 with SHA-256
-`af505ab0b2e031c9a841993545e0c8a0a030447eec6c657d3046b68eabc098ae`.
+`a2b2cb0021bcdd7238b4b6c29351731d6f897b7063bfcdb3f4314eba86970ca8`.
+
+## Distribution
+
+The OpenWrt APK is not a GitHub Packages format. GitHub Packages currently
+supports npm, RubyGems, Maven/Gradle, NuGet, Docker, and OCI registries, so the
+repository's Packages page correctly remains empty. The APK is distributed as
+a repository artifact and, when a `v*` tag is pushed, the included workflow
+publishes it as a GitHub Release asset. See [Releases](https://github.com/opentik-dev/open-hotspot/releases).
 
 ## LuCI screenshots
 

@@ -15,11 +15,11 @@
 <td><%=pcdata(device.last_seen or "")%></td>
 <td><%=device.live_sessions%></td>
 <td>
-<form method="post" action="<%=url%>">
+<form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="id" value="<%=device.id%>" />
 <% if device.status == "blocked" then %><input type="hidden" name="action" value="unblock" /><input class="cbi-button cbi-button-save" type="submit" value="<%:Unblock%>" /><% else %><input type="hidden" name="action" value="block" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Block%>" onclick="return confirm('<%:Block this device?%>');" /><% end %>
 </form>
-<form method="post" action="<%=url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="id" value="<%=device.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" onclick="return confirm('<%:Remove this device? Historical devices cannot be removed.%>');" /></form>
+<form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="id" value="<%=device.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" onclick="return confirm('<%:Remove this device? Historical devices cannot be removed.%>');" /></form>
 </td>
 </tr>
 <% end %>

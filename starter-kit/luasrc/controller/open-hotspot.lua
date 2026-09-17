@@ -72,7 +72,7 @@ function profiles()
 		profiles = result and result.profiles or {},
 		page_error = err or "",
 		page_message = message or "",
-		url = dispatcher.build_url("admin", "services", "open-hotspot", "profiles"),
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "profiles"),
 		token = dispatcher.context.authsession
 	})
 end
@@ -112,7 +112,7 @@ function accounts()
 		profiles = profiles_result and profiles_result.profiles or {},
 		page_error = accounts_error or profiles_error or "",
 		page_message = message or "",
-		url = dispatcher.build_url("admin", "services", "open-hotspot", "accounts"),
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "accounts"),
 		token = dispatcher.context.authsession
 	})
 end
@@ -140,7 +140,7 @@ function devices()
 		devices = result and result.devices or {},
 		page_error = err or "",
 		page_message = message or "",
-		url = dispatcher.build_url("admin", "services", "open-hotspot", "devices"),
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "devices"),
 		token = dispatcher.context.authsession
 	})
 end
@@ -175,7 +175,7 @@ function vouchers()
 		profiles = profiles_result and profiles_result.profiles or {},
 		page_error = vouchers_error or profiles_error or "",
 		page_message = message or "",
-		url = dispatcher.build_url("admin", "services", "open-hotspot", "vouchers"),
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "vouchers"),
 		token = dispatcher.context.authsession
 	})
 end

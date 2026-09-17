@@ -5,7 +5,7 @@
 
 <fieldset class="cbi-section">
 <legend><%:Generate voucher batch%></legend>
-<form method="post" action="<%=url%>">
+<form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="generate" />
 <div class="cbi-value"><label><%:Count%></label><input name="count" type="number" min="1" max="1000" value="1" /></div>
 <div class="cbi-value"><label><%:Profile%></label><select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"><%=pcdata(p.name)%></option><% end %></select></div>
@@ -19,7 +19,7 @@
 <% for _, voucher in ipairs(vouchers) do %>
 <tr class="tr">
 <td><code><%=pcdata(voucher.code)%></code></td><td><%=pcdata(voucher.profile_name)%></td><td><%=voucher.validity_seconds%></td><td><%=pcdata(voucher.status)%></td><td><%=pcdata(voucher.redeemed_at or "")%></td>
-<td><% if voucher.status == "unused" then %><form method="post" action="<%=url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="revoke" /><input type="hidden" name="id" value="<%=voucher.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Revoke%>" onclick="return confirm('<%:Revoke this voucher?%>');" /></form><% end %></td>
+<td><% if voucher.status == "unused" then %><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="revoke" /><input type="hidden" name="id" value="<%=voucher.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Revoke%>" onclick="return confirm('<%:Revoke this voucher?%>');" /></form><% end %></td>
 </tr>
 <% end %>
 </table>

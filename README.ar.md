@@ -8,16 +8,16 @@
 - الراوتر الاختباري: Linksys EA8300، إصدار OpenWrt 25.12.5.
 - عنوان الإدارة: `192.168.70.1`.
 - WAN يعمل بعنوان `192.168.50.156/24` والبوابة وDNS هما `192.168.50.1`.
-- الحزمة المثبتة: `luci-app-open-hotspot 1.2.0-r15`.
+- الحزمة المثبتة: `luci-app-open-hotspot 1.2.0-r16`.
 - openNDS يعمل، وFAS المحلي يعمل على المنفذ `2080` والمسار `/nds/fas.php`.
 - `dnsmasq-full` مثبت مع دعم `nftset`.
 
 الحزمة المختبرة موجودة في
-[`dist/luci-app-open-hotspot-1.2.0-r15.apk`](dist/luci-app-open-hotspot-1.2.0-r15.apk)،
+[`dist/luci-app-open-hotspot-1.2.0-r16.apk`](dist/luci-app-open-hotspot-1.2.0-r16.apk)،
 وبصمة SHA-256 هي:
-`6e3b14cd68ff77dee35f4069506a37dc98d6f8d250c07c3f3992b951d18994fb`.
+`04778451a1fb5a9a293ca8ed80a617bdde7bfa6b68a31c54889999902740d643`.
 
-يتحقق الإصدار r15 من حمولة FAS الموثقة التي تستخدم الحقل `hid`، ويقبل أيضاً
+يتحقق الإصدار r16 من حمولة FAS الموثقة التي تستخدم الحقل `hid`، ويقبل أيضاً
 التسمية التوافقية `client_hid` التي ظهرت في بعض مسارات العميل captive portal.
 أما الطلبات التي لا تحمل سياق FAS موثقاً فتبقى مرفوضة لأسباب أمنية.
 
@@ -34,9 +34,9 @@ Workflow ينشرها تلقائياً كملف مرفق في **Releases** عن�
 ## التثبيت
 
 ```sh
-tar -C .build -cf - luci-app-open-hotspot-1.2.0-r15.apk | \
+tar -C .build -cf - luci-app-open-hotspot-1.2.0-r16.apk | \
   ssh root@192.168.70.1 'tar -xf - -C /tmp'
-ssh root@192.168.70.1 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r15.apk'
+ssh root@192.168.70.1 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r16.apk'
 ```
 
 بعدها افتح: **Services → Open-HotSpot → Setup**. التفعيل المحلي الصريح:
@@ -73,7 +73,7 @@ BinAuth → جلسة openNDS، ثم اختبار الحصص وتعدد الأج�
 [`specs/001-open-hotspot/quickstart.md`](specs/001-open-hotspot/quickstart.md).
 
 للتجربة الحالية اتصل بالشبكة المفتوحة `Open-HotSpot-Test`، ثم أعد فتح صفحة
-الدخول إذا كانت مفتوحة قبل تثبيت r15، وسجّل بالحساب التجريبي الذي أُنشئ على
+الدخول إذا كانت مفتوحة قبل تثبيت r16، وسجّل بالحساب التجريبي الذي أُنشئ على
 الراوتر. لا تُعدّ التجربة مكتملة حتى يظهر العميل `Authenticated` في
 `ndsctl status`.
 

@@ -22,8 +22,14 @@ function fail_page(string $message, int $status = 400): never
 {
     http_response_code($status);
     header('Content-Type: text/html; charset=UTF-8');
-    echo '<!doctype html><meta charset="utf-8"><title>Open-HotSpot</title>';
-    echo '<h1>تعذر إكمال تسجيل الدخول</h1><p>', html($message), '</p>';
+    echo '<!doctype html><html lang="ar" dir="rtl"><meta charset="UTF-8">';
+    echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
+    echo '<link rel="stylesheet" href="/nds/open-hotspot-fas.css">';
+    echo '<title>Open-HotSpot</title><body><main class="oh-fas">';
+    echo '<section class="oh-card"><p class="oh-brand">Open-HotSpot</p>';
+    echo '<h1>تعذر إكمال تسجيل الدخول</h1><p role="alert">', html($message), '</p>';
+    echo '<a class="oh-button" href="http://status.client">فتح بوابة الدخول</a>';
+    echo '</section></main></body></html>';
     exit;
 }
 
@@ -46,6 +52,9 @@ function fas_key(): string
 
 function decode_fas_payload(string $encoded): array
 {
+    if ($encoded === '') {
+        fail_page('بيانات FAS الناقصة.');
+    }
     $decoded = base64_decode($encoded, true);
     if ($decoded === false || $decoded === '') {
         fail_page('بيانات FAS غير صالحة.');
@@ -253,7 +262,9 @@ $postAction = $self . '?fas=' . rawurlencode($encoded);
 header('Content-Type: text/html; charset=UTF-8');
 echo '<!doctype html><html lang="ar" dir="rtl"><meta charset="UTF-8">';
 echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
-echo '<title>Open-HotSpot</title><h1>تسجيل الدخول</h1>';
+echo '<link rel="stylesheet" href="/nds/open-hotspot-fas.css">';
+echo '<title>Open-HotSpot</title><body><main class="oh-fas"><section class="oh-card">';
+echo '<p class="oh-brand">Open-HotSpot</p><h1>تسجيل الدخول إلى الشبكة</h1>';
 if ($message !== '') {
     echo '<p role="alert">', html($message), '</p>';
 }
@@ -267,9 +278,10 @@ if ($authKey !== '') {
     echo '<input type="hidden" name="redir" value="', html($origin), '">';
     echo '<button type="submit">متابعة</button></form>';
 } else {
-    echo '<form method="post" action="', html($postAction), '">';
-    echo '<label>اسم المستخدم <input name="username" required maxlength="64" autocomplete="username"></label><br>';
-    echo '<label>PIN <input name="pin" required inputmode="numeric" type="password" maxlength="32" autocomplete="current-password"></label><br>';
+    echo '<form class="oh-login-form" method="post" action="', html($postAction), '">';
+    echo '<label>اسم المستخدم <input name="username" required maxlength="64" autocomplete="username"></label>';
+    echo '<label>PIN <input name="pin" required inputmode="numeric" type="password" maxlength="32" autocomplete="current-password"></label>';
     echo '<input type="hidden" name="fas" value="', html($encoded), '">';
-    echo '<button type="submit">دخول</button></form>';
+    echo '<button class="oh-button" type="submit">دخول</button></form>';
 }
+echo '</section></main></body></html>';

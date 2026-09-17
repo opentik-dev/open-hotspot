@@ -16,6 +16,7 @@ printf '%s\n' \
 	'}' >"$mock"
 
 export OPEN_HOTSPOT_DB_HELPER="$mock"
+export OPEN_HOTSPOT_PERIOD_HELPER="$root/starter-kit/root/usr/lib/open-hotspot/period.sh"
 . "$root/starter-kit/root/usr/lib/open-hotspot/binauth.sh"
 
 session_length=0

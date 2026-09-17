@@ -57,15 +57,17 @@ The old application state was archived, not destroyed, at:
 
 The sysupgrade and state backups are stored locally under
 `.build/backups/20260917T003034Z.*`. The installed package is
-`luci-app-open-hotspot 1.2.0-r15`, built for `noarch` as an OpenWrt APK:
+`luci-app-open-hotspot 1.2.0-r16`, built for `noarch` as an OpenWrt APK:
 
 ```text
-sha256 6e3b14cd68ff77dee35f4069506a37dc98d6f8d250c07c3f3992b951d18994fb
+sha256 04778451a1fb5a9a293ca8ed80a617bdde7bfa6b68a31c54889999902740d643
 ```
 
 The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
 `local_fas_enabled=1`. `openNDS` reports FAS URL
 `http://192.168.70.1:2080/nds/fas.php`, and uhttpd listens on port 2080.
+The gateway client-status hostname is set to `status.client`; dnsmasq resolves
+it to `192.168.70.1` for captive clients.
 The WAN lease is `192.168.50.156/24` with gateway/DNS `192.168.50.1`; the
 reported `udhcpc: no lease` occurred during a service restart and did not
 replace the active lease. `dnsmasq-full` is installed and provides the required

@@ -80,7 +80,7 @@ PY
 
 run_fas() {
 	OPEN_HOTSPOT_FAS_SCRIPT="$root/starter-kit/root/www/nds/fas.php" \
-	QUERY_STRING="${OH_QUERY:-fas=$encoded}" \
+	QUERY_STRING="${OH_QUERY-fas=$encoded}" \
 	REQUEST_METHOD="${REQUEST_METHOD:-GET}" \
 	OH_BODY="${OH_BODY:-}" \
 	php -r 'parse_str(getenv("QUERY_STRING") ?: "", $_GET); parse_str(getenv("OH_BODY") ?: "", $_POST); $_SERVER["REQUEST_METHOD"] = getenv("REQUEST_METHOD") ?: "GET"; $_SERVER["SCRIPT_NAME"] = "/nds/fas.php"; require getenv("OPEN_HOTSPOT_FAS_SCRIPT");'
@@ -99,6 +99,8 @@ printf '%s' "$compat" | grep -Eq 'name="custom" value="[0-9a-f]{32}"'
 
 missing=$(REQUEST_METHOD=GET OH_QUERY='' OH_BODY='' run_fas || true)
 printf '%s' "$missing" | grep -F 'بيانات FAS الناقصة.' >/dev/null
+printf '%s' "$missing" | grep -F 'http://status.client' >/dev/null
+printf '%s' "$missing" | grep -F 'open-hotspot-fas.css' >/dev/null
 
 python3 - "$OPEN_HOTSPOT_DB_PATH" <<'PY'
 import sqlite3

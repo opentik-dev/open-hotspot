@@ -646,7 +646,7 @@ state transition. The old unversioned database and legacy helper files were
 archived, then the package initialized a clean v1 database and reached
 `BASE_READY`.
 
-Package `luci-app-open-hotspot 1.2.0-r15` was installed successfully. The
+Package `luci-app-open-hotspot 1.2.0-r16` was installed successfully. The
 package's runtime plan is `opennds`, `sqlite3-cli`, `php8-cgi`,
 `php8-mod-pdo-sqlite`, `luci-base`, and `luci-compat`; it does not depend on
 `dnsmasq-full`. The local FAS activation created a separate uhttpd listener on
@@ -667,6 +667,6 @@ endpoint returned HTTP 511 and left `Current clients: 0`; this was not treated
 as an authorization success because the host was not a separate captive client
 on `br-lan`. A real Wi-Fi/LAN client must complete this final step.
 
-Release r15 additionally normalizes the LuCI form layout across the custom
+Release r16 additionally normalizes the LuCI form layout across the custom
 tabs and accepts `client_hid` as a compatibility alias for the documented
 `hid` field. A FAS request without a verified payload is still rejected.

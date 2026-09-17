@@ -100,6 +100,9 @@ activate() {
 	"$UCI_BIN" set opennds.@opennds[0].fasport='2080' || return 1
 	"$UCI_BIN" set opennds.@opennds[0].faspath='/nds/fas.php' || return 1
 	"$UCI_BIN" set opennds.@opennds[0].fas_secure_enabled='1' || return 1
+	# Use openNDS's documented local client-status hostname so clients can
+	# reach the portal without being shown the router's numeric address.
+	"$UCI_BIN" set opennds.@opennds[0].gatewayfqdn='status.client' || return 1
 	# Local FAS is an optional router service; allow the captive client to
 	# reach only its documented listener in addition to existing allowances.
 	"$UCI_BIN" add_list opennds.@opennds[0].users_to_router='allow tcp port 2080' || return 1

@@ -28,8 +28,12 @@ jobs:
               name: `Open-HotSpot ${tag}`,
               generate_release_notes: true
             });
-            const apk = fs.readdirSync('dist').find(name => /^luci-app-open-hotspot-.*\.apk$/.test(name));
-            if (!apk) core.setFailed('No OpenWrt APK found in dist/');
+            const packageName = tag.replace(/^v/, '');
+            const apk = `luci-app-open-hotspot-${packageName}.apk`;
+            if (!fs.existsSync(path.join('dist', apk))) {
+              core.setFailed(`No APK matches tag ${tag}: expected dist/${apk}`);
+              return;
+            }
             for (const file of [path.join('dist', apk), process.env.CHECKSUM_PATH]) {
               const data = fs.readFileSync(file);
               await github.rest.repos.uploadReleaseAsset({

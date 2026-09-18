@@ -11,7 +11,7 @@ uci -q get open-hotspot.global >/dev/null || {
 	uci set open-hotspot.global='manager'
 	uci set open-hotspot.global.check_interval='300'
 	uci set open-hotspot.global.default_profile='1'
-	uci set open-hotspot.global.active_template='default'
+	uci set open-hotspot.global.active_template='arabic-rtl'
 	uci set open-hotspot.global.history_retention='90'
 	uci set open-hotspot.global.log_retention_kb='256'
 	uci set open-hotspot.global.pin_iterations='100000'

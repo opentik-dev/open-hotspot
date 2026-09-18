@@ -1,0 +1,21 @@
+<%+header%>
+<div class="oh-page">
+<h2><%:Open-HotSpot dashboard%></h2>
+<% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
+<p><%:Persistent counters come from SQLite. The openNDS status below is queried only when this page is opened.%></p>
+<div class="oh-table-wrap">
+<table class="table cbi-section-table">
+<tr class="tr"><th><%:Active accounts%></th><td><%=overview.active_accounts or 0%></td></tr>
+<tr class="tr"><th><%:Active sessions%></th><td><%=overview.active_sessions or 0%></td></tr>
+<tr class="tr"><th><%:Seconds used%></th><td><%=overview.seconds_used or 0%></td></tr>
+<tr class="tr"><th><%:Upload bytes used%></th><td><%=overview.bytes_up or 0%></td></tr>
+<tr class="tr"><th><%:Download bytes used%></th><td><%=overview.bytes_down or 0%></td></tr>
+</table>
+</div>
+<fieldset class="cbi-section">
+<legend><%:openNDS live status%></legend>
+<pre class="oh-status"><%=pcdata(overview.opennds_live_status or "unavailable")%></pre>
+</fieldset>
+</div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+<%+footer%>

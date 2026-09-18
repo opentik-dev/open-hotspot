@@ -1,0 +1,22 @@
+<%+header%>
+<div class="oh-page">
+<h2><%:Open-HotSpot portal templates%></h2>
+<% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
+<% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
+<p><%:Choose the local login page language. Templates are installed locally and are never downloaded from a URL.%></p>
+<div class="oh-template-grid">
+<% for _, item in ipairs(templates) do %>
+<section class="oh-template-card<% if item.active then %> is-active<% end %>">
+<h3><%=pcdata(item.name)%></h3>
+<p><% if item.active then %><%:Currently active%><% else %><%:Available locally%><% end %></p>
+<form method="post" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" />
+<input type="hidden" name="name" value="<%=pcdata(item.name)%>" />
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Use template%>"<% if item.active then %> disabled="disabled"<% end %> />
+</form>
+</section>
+<% end %>
+</div>
+</div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+<%+footer%>

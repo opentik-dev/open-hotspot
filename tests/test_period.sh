@@ -19,3 +19,9 @@ hourly=$(period_bounds hourly)
 daily=$(period_bounds daily)
 [ "$(printf '%s' "$hourly" | cut -c15-16)" = '00' ]
 [ "$(printf '%s' "$daily" | cut -c11-20)" = 'T00:00:00Z' ]
+
+# Asia/Aden is UTC+03:00. Local midnight on 2026-01-02 is 2026-01-01T21:00Z.
+aden=$(OPEN_HOTSPOT_TIMEZONE=Asia/Aden period_window_at daily \
+	"$(date -u -d '2026-01-01 21:30:00' +%s)")
+[ "$(printf '%s' "$aden" | cut -f1)" = '2026-01-01T21:00:00Z' ]
+[ "$(printf '%s' "$aden" | cut -f2)" = '2026-01-02T21:00:00Z' ]

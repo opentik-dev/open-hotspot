@@ -25,7 +25,7 @@ download_rate=0
 upload_quota=0
 download_quota=0
 exitlevel=1
-open_hotspot_binauth_apply auth_client AA:BB:CC:DD:EE:FF \
+open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 	http://example.test/ test-agent 192.168.70.20 token \
 	0123456789abcdef0123456789abcdef
 [ "$exitlevel" = 0 ]
@@ -35,9 +35,24 @@ open_hotspot_binauth_apply auth_client AA:BB:CC:DD:EE:FF \
 [ "$upload_quota" = 2 ]
 [ "$download_quota" = 4 ]
 
-if open_hotspot_binauth_apply auth_client AA:BB:CC:DD:EE:FF user pass redir ua token \
-	0123456789abcdef0123456789abcdef; then
-	echo 'deprecated auth_client layout was accepted' >&2
+# The target stock script base64-encodes custom data before invoking the
+# callback. The adapter must normalize that form to the same opaque key.
+encoded_key=$(printf '%s' 0123456789abcdef0123456789abcdef | base64 | tr -d '\n')
+rm -f "$state"
+session_length=0
+upload_rate=0
+download_rate=0
+upload_quota=0
+download_quota=0
+exitlevel=1
+open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
+	http://example.test/ test-agent 192.168.70.20 token "$encoded_key"
+[ "$exitlevel" = 0 ]
+[ "$session_length" = 2 ]
+
+if open_hotspot_binauth_apply auth_client AA:BB:CC:DD:EE:FF user pass redir ua \
+	192.168.70.20 token 0123456789abcdef0123456789abcdef; then
+	echo 'deprecated nine-field auth_client layout was accepted' >&2
 	exit 1
 fi
 
@@ -62,3 +77,16 @@ exitlevel=1
 open_hotspot_binauth_apply client_deauth AA:BB:CC:DD:EE:FF 100 200 1789257600 1789257660 token \
 	0123456789abcdef0123456789abcdef
 [ "$exitlevel" = 0 ]
+
+# Restore/authmon observation uses the same documented eight-field layout as
+# other non-auth_client callbacks and must not be treated as a new login.
+exitlevel=1
+open_hotspot_binauth_apply ndsctl_auth AA:BB:CC:DD:EE:FF 0 0 1789257600 1789257660 token \
+	0123456789abcdef0123456789abcdef
+[ "$exitlevel" = 0 ]
+
+if open_hotspot_binauth_apply ndsctl_auth AA:BB:CC:DD:EE:FF 0 0 1789257600 \
+	1789257660 token; then
+	echo 'malformed ndsctl_auth layout was accepted' >&2
+	exit 1
+fi

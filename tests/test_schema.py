@@ -45,7 +45,7 @@ class SchemaContractTests(unittest.TestCase):
                 "admin_events",
             }.issubset(names)
         )
-        self.assertEqual(self.db.execute("SELECT version FROM schema_meta").fetchone()[0], 1)
+        self.assertEqual(self.db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 3)
         self.assertEqual(
             self.db.execute("SELECT name FROM profiles WHERE id=1").fetchone()[0],
             "default-unlimited",

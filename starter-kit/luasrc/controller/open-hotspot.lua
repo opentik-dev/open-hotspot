@@ -180,6 +180,41 @@ function vouchers()
 	})
 end
 
+function status()
+	local result, err = ubus_call("overview", {})
+	template.render("open-hotspot/status", {
+		overview = result or {},
+		page_error = err or "",
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "status")
+	})
+end
+
+function history()
+	local result, err = ubus_call("history_list", {})
+	template.render("open-hotspot/history", {
+		history = result and result.history or {},
+		page_error = err or "",
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "history")
+	})
+end
+
+function templates()
+	local message
+	if http.getenv("REQUEST_METHOD") == "POST" then
+		if not csrf_ok() then return end
+		local _, err = ubus_call("template_apply", { name = value("name") })
+		message = err and ("Error: " .. err) or "Saved"
+	end
+	local result, err = ubus_call("template_list", {})
+	template.render("open-hotspot/templates", {
+		templates = result and result.templates or {},
+		page_error = err or "",
+		page_message = message or "",
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "templates"),
+		token = dispatcher.context.authsession
+	})
+end
+
 function index()
 	if not nixio.fs.access("/etc/config/open-hotspot") then
 		return
@@ -214,4 +249,19 @@ function index()
 		call("vouchers"), translate("Vouchers"), 40)
 	vouchers.leaf = true
 	vouchers.acl_depends = { "luci-app-open-hotspot" }
+
+	local status = entry({"admin", "services", "open-hotspot", "status"},
+		call("status"), translate("Dashboard"), 5)
+	status.leaf = true
+	status.acl_depends = { "luci-app-open-hotspot" }
+
+	local history = entry({"admin", "services", "open-hotspot", "history"},
+		call("history"), translate("History"), 50)
+	history.leaf = true
+	history.acl_depends = { "luci-app-open-hotspot" }
+
+	local templates = entry({"admin", "services", "open-hotspot", "templates"},
+		call("templates"), translate("Portal templates"), 45)
+	templates.leaf = true
+	templates.acl_depends = { "luci-app-open-hotspot" }
 end

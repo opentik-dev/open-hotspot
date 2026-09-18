@@ -5,9 +5,6 @@
 # that isn't required on every tick belongs here (see maintenance.sh for
 # the once-daily housekeeping).
 #
-# T002/T004/T005 are open; opennds.sh fails closed until the target contract
-# and units are verified.
-
 LOCK=/var/run/open-hotspot-cycle.lock
 exec 9>"$LOCK"
 flock -n 9 || exit 0   # a previous run is still going: skip this tick, don't stack
@@ -15,6 +12,7 @@ flock -n 9 || exit 0   # a previous run is still going: skip this tick, don't st
 . /usr/lib/open-hotspot/db.sh
 . /usr/lib/open-hotspot/period.sh
 . /usr/lib/open-hotspot/opennds.sh
+. /usr/lib/open-hotspot/quota.sh
 
 now=$(date -u '+%Y-%m-%d %H:%M:%S')
 
@@ -23,14 +21,19 @@ now=$(date -u '+%Y-%m-%d %H:%M:%S')
 #    For accounts with a currently-connected device, reissue an updated
 #    ceiling so the live session sees the new period's fresh budget
 #    (FR-006 — no forced disconnect purely for a period boundary).
-sqlite3 -batch "$DB_PATH" "UPDATE usage_periods SET closed=1
-	WHERE closed=0 AND period_end <= '$now';"
+sqlite3 -batch "$DB_PATH" "UPDATE usage_periods SET closed=1, closed_at=datetime('now')
+	WHERE closed=0 AND julianday(period_end) <= julianday('now');" ||
+	db_log_event cycle_database_error '' 'period-close-failed' || true
 
 sqlite3 -batch "$DB_PATH" "
-	SELECT d.mac, a.id, a.profile_id
+	SELECT DISTINCT d.mac, a.id, a.profile_id, COALESCE(s.policy_period_start,'')
 	FROM devices d
 	JOIN accounts a ON a.id = d.account_id
-	WHERE d.status='active';" | while IFS='|' read -r mac acct_id profile_id; do
+	JOIN active_sessions s ON s.device_id = d.id
+	WHERE d.status='active' AND a.status='active' AND a.deleted_at IS NULL
+		AND s.state='active';" | while IFS='|' read -r mac acct_id profile_id policy_period_start; do
+	# The policy is refreshed once for a newly entered period. A failed
+	# refresh leaves the marker unchanged, so the next tick retries it.
 	[ -n "$mac" ] || continue
 	prof=$(db_profile_get "$profile_id")
 	period_type=$(printf '%s' "$prof" | cut -d'|' -f1)
@@ -47,20 +50,44 @@ sqlite3 -batch "$DB_PATH" "
 	used_up=$(printf '%s' "$used" | cut -d'|' -f2); used_up=${used_up:-0}
 	used_down=$(printf '%s' "$used" | cut -d'|' -f3); used_down=${used_down:-0}
 
-	remaining_time=$time_limit;  [ "$time_limit" -gt 0 ] && remaining_time=$(( time_limit - used_s ))
-	remaining_up=$up_vol;        [ "$up_vol" -gt 0 ]     && remaining_up=$(( up_vol - used_up ))
-	remaining_down=$down_vol;    [ "$down_vol" -gt 0 ]   && remaining_down=$(( down_vol - used_down ))
+	remaining=$(quota_remaining "$time_limit" "$used_s" "$up_vol" "$used_up" "$down_vol" "$used_down") || {
+		db_log_event cycle_quota_error "$acct_id" "$mac" || true
+		continue
+	}
+	remaining_time=$(printf '%s' "$remaining" | cut -d'|' -f1)
+	remaining_up=$(printf '%s' "$remaining" | cut -d'|' -f2)
+	remaining_down=$(printf '%s' "$remaining" | cut -d'|' -f3)
+	exhausted=$(printf '%s' "$remaining" | cut -d'|' -f4)
+	if [ "$exhausted" = '1' ]; then
+		if ! opennds_deauth "$mac" 2>/dev/null; then
+			db_log_event quota_deauth_failed "$acct_id" "$mac" || true
+		fi
+		continue
+	fi
 
-	opennds_apply_session_policy "$mac" "$remaining_time" "$up_rate" "$down_rate" "$remaining_up" "$remaining_down" 2>/dev/null || true
+	[ "$policy_period_start" = "$period_start" ] && continue
+
+	if opennds_apply_session_policy "$mac" "$remaining_time" "$up_rate" "$down_rate" "$remaining_up" "$remaining_down" 2>/dev/null; then
+		if ! sqlite3 -batch "$DB_PATH" "UPDATE active_sessions SET policy_period_start='$(_sql_escape "$period_start")' WHERE state='active' AND device_id IN (SELECT id FROM devices WHERE mac='$mac');"; then
+			db_log_event policy_marker_failed "$acct_id" "$mac" || true
+		fi
+	else
+		# Preserve the live openNDS session, but make a bounded, non-secret
+		# diagnostic visible to the status/history layer.
+		db_log_event policy_refresh_failed "$acct_id" "$mac" || true
+	fi
 done
 
 # 2) Deauth devices whose account's hard expiry has passed while connected.
-today=$(date -u +%Y-%m-%d)
 sqlite3 -batch "$DB_PATH" "
 	SELECT d.mac FROM devices d JOIN accounts a ON a.id = d.account_id
-	WHERE d.status='active' AND a.expires_at IS NOT NULL AND a.expires_at < '$today';" \
+	JOIN active_sessions s ON s.device_id = d.id
+	WHERE d.status='active' AND a.status='active' AND s.state='active'
+	  AND a.expires_at IS NOT NULL AND julianday(a.expires_at) <= julianday('now');" \
 | while read -r mac; do
-	[ -n "$mac" ] && opennds_deauth "$mac" 2>/dev/null || true
+	if [ -n "$mac" ] && ! opennds_deauth "$mac" 2>/dev/null; then
+		db_log_event expiry_deauth_failed '' "$mac" || true
+	fi
 done
 
 exit 0

@@ -51,6 +51,9 @@ unless a column explicitly stores a date-only value.
 | `profile_id` | INTEGER | FK NOT NULL | Assigned policy profile |
 | `status` | TEXT | NOT NULL | active/suspended |
 | `expires_at` | TEXT | nullable | Hard expiry in UTC |
+| `failed_attempts` | INTEGER | NOT NULL >= 0 | Consecutive failed PIN attempts |
+| `last_failed_at` | TEXT | nullable | Last failed PIN timestamp |
+| `lock_until` | TEXT | nullable | Temporary login backoff end in UTC |
 | `created_at` | TEXT | NOT NULL | Creation time |
 | `updated_at` | TEXT | NOT NULL | Last update |
 | `deleted_at` | TEXT | nullable | Soft-delete marker, if retained |
@@ -90,6 +93,7 @@ source of truth for historical usage; it is a concurrency/control aid.
 | `started_at` | TEXT | NOT NULL | Session start |
 | `last_seen_at` | TEXT | NOT NULL | Last manager event |
 | `state` | TEXT | NOT NULL | pending/active/closed |
+| `policy_period_start` | TEXT | nullable | Period for which native policy was last refreshed |
 | `created_at` | TEXT | NOT NULL | Row creation |
 | `closed_at` | TEXT | nullable | Close time |
 
@@ -100,6 +104,10 @@ it must not silently assume one exists.
 A partial unique index must prevent more than one `active` row for the same
 openNDS session identity. A query/transaction over `active_sessions` is used to
 enforce `profiles.max_devices` atomically.
+
+Schema version 3 adds `policy_period_start`. The cycle job uses it to refresh
+native openNDS policy once per period; a failed refresh leaves the marker
+unchanged for a bounded retry.
 
 ## 6. `usage_periods`
 
@@ -199,7 +207,8 @@ written here.
 | `version` | INTEGER | Schema version |
 | `applied_at` | TEXT | Migration timestamp |
 
-Migrations are monotonic and idempotent.
+Migrations are monotonic and idempotent. Version 2 adds bounded PIN-failure
+backoff fields to `accounts`.
 
 ## 12. Transaction Patterns
 

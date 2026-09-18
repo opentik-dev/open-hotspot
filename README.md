@@ -48,7 +48,7 @@ two concurrency guarantees — see commit history / test output).
 ## Physical-router checkpoint
 
 The OpenWrt 25.12.5 SDK package was built as
-`luci-app-open-hotspot 1.2.0-r16` and installed/tested on the Linksys EA8300 at
+`luci-app-open-hotspot 1.2.0-r35` and installed/tested on the Linksys EA8300 at
 `192.168.70.1`. The local FAS listener is active on port `2080`; the exact
 installation record, backup locations, SHA-256, rollback command, SDK/feed
 procedure, and remaining live-client gates are in
@@ -59,11 +59,14 @@ installed with nftset support. The package intentionally does not replace
 `dnsmasq` or silently alter the existing FAS configuration.
 
 The tested APK is available at
-[`dist/luci-app-open-hotspot-1.2.0-r16.apk`](dist/luci-app-open-hotspot-1.2.0-r16.apk)
+[`dist/luci-app-open-hotspot-1.2.0-r35.apk`](dist/luci-app-open-hotspot-1.2.0-r35.apk)
 with SHA-256
-`cfc03526e5e8c9cfe6dace0968b24ff4e63aabeab72144232196ed0ded7ad16a`.
+`9095b936e575aaf15766bc60e2bbe228f526e2ec9c3b8a3fdeaf563c3ed14856`.
 
-Release r16 also accepts the documented openNDS `hid` field and the
+The preserved APK-by-APK ledger is in
+[docs/release-history.md](docs/release-history.md).
+
+Release r35 also accepts the documented openNDS `hid` field and the
 `client_hid` compatibility spelling observed in some captive-client flows.
 Requests without a verified FAS payload remain rejected.
 

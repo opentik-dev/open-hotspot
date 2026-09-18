@@ -1,82 +1,62 @@
 #!/bin/sh
-# period.sh — compute [period_start, period_end) for a profile's
-# period_type, as of "now". Sourced by binauth.sh and cycle.sh so both
-# agree on period boundaries.
+# period.sh — calculate local civil-time periods and persist UTC boundaries.
 #
-# hourly/daily use fixed-length UTC epoch arithmetic. monthly/yearly use the
-# target date utility's calendar arithmetic because their lengths vary. The
-# caller must treat a non-zero exit as an unavailable period calculation.
+# OpenWrt's configured timezone defines the meaning of a day/month/year. The
+# resulting boundaries are always emitted as UTC ISO-8601 values so SQLite and
+# openNDS callbacks share one durable representation.
 
-# period_bounds <period_type>  -> prints "period_start<TAB>period_end"
-# (both ISO-8601 'YYYY-MM-DDTHH:MM:SSZ', UTC-based)
-period_bounds() {
-	ptype="$1"
-	now_epoch=$(date -u +%s)
-
-	case "$ptype" in
-	hourly)
-		start_epoch=$(( now_epoch - (now_epoch % 3600) ))
-		end_epoch=$(( start_epoch + 3600 ))
-		start=$(date -u -d "@${start_epoch}" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null) || return 1
-		end=$(date -u -d "@${end_epoch}"   '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null) || return 1
-		;;
-	daily)
-		start_epoch=$(( now_epoch - (now_epoch % 86400) ))
-		end_epoch=$(( start_epoch + 86400 ))
-		start=$(date -u -d "@${start_epoch}" '+%Y-%m-%dT00:00:00Z' 2>/dev/null) || return 1
-		end=$(date -u -d "@${end_epoch}"   '+%Y-%m-%dT00:00:00Z' 2>/dev/null) || return 1
-		;;
-	monthly)
-		year=$(date -u +'%Y') || return 1
-		month=$(date -u +'%m') || return 1
-		month_num=$(printf '%s' "$month" | sed 's/^0//')
-		[ -n "$month_num" ] || month_num=0
-		if [ "$month_num" -eq 12 ]; then
-			next_year=$((year + 1))
-			next_month=01
-		else
-			next_year=$year
-			next_month=$(printf '%02d' $((month_num + 1)))
-		fi
-		start="${year}-${month}-01T00:00:00Z"
-		end="${next_year}-${next_month}-01T00:00:00Z"
-		;;
-	yearly)
-		year=$(date -u +'%Y') || return 1
-		next_year=$((year + 1))
-		start="${year}-01-01T00:00:00Z"
-		end="${next_year}-01-01T00:00:00Z"
-		;;
-	*)  # none / unlimited: one open-ended sentinel period
-		start='1970-01-01T00:00:00Z'
-		end='9999-12-31T23:59:59Z'
-		;;
-	esac
-
-	printf '%s\t%s\n' "$start" "$end"
+_period_timezone() {
+	if [ -n "${OPEN_HOTSPOT_TIMEZONE:-}" ]; then
+		printf '%s\n' "$OPEN_HOTSPOT_TIMEZONE"
+	elif [ -r /etc/TZ ] && [ -s /etc/TZ ]; then
+		cat /etc/TZ
+	elif command -v uci >/dev/null 2>&1; then
+		uci -q get system.@system[0].timezone 2>/dev/null || printf 'UTC\n'
+	else
+		printf 'UTC\n'
+	fi
 }
+
+_period_local_date() { TZ="$(_period_timezone)" date -d "@$1" '+%Y-%m-%d' 2>/dev/null; }
+_period_local_year() { TZ="$(_period_timezone)" date -d "@$1" '+%Y' 2>/dev/null; }
+_period_local_month() { TZ="$(_period_timezone)" date -d "@$1" '+%m' 2>/dev/null; }
+_period_local_hour() { TZ="$(_period_timezone)" date -d "@$1" '+%H' 2>/dev/null; }
+_period_local_epoch() { TZ="$(_period_timezone)" date -d "$1" '+%s' 2>/dev/null; }
+_period_iso_utc() { date -u -d "@$1" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null; }
 
 # period_window_at <period_type> <epoch>
 # -> period_start_iso<TAB>period_end_iso<TAB>period_start_epoch<TAB>period_end_epoch
-# Used by accounting so a session can be split without assigning all traffic
-# to the period in which the callback happens.
 period_window_at() {
-	ptype="$1"
-	epoch="$2"
+	ptype="$1"; epoch="$2"
 	case "$epoch" in ''|*[!0-9]*) return 1 ;; esac
 
 	case "$ptype" in
 		hourly)
-			start_epoch=$(( epoch - (epoch % 3600) ))
-			end_epoch=$(( start_epoch + 3600 ))
+			local_date=$(_period_local_date "$epoch") || return 1
+			local_hour=$(_period_local_hour "$epoch") || return 1
+			start_epoch=$(_period_local_epoch "$local_date $local_hour:00:00") || return 1
+			end_epoch=$((start_epoch + 3600))
 			;;
 		daily)
-			start_epoch=$(( epoch - (epoch % 86400) ))
-			end_epoch=$(( start_epoch + 86400 ))
+			local_date=$(_period_local_date "$epoch") || return 1
+			start_epoch=$(_period_local_epoch "$local_date 00:00:00") || return 1
+			# Find the first UTC instant whose local date changes. Binary search
+			# avoids relative-date parsing and remains correct for 23/25-hour DST
+			# days and half-hour timezone transitions.
+			low="$start_epoch"; high=$((start_epoch + 172800))
+			while [ $((high - low)) -gt 1 ]; do
+				candidate=$((low + (high - low) / 2))
+				if [ "$(_period_local_date "$candidate")" = "$local_date" ]; then
+					low="$candidate"
+				else
+					high="$candidate"
+				fi
+			done
+			end_epoch="$high"
 			;;
 		monthly)
-			year=$(date -u -d "@${epoch}" +'%Y') || return 1
-			month=$(date -u -d "@${epoch}" +'%m') || return 1
+			year=$(_period_local_year "$epoch") || return 1
+			month=$(_period_local_month "$epoch") || return 1
 			month_num=$(printf '%s' "$month" | sed 's/^0//')
 			[ -n "$month_num" ] || month_num=0
 			if [ "$month_num" -eq 12 ]; then
@@ -84,21 +64,26 @@ period_window_at() {
 			else
 				next_year=$year; next_month=$(printf '%02d' $((month_num + 1)))
 			fi
-			start_epoch=$(date -u -d "${year}-${month}-01 00:00:00" +%s) || return 1
-			end_epoch=$(date -u -d "${next_year}-${next_month}-01 00:00:00" +%s) || return 1
+			start_epoch=$(_period_local_epoch "$year-$month-01 00:00:00") || return 1
+			end_epoch=$(_period_local_epoch "$next_year-$next_month-01 00:00:00") || return 1
 			;;
 		yearly)
-			year=$(date -u -d "@${epoch}" +'%Y') || return 1
-			start_epoch=$(date -u -d "${year}-01-01 00:00:00" +%s) || return 1
-			end_epoch=$(date -u -d "$((year + 1))-01-01 00:00:00" +%s) || return 1
+			year=$(_period_local_year "$epoch") || return 1
+			start_epoch=$(_period_local_epoch "$year-01-01 00:00:00") || return 1
+			end_epoch=$(_period_local_epoch "$((year + 1))-01-01 00:00:00") || return 1
 			;;
 		*)
-			start_epoch=0
-			end_epoch=2147483647
+			start_epoch=0; end_epoch=2147483647
 			;;
 	esac
 
-	start=$(date -u -d "@${start_epoch}" '+%Y-%m-%dT%H:%M:%SZ') || return 1
-	end=$(date -u -d "@${end_epoch}" '+%Y-%m-%dT%H:%M:%SZ') || return 1
+	start=$(_period_iso_utc "$start_epoch") || return 1
+	end=$(_period_iso_utc "$end_epoch") || return 1
 	printf '%s\t%s\t%s\t%s\n' "$start" "$end" "$start_epoch" "$end_epoch"
+}
+
+# period_bounds <period_type> -> period_start<TAB>period_end
+period_bounds() {
+	window=$(period_window_at "$1" "$(date +%s)") || return 1
+	printf '%s\t%s\n' "$(printf '%s' "$window" | cut -f1)" "$(printf '%s' "$window" | cut -f2)"
 }

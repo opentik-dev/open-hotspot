@@ -1,4 +1,4 @@
--- Open-HotSpot schema v1.
+-- Open-HotSpot schema v3.
 -- Persistent state is local SQLite data; openNDS remains the enforcement engine.
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS accounts (
     status      TEXT NOT NULL DEFAULT 'active'
                 CHECK (status IN ('active','suspended')),
     expires_at  TEXT,
+    failed_attempts INTEGER NOT NULL DEFAULT 0 CHECK (failed_attempts >= 0),
+    last_failed_at  TEXT,
+    lock_until      TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
     deleted_at  TEXT
@@ -62,6 +65,7 @@ CREATE TABLE IF NOT EXISTS active_sessions (
     started_at   TEXT NOT NULL,
     last_seen_at TEXT NOT NULL,
     state        TEXT NOT NULL CHECK (state IN ('pending','active','closed')),
+    policy_period_start TEXT,
     created_at   TEXT NOT NULL DEFAULT (datetime('now')),
     closed_at    TEXT
 );
@@ -139,6 +143,8 @@ CREATE TABLE IF NOT EXISTS admin_events (
 CREATE INDEX IF NOT EXISTS idx_admin_events_ts ON admin_events(ts);
 
 INSERT OR IGNORE INTO schema_meta(version) VALUES (1);
+INSERT OR IGNORE INTO schema_meta(version) VALUES (2);
+INSERT OR IGNORE INTO schema_meta(version) VALUES (3);
 INSERT OR IGNORE INTO profiles
     (id, name, period_type, time_limit_s, upload_limit_b, download_limit_b,
      upload_rate_kbps, download_rate_kbps, max_devices)

@@ -8,11 +8,11 @@
 
 DB_PATH="${OPEN_HOTSPOT_DB_PATH:-/etc/open-hotspot/hotspot.db}"
 SCHEMA_PATH="${OPEN_HOTSPOT_SCHEMA_PATH:-/usr/lib/open-hotspot/schema.sql}"
-DB_SCHEMA_VERSION=1
+DB_SCHEMA_VERSION=3
 DB_MIGRATIONS_PATH="${OPEN_HOTSPOT_MIGRATIONS_PATH:-/usr/lib/open-hotspot/migrations}"
 
 _db_is_empty() {
-	[ "$(sqlite3 -batch "$DB_PATH" \
+	[ "$(sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" \
 		"SELECT count(*) FROM sqlite_master WHERE type IN ('table','index','trigger','view') AND name NOT LIKE 'sqlite_%';" 2>/dev/null || echo 1)" = "0" ]
 }
 
@@ -36,7 +36,7 @@ db_migrate() {
 			echo "open-hotspot: missing migration for schema version $next" >&2
 			return 1
 		}
-		sqlite3 -batch "$DB_PATH" < "$migration" || return 1
+		sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" < "$migration" || return 1
 		current=$(db_schema_version) || return 1
 		[ "$current" = "$next" ] || {
 			echo "open-hotspot: migration did not reach schema version $next" >&2
@@ -53,7 +53,7 @@ db_init() {
 	}
 
 	if [ ! -f "$DB_PATH" ] || _db_is_empty; then
-		sqlite3 -batch "$DB_PATH" < "$SCHEMA_PATH" || return 1
+		sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" < "$SCHEMA_PATH" || return 1
 	else
 		version=$(db_schema_version 2>/dev/null || true)
 		_db_version_is_valid "$version" || {
@@ -88,7 +88,7 @@ _valid_hex32() {
 	case "$1" in *[!0-9A-Fa-f]*) return 1 ;; *) return 0 ;; esac
 }
 _sql_escape() { printf '%s' "$1" | sed "s/'/''/g"; }
-_sql() { sqlite3 -batch "$DB_PATH" "$1"; }
+_sql() { sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" "$1"; }
 
 db_schema_version() {
 	_sql "SELECT version FROM schema_meta ORDER BY version DESC LIMIT 1;"
@@ -151,7 +151,7 @@ db_auth_consume() {
 	_valid_mac "$mac" || return 1
 	_valid_epoch "$session_start" || return 1
 
-	result=$(sqlite3 -batch -separator '|' "$DB_PATH" <<SQL
+result=$(sqlite3 -cmd '.timeout 5000' -batch -separator '|' "$DB_PATH" <<SQL
 PRAGMA foreign_keys=ON;
 BEGIN IMMEDIATE;
 CREATE TEMP TABLE oh_auth_context (
@@ -166,10 +166,10 @@ SELECT t.auth_key, t.account_id, t.device_mac, t.policy_snapshot, t.profile_id
  WHERE t.auth_key = '$(_sql_escape "$auth_key")'
    AND t.device_mac = '$mac'
    AND t.state = 'pending'
-   AND t.expires_at > datetime('now')
+   AND julianday(t.expires_at) > julianday('now')
    AND a.status = 'active'
    AND a.deleted_at IS NULL
-   AND (a.expires_at IS NULL OR a.expires_at > datetime('now'))
+   AND (a.expires_at IS NULL OR julianday(a.expires_at) > julianday('now'))
    AND NOT EXISTS (
        SELECT 1 FROM devices blocked
         WHERE blocked.mac = t.device_mac
@@ -249,7 +249,8 @@ db_session_close() {
 	[ -n "$segments" ] || return 1
 
 	event_key="${session_key}:${session_start}:${session_end}"
-	sql="BEGIN IMMEDIATE;
+	sql="PRAGMA busy_timeout=5000;
+BEGIN IMMEDIATE;
 	CREATE TEMP TABLE oh_close_context(session_id INTEGER, account_id INTEGER, device_id INTEGER);
 	INSERT INTO oh_close_context(session_id, account_id, device_id)
 SELECT s.id, s.account_id, s.device_id
@@ -301,7 +302,7 @@ UPDATE devices SET last_seen = datetime('now'), updated_at = datetime('now')
 SELECT (SELECT count(*) FROM oh_close_context) || '|' ||
        (SELECT inserted FROM oh_event_flag);
 COMMIT;"
-	result=$(sqlite3 -batch "$DB_PATH" "$sql") || return 1
+	result=$(sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" "$sql") || return 1
 	[ "$result" = '1|1' ] || return 1
 }
 
@@ -321,7 +322,7 @@ db_usage_accrue_if_new() {
 	_valid_mac "$mac" || return 1
 
 	event_key="${device_id}:${session_start}:${session_end}"
-	sqlite3 -batch "$DB_PATH" <<SQL
+	sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" <<SQL
 BEGIN IMMEDIATE;
 INSERT OR IGNORE INTO usage_events
     (event_key, account_id, device_id, method, mac, bytes_incoming,
@@ -348,7 +349,7 @@ db_voucher_redeem() {
 	code="$1"; account_id="$2"
 	_valid_ident "$code" || return 1
 	_valid_int "$account_id" || return 1
-	changes=$(sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
+	changes=$(sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE vouchers SET status='redeemed', redeemed_by=$account_id, redeemed_at=datetime('now')
 	 WHERE code='$(_sql_escape "$code")' AND status='unused';
 	SELECT changes(); COMMIT;" | tail -n 1)

@@ -5,6 +5,8 @@
 . /usr/share/libubox/jshn.sh
 
 ADMIN=/usr/lib/open-hotspot/admin.sh
+NDS_HELPER=/usr/lib/open-hotspot/opennds.sh
+TEMPLATE_HELPER=/usr/lib/open-hotspot/template.sh
 
 rpc_error() {
 	json_init
@@ -124,6 +126,91 @@ EOF
 	json_dump
 }
 
+rpc_overview() {
+	row=$($ADMIN overview 2>/dev/null) || rpc_error database
+	old_ifs="$IFS"
+	IFS='|'
+	read -r active_accounts active_sessions seconds_used bytes_up bytes_down <<EOF
+$row
+EOF
+	IFS="$old_ifs"
+	live_status=$("$NDS_HELPER" live-clients 2>/dev/null || true)
+	json_init
+	json_add_int active_accounts "${active_accounts:-0}"
+	json_add_int active_sessions "${active_sessions:-0}"
+	json_add_int seconds_used "${seconds_used:-0}"
+	json_add_int bytes_up "${bytes_up:-0}"
+	json_add_int bytes_down "${bytes_down:-0}"
+	json_add_string opennds_live_status "$live_status"
+	json_dump
+}
+
+rpc_history_list() {
+	rows=$($ADMIN history-list 2>/dev/null) || rpc_error database
+	json_init
+	json_add_array history
+	old_ifs="$IFS"
+	IFS='|'
+	while read -r account_id username period_start period_end seconds_used bytes_up bytes_down closed; do
+		[ -n "$account_id" ] || continue
+		json_add_object
+		json_add_int account_id "$account_id"
+		json_add_string username "$username"
+		json_add_string period_start "$period_start"
+		json_add_string period_end "$period_end"
+		json_add_int seconds_used "$seconds_used"
+		json_add_int bytes_up "$bytes_up"
+		json_add_int bytes_down "$bytes_down"
+		json_add_int closed "$closed"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
+rpc_template_list() {
+	rows=$($TEMPLATE_HELPER list 2>/dev/null) || rpc_error templates
+	active=$(uci -q get open-hotspot.global.active_template 2>/dev/null || printf 'arabic-rtl')
+	json_init
+	json_add_string active_template "$active"
+	json_add_array templates
+	while read -r name; do
+		[ -n "$name" ] || continue
+		json_add_object
+		json_add_string name "$name"
+		if [ "$name" = "$active" ]; then
+			json_add_boolean active 1
+		else
+			json_add_boolean active 0
+		fi
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	json_close_array
+	json_dump
+}
+
+rpc_template_apply() {
+	name="$1"
+	case "$name" in english|arabic-rtl) ;; *) rpc_error validation ;; esac
+	$TEMPLATE_HELPER apply "$name" >/dev/null 2>&1 || rpc_error template-apply
+	uci set open-hotspot.global.active_template="$name" || rpc_error template-config
+	uci commit open-hotspot || rpc_error template-config
+	rpc_template_list
+}
+
+rpc_setup_base() {
+	if /usr/lib/open-hotspot/setup.sh base >/dev/null 2>&1; then
+		rpc_ok
+	else
+		rpc_error setup-failed
+	fi
+}
+
 rpc_voucher_generate() {
 	count="$1"; profile_id="$2"; validity_seconds="$3"
 	codes=$($ADMIN voucher-generate "$count" "$profile_id" "$validity_seconds" 2>/dev/null) || rpc_error validation
@@ -151,7 +238,7 @@ rpc_mutation() {
 
 case "${1:-}" in
 	list)
-		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0}}'
+		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{}}'
 		;;
 	call)
 		method="${2:-}"
@@ -162,6 +249,14 @@ case "${1:-}" in
 			account_list) rpc_account_list ;;
 			device_list) rpc_device_list ;;
 			voucher_list) rpc_voucher_list ;;
+			overview) rpc_overview ;;
+			history_list) rpc_history_list ;;
+			template_list) rpc_template_list ;;
+			template_apply)
+				json_get_var name name
+				rpc_template_apply "$name"
+				;;
+			setup_base) rpc_setup_base ;;
 			profile_create|profile_update)
 				json_get_var name name
 				json_get_var period period_type

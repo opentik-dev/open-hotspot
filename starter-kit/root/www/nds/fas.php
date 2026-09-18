@@ -5,6 +5,9 @@
 // credential verification this endpoint returns the documented
 // /opennds_auth/ form with tok=sha256(hid + faskey), redir, and an opaque
 // custom auth transaction key. The PIN never reaches openNDS or a log.
+// openNDS 10.3.1's CPD login payload may omit authdir and include gatewayurl;
+// that observed shape is accepted below and still uses only the documented
+// /opennds_auth/ virtual endpoint.
 
 declare(strict_types=1);
 
@@ -18,18 +21,61 @@ function html(string $value): string
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function portal_template_name(): string
+{
+    $name = getenv('OPEN_HOTSPOT_TEMPLATE_NAME') ?: '';
+    if ($name === '' && is_executable('/sbin/uci')) {
+        $name = trim((string) shell_exec('/sbin/uci -q get open-hotspot.global.active_template 2>/dev/null'));
+    }
+    return in_array($name, ['english', 'arabic-rtl'], true) ? $name : 'arabic-rtl';
+}
+
+function portal_template(): string
+{
+    $explicit = getenv('OPEN_HOTSPOT_TEMPLATE_PATH') ?: '';
+    $templateRoot = getenv('OPEN_HOTSPOT_TEMPLATE_ROOT') ?: '/usr/share/open-hotspot/templates';
+    $path = $explicit !== '' ? $explicit
+        : '/etc/open-hotspot/portal.html';
+    if (!is_readable($path)) {
+        $path = $templateRoot . '/' . portal_template_name() . '.html';
+    }
+    $contents = @file_get_contents($path);
+    $required = ['{{CSS_HREF}}', '{{PAGE_TITLE}}', '{{BRAND}}', '{{HEADING}}', '{{ALERT}}', '{{BODY}}'];
+    if (!is_string($contents) || $contents === '') {
+        $contents = (string) @file_get_contents(
+            $templateRoot . '/arabic-rtl.html'
+        );
+    }
+    foreach ($required as $marker) {
+        if (strpos($contents, $marker) === false) {
+            $contents = (string) @file_get_contents(
+                $templateRoot . '/arabic-rtl.html'
+            );
+            break;
+        }
+    }
+    return $contents;
+}
+
+function portal_render(string $heading, string $body, string $message = ''): string
+{
+    $alert = $message === '' ? '' : '<p role="alert">' . html($message) . '</p>';
+    return strtr(portal_template(), [
+        '{{CSS_HREF}}' => '/nds/open-hotspot-fas.css',
+        '{{PAGE_TITLE}}' => 'Open-HotSpot',
+        '{{BRAND}}' => 'Open-HotSpot',
+        '{{HEADING}}' => html($heading),
+        '{{ALERT}}' => $alert,
+        '{{BODY}}' => $body,
+    ]);
+}
+
 function fail_page(string $message, int $status = 400): never
 {
     http_response_code($status);
     header('Content-Type: text/html; charset=UTF-8');
-    echo '<!doctype html><html lang="ar" dir="rtl"><meta charset="UTF-8">';
-    echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
-    echo '<link rel="stylesheet" href="/nds/open-hotspot-fas.css">';
-    echo '<title>Open-HotSpot</title><body><main class="oh-fas">';
-    echo '<section class="oh-card"><p class="oh-brand">Open-HotSpot</p>';
-    echo '<h1>تعذر إكمال تسجيل الدخول</h1><p role="alert">', html($message), '</p>';
-    echo '<a class="oh-button" href="http://status.client">فتح بوابة الدخول</a>';
-    echo '</section></main></body></html>';
+    $body = '<a class="oh-button" href="http://status.client">فتح بوابة الدخول</a>';
+    echo portal_render('تعذر إكمال تسجيل الدخول', $body, $message);
     exit;
 }
 
@@ -79,10 +125,18 @@ function decode_fas_payload(string $encoded): array
     if (!isset($values['hid']) && isset($values['client_hid'])) {
         $values['hid'] = $values['client_hid'];
     }
-    foreach (['hid', 'clientmac', 'gatewayaddress', 'authdir'] as $required) {
+    foreach (['hid', 'clientmac', 'gatewayaddress'] as $required) {
         if (!isset($values[$required]) || $values[$required] === '') {
             fail_page('بيانات FAS الناقصة.');
         }
+    }
+    // The installed openNDS 10.3.1 CPD flow observed on the target sends
+    // gatewayurl/cpd_query but no authdir. The official FAS contract defines
+    // /opennds_auth/ as the virtual authentication endpoint, so accept this
+    // exact compatibility shape without accepting an arbitrary path.
+    if ((!isset($values['authdir']) || $values['authdir'] === '')
+        && (!isset($values['gatewayurl']) || rawurldecode($values['gatewayurl']) === '')) {
+        fail_page('بيانات FAS الناقصة.');
     }
     return $values;
 }
@@ -111,24 +165,40 @@ function normalized_mac(string $mac): string
     return $mac;
 }
 
+function router_timezone(): DateTimeZone
+{
+    $candidate = getenv('OPEN_HOTSPOT_TIMEZONE') ?: '';
+    if ($candidate === '' && is_readable('/etc/TZ')) {
+        $candidate = trim((string) file_get_contents('/etc/TZ'));
+    }
+    if ($candidate === '' && is_executable('/sbin/uci')) {
+        $candidate = trim((string) shell_exec('/sbin/uci -q get system.@system[0].timezone 2>/dev/null'));
+    }
+    try {
+        return new DateTimeZone($candidate !== '' ? $candidate : 'UTC');
+    } catch (Throwable $error) {
+        return new DateTimeZone('UTC');
+    }
+}
+
 function period_bounds(string $type, DateTimeImmutable $now): array
 {
-    $utc = $now->setTimezone(new DateTimeZone('UTC'));
+    $local = $now->setTimezone(router_timezone());
     switch ($type) {
         case 'hourly':
-            $start = $utc->setTime((int) $utc->format('H'), 0, 0);
+            $start = $local->setTime((int) $local->format('H'), 0, 0);
             $end = $start->modify('+1 hour');
             break;
         case 'daily':
-            $start = $utc->setTime(0, 0, 0);
+            $start = $local->setTime(0, 0, 0);
             $end = $start->modify('+1 day');
             break;
         case 'monthly':
-            $start = $utc->modify('first day of this month')->setTime(0, 0, 0);
+            $start = $local->modify('first day of this month')->setTime(0, 0, 0);
             $end = $start->modify('+1 month');
             break;
         case 'yearly':
-            $start = $utc->setDate((int) $utc->format('Y'), 1, 1)->setTime(0, 0, 0);
+            $start = $local->setDate((int) $local->format('Y'), 1, 1)->setTime(0, 0, 0);
             $end = $start->modify('+1 year');
             break;
         case 'none':
@@ -136,7 +206,11 @@ function period_bounds(string $type, DateTimeImmutable $now): array
         default:
             fail_page('نوع الفترة غير صالح.');
     }
-    return [$start->format('Y-m-d\TH:i:s\Z'), $end->format('Y-m-d\TH:i:s\Z')];
+    $utc = new DateTimeZone('UTC');
+    return [
+        $start->setTimezone($utc)->format('Y-m-d\TH:i:s\Z'),
+        $end->setTimezone($utc)->format('Y-m-d\TH:i:s\Z'),
+    ];
 }
 
 function post_value(string $name): string
@@ -153,13 +227,100 @@ function post_value(string $name): string
 		}
 	}
 	$value = $parsedBody[$name] ?? '';
-	return is_string($value) ? $value : '';
+    return is_string($value) ? $value : '';
+}
+
+function redeem_voucher(PDO $pdo, string $code, string $username, string $pin,
+    DateTimeImmutable $now): ?array
+{
+    if (preg_match('/^[A-Fa-f0-9]{20}$/', $code) !== 1) {
+        return null;
+    }
+    $iterations = 100000;
+    if (is_executable('/sbin/uci')) {
+        $configured = trim((string) shell_exec('/sbin/uci -q get open-hotspot.global.pin_iterations 2>/dev/null'));
+        if (preg_match('/^[0-9]+$/', $configured) === 1 && (int) $configured >= 1) {
+            $iterations = (int) $configured;
+        }
+    }
+    $pdo->beginTransaction();
+    try {
+        $voucher = $pdo->prepare(
+            'SELECT v.id, v.profile_id, v.validity_seconds, p.period_type,
+                    p.time_limit_s, p.upload_limit_b, p.download_limit_b,
+                    p.upload_rate_kbps, p.download_rate_kbps, p.max_devices
+               FROM vouchers v JOIN profiles p ON p.id = v.profile_id
+              WHERE v.code = :code AND v.status = "unused"
+                AND (v.expires_at IS NULL OR julianday(v.expires_at) > julianday("now"))
+              LIMIT 1'
+        );
+        $voucher->execute([':code' => strtoupper($code)]);
+        $row = $voucher->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            $pdo->rollBack();
+            return null;
+        }
+        $salt = bin2hex(random_bytes(16));
+        $hash = open_hotspot_pbkdf2_hex($pin, $salt, $iterations);
+        if ($hash === null) {
+            $pdo->rollBack();
+            return null;
+        }
+        $expiresAt = $now->modify('+' . (int) $row['validity_seconds'] . ' seconds')
+            ->format('Y-m-d\TH:i:s\Z');
+        $insert = $pdo->prepare(
+            'INSERT INTO accounts
+                (username, pin_hash, pin_salt, pin_iter, profile_id, expires_at)
+             VALUES (:username, :pin_hash, :pin_salt, :pin_iter, :profile_id, :expires_at)'
+        );
+        $insert->execute([
+            ':username' => $username,
+            ':pin_hash' => $hash,
+            ':pin_salt' => $salt,
+            ':pin_iter' => $iterations,
+            ':profile_id' => $row['profile_id'],
+            ':expires_at' => $expiresAt,
+        ]);
+        $accountId = (int) $pdo->lastInsertId();
+        $redeem = $pdo->prepare(
+            'UPDATE vouchers SET status = "redeemed", redeemed_by = :account_id,
+                    redeemed_at = :redeemed_at
+              WHERE id = :id AND status = "unused"'
+        );
+        $redeem->execute([
+            ':account_id' => $accountId,
+            ':redeemed_at' => $now->format('Y-m-d\TH:i:s\Z'),
+            ':id' => $row['id'],
+        ]);
+        if ($redeem->rowCount() !== 1) {
+            throw new RuntimeException('voucher transition failed');
+        }
+        $pdo->commit();
+        return [
+            'id' => $accountId, 'pin_hash' => $hash, 'pin_salt' => $salt,
+            'pin_iter' => $iterations, 'status' => 'active',
+            'expires_at' => $expiresAt, 'profile_id' => $row['profile_id'],
+            'period_type' => $row['period_type'], 'time_limit_s' => $row['time_limit_s'],
+            'upload_limit_b' => $row['upload_limit_b'],
+            'download_limit_b' => $row['download_limit_b'],
+            'upload_rate_kbps' => $row['upload_rate_kbps'],
+            'download_rate_kbps' => $row['download_rate_kbps'],
+            'max_devices' => $row['max_devices'], 'failed_attempts' => 0,
+            'last_failed_at' => null, 'lock_until' => null,
+        ];
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        return null;
+    }
 }
 
 $encoded = is_string($_GET['fas'] ?? null) ? $_GET['fas'] : post_value('fas');
 $fas = decode_fas_payload($encoded);
 $mac = normalized_mac($fas['clientmac']);
-$authDir = trim(rawurldecode($fas['authdir']), '/');
+$authDir = isset($fas['authdir']) && $fas['authdir'] !== ''
+    ? trim(rawurldecode($fas['authdir']), '/') : 'opennds_auth';
 if ($authDir === '' || preg_match('~^[A-Za-z0-9_/-]+$~', $authDir) !== 1) {
     fail_page('مسار المصادقة غير صالح.');
 }
@@ -181,33 +342,70 @@ $authKey = '';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $username = post_value('username');
     $pin = post_value('pin');
+    $voucherCode = post_value('voucher');
     if (preg_match('/^[A-Za-z0-9_.-]{1,64}$/', $username) !== 1
         || preg_match('/^[0-9]{4,32}$/', $pin) !== 1) {
         $message = 'اسم المستخدم أو PIN غير صالح.';
     } else {
         try {
-            $stmt = $pdo->prepare(
-                'SELECT a.id, a.pin_hash, a.pin_salt, a.pin_iter, a.status, a.expires_at,
-                        a.profile_id, p.period_type, p.time_limit_s, p.upload_limit_b,
-                        p.download_limit_b, p.upload_rate_kbps, p.download_rate_kbps,
-                        p.max_devices
-                   FROM accounts a JOIN profiles p ON p.id = a.profile_id
-                  WHERE a.username = :username AND a.deleted_at IS NULL LIMIT 1'
-            );
-            $stmt->execute([':username' => $username]);
-            $account = $stmt->fetch(PDO::FETCH_ASSOC);
             $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            if ($voucherCode !== '') {
+                $account = redeem_voucher($pdo, $voucherCode, $username, $pin, $now);
+            } else {
+                $stmt = $pdo->prepare(
+                    'SELECT a.id, a.pin_hash, a.pin_salt, a.pin_iter, a.status, a.expires_at,
+                            a.failed_attempts, a.last_failed_at, a.lock_until,
+                            a.profile_id, p.period_type, p.time_limit_s, p.upload_limit_b,
+                            p.download_limit_b, p.upload_rate_kbps, p.download_rate_kbps,
+                            p.max_devices
+                       FROM accounts a JOIN profiles p ON p.id = a.profile_id
+                      WHERE a.username = :username AND a.deleted_at IS NULL LIMIT 1'
+                );
+                $stmt->execute([':username' => $username]);
+                $account = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
             $expired = $account && $account['expires_at'] !== null
                 && new DateTimeImmutable($account['expires_at'], new DateTimeZone('UTC')) <= $now;
-            if (!$account || $account['status'] !== 'active' || $expired
-                || !open_hotspot_verify_pin(
+            $locked = $account && $account['lock_until'] !== null
+                && new DateTimeImmutable($account['lock_until'], new DateTimeZone('UTC')) > $now;
+            $validLogin = $account && !$locked && $account['status'] === 'active' && !$expired
+                && open_hotspot_verify_pin(
                     $pin,
                     (string) $account['pin_hash'],
                     (string) $account['pin_salt'],
                     (int) $account['pin_iter']
-                )) {
+                );
+            if (!$validLogin) {
+                if ($account && !$locked && $account['status'] === 'active' && !$expired) {
+                    $failures = (int) $account['failed_attempts'] + 1;
+                    $lockUntil = null;
+                    if ($failures >= 5) {
+                        $backoff = 30;
+                        for ($attempt = 5; $attempt < $failures; $attempt++) {
+                            $backoff = min(900, $backoff * 2);
+                        }
+                        $lockUntil = $now->modify('+' . $backoff . ' seconds')
+                            ->format('Y-m-d\TH:i:s\Z');
+                    }
+                    $failed = $pdo->prepare(
+                        'UPDATE accounts SET failed_attempts = :failed_attempts,
+                                last_failed_at = :last_failed_at, lock_until = :lock_until,
+                                updated_at = datetime("now") WHERE id = :id'
+                    );
+                    $failed->execute([
+                        ':failed_attempts' => $failures,
+                        ':last_failed_at' => $now->format('Y-m-d\TH:i:s\Z'),
+                        ':lock_until' => $lockUntil,
+                        ':id' => $account['id'],
+                    ]);
+                }
                 $message = 'بيانات الدخول غير صحيحة.';
             } else {
+                $reset = $pdo->prepare(
+                    'UPDATE accounts SET failed_attempts = 0, last_failed_at = NULL,
+                            lock_until = NULL, updated_at = datetime("now") WHERE id = :id'
+                );
+                $reset->execute([':id' => $account['id']]);
                 [$periodStart, $periodEnd] = period_bounds((string) $account['period_type'], $now);
                 $usage = $pdo->prepare(
                     'SELECT seconds_used, bytes_up, bytes_down FROM usage_periods
@@ -240,7 +438,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             (auth_key, account_id, device_mac, profile_id, policy_snapshot,
                              expires_at, state)
                          VALUES (:auth_key, :account_id, :device_mac, :profile_id,
-                                 :policy_snapshot, datetime("now", "+2 minutes"), "pending")'
+                             :policy_snapshot, datetime("now", "+15 minutes"), "pending")'
                     );
                     $insert->execute([
                         ':auth_key' => $authKey,
@@ -260,28 +458,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $self = $_SERVER['SCRIPT_NAME'] ?? '/nds/fas.php';
 $postAction = $self . '?fas=' . rawurlencode($encoded);
 header('Content-Type: text/html; charset=UTF-8');
-echo '<!doctype html><html lang="ar" dir="rtl"><meta charset="UTF-8">';
-echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
-echo '<link rel="stylesheet" href="/nds/open-hotspot-fas.css">';
-echo '<title>Open-HotSpot</title><body><main class="oh-fas"><section class="oh-card">';
-echo '<p class="oh-brand">Open-HotSpot</p><h1>تسجيل الدخول إلى الشبكة</h1>';
-if ($message !== '') {
-    echo '<p role="alert">', html($message), '</p>';
-}
-
+$body = '';
 if ($authKey !== '') {
     $token = hash('sha256', $fas['hid'] . fas_key());
     $authAction = 'http://' . $gateway . '/' . $authDir . '/';
-    echo '<form method="get" action="', html($authAction), '">';
-    echo '<input type="hidden" name="tok" value="', html($token), '">';
-    echo '<input type="hidden" name="custom" value="', html($authKey), '">';
-    echo '<input type="hidden" name="redir" value="', html($origin), '">';
-    echo '<button type="submit">متابعة</button></form>';
+    $body .= '<form method="get" action="' . html($authAction) . '">';
+    $body .= '<input type="hidden" name="tok" value="' . html($token) . '">';
+    $body .= '<input type="hidden" name="custom" value="' . html($authKey) . '">';
+    $body .= '<input type="hidden" name="redir" value="' . html($origin) . '">';
+    $body .= '<button class="oh-button" type="submit">متابعة</button></form>';
 } else {
-    echo '<form class="oh-login-form" method="post" action="', html($postAction), '">';
-    echo '<label>اسم المستخدم <input name="username" required maxlength="64" autocomplete="username"></label>';
-    echo '<label>PIN <input name="pin" required inputmode="numeric" type="password" maxlength="32" autocomplete="current-password"></label>';
-    echo '<input type="hidden" name="fas" value="', html($encoded), '">';
-    echo '<button class="oh-button" type="submit">دخول</button></form>';
+    $body .= '<form class="oh-login-form" method="post" action="' . html($postAction) . '">';
+    $body .= '<label>اسم المستخدم <input name="username" required maxlength="64" autocomplete="username"></label>';
+    $body .= '<label>PIN <input name="pin" required inputmode="numeric" type="password" maxlength="32" autocomplete="current-password"></label>';
+    $body .= '<label>رمز الباقة (اختياري) <input name="voucher" inputmode="text" maxlength="20" autocomplete="off"></label>';
+    $body .= '<small>عند استخدام رمز جديد سيتم إنشاء الحساب وربطه بالباقة تلقائيًا.</small>';
+    $body .= '<input type="hidden" name="fas" value="' . html($encoded) . '">';
+    $body .= '<button class="oh-button" type="submit">دخول</button></form>';
 }
-echo '</section></main></body></html>';
+echo portal_render('تسجيل الدخول إلى الشبكة', $body, $message);

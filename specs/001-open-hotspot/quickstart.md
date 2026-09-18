@@ -13,9 +13,10 @@ ssh root@192.168.70.1 'sed -n "1,220p" /usr/lib/opennds/binauth_log.sh'
 ssh root@192.168.70.1 'sed -n "1,260p" /usr/lib/opennds/authmon.sh'
 ```
 
-Observed target v10.3.1 contract: `auth_client` receives method, MAC,
-origin URL, user agent, client IP, token, and custom value. Other callback
-reasons receive method, MAC, incoming/outgoing byte counters, session
+Observed target v10.3.1 contract from the installed
+`/usr/lib/opennds/binauth_log.sh`: `auth_client` receives method, MAC, origin
+URL, user agent, client IP, token, and custom value (7 arguments total). Other
+callback reasons receive method, MAC, incoming/outgoing byte counters, session
 start/end, token, and custom value. The default script returns five numeric
 policy values and uses exit status 0/1 for allow/deny. FAS level 1
 returns the documented HID flow; FAS level 4 returns `rhid`, session length in
@@ -42,7 +43,7 @@ restart command returns in about 1 second, but readiness took about 30 seconds
 after the old process exited because procd respawned the daemon.
 
 The Phase 1 foundation was also checked on the target: SQLite initialization
-created an idempotent v1 database and rejected an unversioned database, while
+created an idempotent v2 database and rejected an unversioned database, while
 the period helper produced valid UTC boundaries on the router's ash/BusyBox
 environment.
 
@@ -57,10 +58,10 @@ The old application state was archived, not destroyed, at:
 
 The sysupgrade and state backups are stored locally under
 `.build/backups/20260917T003034Z.*`. The installed package is
-`luci-app-open-hotspot 1.2.0-r16`, built for `noarch` as an OpenWrt APK:
+`luci-app-open-hotspot 1.2.0-r35`, built for `noarch` as an OpenWrt APK:
 
 ```text
-sha256 cfc03526e5e8c9cfe6dace0968b24ff4e63aabeab72144232196ed0ded7ad16a
+sha256 9095b936e575aaf15766bc60e2bbe228f526e2ec9c3b8a3fdeaf563c3ed14856
 ```
 
 The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
@@ -172,3 +173,47 @@ blocked by the sandbox's fakeroot restriction.
 16. Trigger two rapid deauth events for the same device in immediate
     succession (e.g. `ndsctl deauth` called twice back to back); confirm
     `usage_periods` reflects the session once, not twice (**SC-006**).
+
+## Corrective implementation checkpoint — r30
+
+The source and test router are now aligned on `luci-app-open-hotspot 1.2.0-r30`.
+The database was upgraded in place from schema v1 to v3 through the numbered
+`002.sql` and `003.sql` migrations; no factory reset was used. The release also
+contains timezone-aware period boundaries, timestamp-based expiry checks,
+bounded PIN backoff, atomic voucher redemption, conditional maintenance
+vacuuming, period-scoped policy refresh, live dashboard/history RPC methods,
+and validated backup export/import helpers. The local FAS also includes
+allow-listed English and Arabic RTL templates with atomic validation/apply. The
+SQLite transaction paths set a per-connection busy timeout so concurrent
+admission does not degrade into a partial lock failure.
+
+The following checks passed on `192.168.70.1` after installation:
+
+```sh
+ssh root@192.168.70.1 'sh -c ". /usr/lib/open-hotspot/db.sh; db_init; db_schema_version"'
+ssh root@192.168.70.1 'ubus call open_hotspot overview "{}"'
+ssh root@192.168.70.1 'ubus call open_hotspot history_list "{}"'
+ssh root@192.168.70.1 '/usr/lib/open-hotspot/backup.sh validate /tmp/open-hotspot-validation.tar.gz'
+ssh root@192.168.70.1 'php-cgi -l /www/nds/fas.php'
+```
+
+The target reported schema `3`, local FAS level 1 at port `2080`, openNDS
+10.3.1 running, and valid JSON from the new RPC methods. The remaining
+blocking gates are deliberately unchanged: a separate captive client is still
+needed for portal → FAS → BinAuth → native enforcement → accounting, and a
+controlled upload/download experiment plus reboot/session-restore test are
+needed before closing T006, T011, and T012.
+
+The r29 concurrency proof used disposable databases on the target: with
+`max_devices=2`, three simultaneous official `auth_client` callbacks produced
+exactly two successes, two active sessions, one pending transaction, and one
+duplicate callback rejection. Two simultaneous FAS voucher submissions
+produced exactly one redeemed voucher and one account. These checks do not
+replace the separate real-client gate below.
+
+The r29 real-client attempt exposed a contract mismatch: the installed stock
+`binauth_log.sh` passes seven `auth_client` arguments, while the adapter had
+been validating an older nine-argument layout. The stock default allow path
+therefore left the client `Authenticated` without consuming the manager
+transaction. r30 uses the exact seven-field target layout and must be
+retested through the real portal flow.

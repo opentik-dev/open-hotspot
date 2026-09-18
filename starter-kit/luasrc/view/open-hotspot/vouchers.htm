@@ -24,6 +24,7 @@
 <td><% if voucher.status == "unused" then %><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="revoke" /><input type="hidden" name="id" value="<%=voucher.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Revoke%>" onclick="return confirm('<%:Revoke this voucher?%>');" /></form><% end %></td>
 </tr>
 <% end %>
+<% if #vouchers == 0 then %><tr class="tr"><td class="oh-empty" colspan="6"><%:No vouchers have been generated yet.%></td></tr><% end %>
 </table>
  </div>
 <link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">

@@ -50,7 +50,10 @@ fas_probe() {
 	probe=/tmp/open-hotspot-fas-probe.$$
 	# Keep the probe independent of optional BusyBox applets: this is the
 	# base64 encoding of a fixed, non-secret level-1 request.
-	payload='aGlkPXByb2JlLCBjbGllbnRtYWM9QUE6QkI6Q0M6REQ6RUU6RkYsIGdhdGV3YXlhZGRyZXNzPTEyNy4wLjAuMSwgYXV0aGRpcj1vcGVubmRzX2F1dGgsIG9yaWdpbnVybD1odHRwOi8vMTI3LjAuMC4xLw=='
+	# Match the CPD login payload emitted by the installed openNDS 10.3.1.
+	# This deliberately exercises the compatibility shape with gatewayurl and
+	# no authdir, rather than only testing a synthetic legacy payload.
+	payload='aGlkPXByb2JlLCBjbGllbnRpcD0xMjcuMC4wLjEsIGNsaWVudG1hYz1BQTpCQjpDQzpERDpFRTpGRiwgY2xpZW50X3R5cGU9Y3BkX3VybCwgY3BkX3F1ZXJ5PWh0dHAlM0ElMkYlMkZzdGF0dXMuY2xpZW50JTJGbG9naW4sIGdhdGV3YXluYW1lPU9wZW4tSG90U3BvdCwgZ2F0ZXdheXVybD1odHRwJTNBJTJGJTJGc3RhdHVzLmNsaWVudCwgdmVyc2lvbj0xMC4zLjEsIGdhdGV3YXlhZGRyZXNzPTEyNy4wLjAuMToyMDUwLCBnYXRld2F5bWFjPXByb2JlLCBvcmlnaW51cmw9aHR0cCUzQSUyRiUyRnN0YXR1cy5jbGllbnQlMkZsb2dpbiwgY2xpZW50aWY9YnItbGFuLCB0aGVtZXNwZWM9'
 	rm -f "$probe"
 	wget -qO "$probe" "http://127.0.0.1:2080/nds/fas.php?fas=$payload" || true
 	grep -F 'Open-HotSpot' "$probe" >/dev/null 2>&1

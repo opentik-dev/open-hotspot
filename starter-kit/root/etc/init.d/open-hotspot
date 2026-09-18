@@ -23,6 +23,15 @@ _interval_minutes() {
 
 start_service() {
 	[ -f /etc/open-hotspot/hotspot.db ] || /etc/uci-defaults/40-open-hotspot
+	# Always run the versioned DB boundary, including package upgrades. A
+	# migration failure must stop cron registration instead of running against
+	# an unknown schema.
+	if ! sh -c '. /usr/lib/open-hotspot/db.sh; db_init'; then
+		uci set open-hotspot.global.setup_state='DATABASE_FAILED'
+		uci set open-hotspot.global.setup_last_error='database-init-failed'
+		uci commit open-hotspot
+		return 1
+	fi
 
 	stop_service   # avoid duplicate lines on restart
 	min="$(_interval_minutes)"

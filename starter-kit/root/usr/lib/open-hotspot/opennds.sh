@@ -105,3 +105,8 @@ opennds_apply_session_policy() {
 opennds_live_clients() {
 	"$OPEN_HOTSPOT_NDSCTL_BIN" status
 }
+
+case "${1:-}" in
+	status) opennds_validate_config ;;
+	live-clients) opennds_live_clients ;;
+	esac

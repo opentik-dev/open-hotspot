@@ -1,7 +1,7 @@
 config manager 'global'
 	option check_interval    '300'
 	option default_profile   '1'
-	option active_template   'default'
+	option active_template   'arabic-rtl'
 	option history_retention '90'
 	option log_retention_kb  '256'
 	option pin_iterations    '100000'

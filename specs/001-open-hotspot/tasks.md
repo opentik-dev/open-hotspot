@@ -10,7 +10,7 @@
   `research.md` and `quickstart.md`.
 - [x] **T002 [GATE]** Capture the exact BinAuth method list, `auth_client`
   arguments/return semantics, and deauth/session-close argument contracts.
-- [ ] **T003 [GATE]** Verify the local FAS authentication flow and exact redirect/
+- [x] **T003 [GATE]** Verify the local FAS authentication flow and exact redirect/
   custom-variable contract, including secure FAS options available on target.
 - [x] **T004 [GATE]** Verify the supported native path for returning session length,
   upload/download rates, and upload/download volume quotas.
@@ -57,15 +57,15 @@ pending until the target `sqlite3-cli` environment is available.
 ## Phase 2 — Authentication and Native Enforcement Adapter
 
 - [x] **T030** Implement `pbkdf2.sh` using the exact Phase 0 verified KDF.
-- [ ] **T031** Implement `hotspot-login` POST parsing, validation, credential
+- [x] **T031** Implement `hotspot-login` POST parsing, validation, credential
   verification, expiry/status checks, and short-lived `auth_transactions`.
-- [ ] **T032** Implement the verified openNDS FAS/authorization handoff from
+- [x] **T032** Implement the verified openNDS FAS/authorization handoff from
   Gate B/C. Do not invent parameter names.
-- [ ] **T033** Implement `opennds.sh` as the only non-BinAuth adapter for
+- [x] **T033** Implement `opennds.sh` as the only non-BinAuth adapter for
   openNDS control operations.
-- [ ] **T034** Implement authorization policy conversion from internal units to
+- [x] **T034** Implement authorization policy conversion from internal units to
   target openNDS units.
-- [ ] **T035** Implement atomic simultaneous-device admission using
+- [x] **T035** Implement atomic simultaneous-device admission using
   `active_sessions` and the verified session identity model.
 - [x] **T036** Implement `binauth.sh` method-specific parser for `auth_client`
   and all verified session-close methods.
@@ -77,14 +77,14 @@ pending until the target `sqlite3-cli` environment is available.
 
 ## Phase 3 — Periods, Expiry, Recovery
 
-- [ ] **T040** Implement period creation/rollover in `period.sh`.
+- [x] **T040** Implement period creation/rollover in `period.sh`.
 - [x] **T041** Implement exact period-spanning accounting rules and tests.
-- [ ] **T042** Implement `cycle.sh` with minimum 60 s interval and `flock -n`.
-- [ ] **T043** Implement hard-expiry handling using `opennds.sh` outside BinAuth.
-- [ ] **T044** Implement live policy refresh at period rollover only through the
+- [x] **T042** Implement `cycle.sh` with minimum 60 s interval and `flock -n`.
+- [x] **T043** Implement hard-expiry handling using `opennds.sh` outside BinAuth.
+- [x] **T044** Implement live policy refresh at period rollover only through the
   verified openNDS adapter.
-- [ ] **T045** Implement `maintenance.sh` daily WAL checkpoint/retention/logging.
-- [ ] **T046** Implement interrupted-job recovery and idempotent reruns.
+- [x] **T045** Implement `maintenance.sh` daily WAL checkpoint/retention/logging.
+- [x] **T046** Implement interrupted-job recovery and idempotent reruns.
 
 **Check:** reboot, restart, rollover, expiry, and killed-job tests.
 
@@ -108,35 +108,34 @@ pending until the target `sqlite3-cli` environment is available.
   LuCI controller/RPC boundary. Removal is refused when session or usage
   history still references the device; blocking remains available instead.
 - [x] **T064 [P]** Implement voucher batch generation/status/revoke through the
-  LuCI controller/RPC boundary; redemption remains the existing atomic DB
-  transition.
-- [ ] **T065** Implement `status.lua` live dashboard merging openNDS live state
+  LuCI controller/RPC boundary and atomic FAS redemption.
+- [x] **T065** Implement the live dashboard merging openNDS live state
   with SQLite persistent state.
-- [ ] **T066 [P]** Implement history view and backup/export/import validation.
-- [ ] **T067** Implement setup UI with step state and safe action feedback.
+- [x] **T066 [P]** Implement history view and backup/export/import validation.
+- [x] **T067** Implement setup UI with step state and safe action feedback.
 
 ## Phase 6 — Portal Templates
 
-- [ ] **T070** Implement bundled English template.
-- [ ] **T071** Implement bundled Arabic RTL template.
-- [ ] **T072** Implement template validation and safe application through the
+- [x] **T070** Implement bundled English template.
+- [x] **T071** Implement bundled Arabic RTL template.
+- [x] **T072** Implement template validation and safe application through the
   openNDS-supported template mechanism.
-- [ ] **T073** Test portal behavior with invalid credentials, expired account,
+- [x] **T073** Test portal behavior with invalid credentials, expired account,
   exhausted quota, suspended account, and voucher redemption.
 
 ## Phase 7 — Security, Concurrency, and Release Validation
 
-- [ ] **T080** Audit every portal-input field for validation and SQL safety.
-- [ ] **T081** Verify PINs never appear in logs, process arguments, audit detail,
+- [x] **T080** Audit every portal-input field for validation and SQL safety.
+- [x] **T081** Verify PINs never appear in logs, process arguments, audit detail,
   or exported diagnostic files.
-- [ ] **T082** Test simultaneous-device race with N+1 concurrent logins.
-- [ ] **T083** Test voucher double-redemption race.
-- [ ] **T084** Test duplicate BinAuth callbacks for one session.
-- [ ] **T085** Test a session crossing a period boundary.
+- [x] **T082** Test simultaneous-device race with N+1 concurrent logins.
+- [x] **T083** Test voucher double-redemption race.
+- [x] **T084** Test duplicate BinAuth callbacks for one session.
+- [x] **T085** Test a session crossing a period boundary.
 - [ ] **T086** Test manager/BinAuth/cycle failure while clients are connected.
 - [ ] **T087** Test setup interruption/restart and package/service health.
 - [ ] **T088** Run full `quickstart.md` acceptance procedure on real hardware.
-- [ ] **T089** Perform Constitution traceability review.
+- [x] **T089** Perform Constitution traceability review.
 - [ ] **T090** Freeze v1.2 implementation baseline only when every blocking
   acceptance criterion in `spec.md` is demonstrated.
 

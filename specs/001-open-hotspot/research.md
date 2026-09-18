@@ -26,8 +26,9 @@ enforcement to openNDS rather than implementing its own packet/byte collector.
 ### 2.2 BinAuth is event-driven
 openNDS invokes BinAuth with a method-specific reason and a target-build
 argument layout. The resolved target v10.3.1 script has two layouts:
-`auth_client` receives MAC, origin URL, user agent, client IP, token, and
-custom data; other reasons receive MAC, incoming/outgoing counters, session
+`auth_client` receives method, MAC, origin URL, user agent, client IP, token,
+and custom data (7 arguments); other reasons receive method, MAC,
+incoming/outgoing counters, session
 start/end, token, and custom data.
 
 **Design consequence:** each method branch must have its own parser and Phase 0
@@ -349,14 +350,15 @@ timeout_deauth, downquota_deauth, upquota_deauth,
 ndsctl_auth, ndsctl_deauth, shutdown_deauth
 ```
 
-The stable documentation still describes the deprecated `auth_client` form
-with username/password positions. The installed target script uses distinct
-layouts:
+The installed target's `/usr/lib/opennds/binauth_log.sh` defines the following
+layouts. This installed script is authoritative for this OpenWrt build; some
+older/stable documentation and source examples describe deprecated credential
+fields that are not passed by the target script:
 
 ```text
 $1 method/reason
 $2 client_mac
-$3 originurl             # auth_client only
+$3 origin/redir URL      # auth_client only
 $4 useragent             # auth_client only
 $5 clientip              # auth_client only
 $6 client_token          # auth_client only
@@ -370,8 +372,8 @@ $7 client_token
 $8 url-escaped custom
 ```
 
-The adapter rejects the older username/password layout rather than trying to
-infer which contract a callback used.
+The adapter accepts the installed target's seven-argument `auth_client`
+callback; credential verification remains exclusively in the local FAS.
 
 The custom variable is not a username field. It is a URL-escaped opaque value
 provided by the FAS. The implementation must use the token/session context and
@@ -667,6 +669,64 @@ endpoint returned HTTP 511 and left `Current clients: 0`; this was not treated
 as an authorization success because the host was not a separate captive client
 on `br-lan`. A real Wi-Fi/LAN client must complete this final step.
 
-Release r16 additionally normalizes the LuCI form layout across the custom
+Release r29 additionally normalizes the LuCI form layout across the custom
 tabs and accepts `client_hid` as a compatibility alias for the documented
 `hid` field. A FAS request without a verified payload is still rejected.
+
+## 19. Corrective audit and implementation checkpoint — 2026-09-18
+
+The project review identified release drift and several semantic gaps. The
+source was corrected and rebuilt as `luci-app-open-hotspot 1.2.0-r35`; the
+test router was upgraded from r16 without a factory reset. The in-place schema
+upgrade is now proven on the router: v1 → v2 adds bounded PIN-backoff fields,
+and v2 → v3 adds `active_sessions.policy_period_start`. Migration filenames
+are numeric (`002.sql`, `003.sql`) because the loader intentionally rejects a
+missing numbered step.
+
+Implemented corrective items include local-timezone period boundaries,
+timestamp expiry checks, account-level PIN backoff, atomic voucher redemption,
+period-scoped policy refresh, exhausted-budget deauthentication through the
+verified adapter, observable maintenance failures, live dashboard/history RPC
+methods, and validated backup export/import helpers. The local FAS now also
+has allow-listed English and Arabic RTL templates with atomic apply/validation.
+`tools/build-apk.sh` now reproduces the noarch APK packaging path and the
+published checksum points to r35.
+
+Target verification after r35 reported schema v3, the new schema fields,
+valid backup export/validation, valid FAS PHP syntax, and registered
+`overview`/`history_list` ubus methods. The dashboard returned openNDS 10.3.1
+status with local FAS on port 2080. A real client was observed as
+`Authenticated`; because its manager session was not created by the automatic
+callback, this observation remains an unresolved T012 diagnostic rather than
+an enforcement success claim.
+
+The review's external acceptance gates remain open by evidence, not omission:
+T003/T006/T011/T012 require a separate real captive client and controlled
+counter/restart observations. The source does not claim native quota
+enforcement or counter direction as closed until those observations are made.
+
+After the r29 target upgrade, disposable target tests also proved the
+concurrency guarantees: `max_devices=2` admitted exactly two of three
+simultaneous official `auth_client` callbacks, and two simultaneous FAS
+voucher redemptions produced one account and one redeemed voucher. The
+per-connection SQLite timeout was added after an earlier harness exposed a
+real partial-lock failure; the callback result parser was then corrected so
+the timeout pragma output cannot be mistaken for policy data.
+
+The r29 real-client attempt also exposed a target contract mismatch: the stock
+script passed seven `auth_client` arguments, but the adapter validated an older
+nine-argument form. That made the stock default allow path possible without a
+manager session. r30 aligns the parser with the installed stock script; the
+real portal flow must be repeated before T012 can close.
+
+The r30 retry then confirmed the remaining encoding detail: stock
+`binauth_log.sh` passes FAS custom data Base64-encoded. r31 normalizes that
+value to the 32-character transaction key before the atomic database consume;
+raw hex remains accepted for direct contract tests. Because the target has no
+standalone `base64` applet, r32 performs this restricted decode with the
+available BusyBox `awk` interpreter and remains fail-closed on malformed data.
+
+The r32 direct callback probe then exposed the target's lowercase MAC form
+versus the uppercase MAC persisted by the local FAS. r33 canonicalizes MAC
+letters before the atomic admission query and covers the lowercase callback
+form in the contract test.

@@ -242,6 +242,31 @@ admin_voucher_revoke() {
 	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null
 }
 
+admin_overview() {
+	# Keep the persistent dashboard query bounded and machine-readable. Live
+	# openNDS state is fetched separately by rpcd through opennds.sh so this
+	# database layer remains the source of truth for accounting.
+	sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
+		'SELECT
+		 (SELECT count(*) FROM accounts WHERE status="active" AND deleted_at IS NULL),
+		 (SELECT count(*) FROM active_sessions WHERE state="active"),
+		 COALESCE((SELECT sum(seconds_used) FROM usage_periods),0),
+		 COALESCE((SELECT sum(bytes_up) FROM usage_periods),0),
+		 COALESCE((SELECT sum(bytes_down) FROM usage_periods),0);'
+}
+
+admin_history_list() {
+	# History is read-only and intentionally excludes pin material and auth
+	# transaction payloads. The output is ordered newest-first for LuCI.
+	sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
+		'SELECT u.account_id,a.username,u.period_start,u.period_end,
+		        u.seconds_used,u.bytes_up,u.bytes_down,u.closed
+		   FROM usage_periods u JOIN accounts a ON a.id=u.account_id
+		  WHERE a.deleted_at IS NULL
+		  ORDER BY u.period_start DESC,a.username
+		  LIMIT 500;'
+}
+
 case "${1:-}" in
 	profile-list) admin_profile_list ;;
 	profile-create) shift; admin_profile_create "$@" ;;
@@ -259,5 +284,7 @@ case "${1:-}" in
 	voucher-list) admin_voucher_list ;;
 	voucher-generate) shift; admin_voucher_generate "$@" ;;
 	voucher-revoke) shift; admin_voucher_revoke "$1" ;;
-	*) echo 'usage: admin.sh {profile|account|device|voucher}-{list|create|update|delete|block|unblock|remove|generate|revoke}' >&2; exit 2 ;;
+	overview) admin_overview ;;
+	history-list) admin_history_list ;;
+	*) echo 'usage: admin.sh {profile|account|device|voucher}-{list|create|update|delete|block|unblock|remove|generate|revoke}|overview|history-list' >&2; exit 2 ;;
 esac

@@ -23,6 +23,11 @@
 .oh-page th, .oh-page td { padding: .7rem .55rem; vertical-align: middle; }
 .oh-page tr:nth-child(even) { background: rgba(127, 127, 127, .08); }
 .oh-page .oh-account-update { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
+.oh-page .oh-template-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.oh-page .oh-template-card { padding: 1rem; border: 1px solid rgba(127, 127, 127, .35); border-radius: .35rem; }
+.oh-page .oh-template-card.is-active { border-color: #087f5b; box-shadow: 0 0 0 2px rgba(8, 127, 91, .16); }
+.oh-page .oh-template-card form { margin-top: 1rem; }
+.oh-page .oh-empty { text-align: center; opacity: .78; padding: 1.5rem; }
 @media (max-width: 700px) {
 	.oh-page .cbi-value { grid-template-columns: 1fr; gap: .35rem; }
 	.oh-page fieldset form > input[type="submit"] { margin-inline-start: 0; }

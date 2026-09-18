@@ -14,8 +14,12 @@ grep -F 'device_remove' "$rpc" >/dev/null
 grep -F 'voucher_list' "$rpc" >/dev/null
 grep -F 'voucher_generate' "$rpc" >/dev/null
 grep -F 'voucher_revoke' "$rpc" >/dev/null
+grep -F 'overview' "$rpc" >/dev/null
+grep -F 'history_list' "$rpc" >/dev/null
+grep -F 'setup_base' "$rpc" >/dev/null
 grep -F 'json_load "$input"' "$rpc" >/dev/null
 grep -F 'printf' "$rpc" | grep -F '"$pin"' >/dev/null
 grep -F '"$ADMIN" account-create' "$rpc" >/dev/null
 ! grep -Eq 'ndsctl|opennds[[:space:]]+auth|opennds[[:space:]]+deauth' "$rpc"
 python3 -m json.tool "$acl" >/dev/null
+grep -F 'setup_base' "$acl" >/dev/null

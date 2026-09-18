@@ -8,16 +8,19 @@
 - الراوتر الاختباري: Linksys EA8300، إصدار OpenWrt 25.12.5.
 - عنوان الإدارة: `192.168.70.1`.
 - WAN يعمل بعنوان `192.168.50.156/24` والبوابة وDNS هما `192.168.50.1`.
-- الحزمة المثبتة: `luci-app-open-hotspot 1.2.0-r16`.
+- الحزمة المثبتة: `luci-app-open-hotspot 1.2.0-r35`.
 - openNDS يعمل، وFAS المحلي يعمل على المنفذ `2080` والمسار `/nds/fas.php`.
 - `dnsmasq-full` مثبت مع دعم `nftset`.
 
 الحزمة المختبرة موجودة في
-[`dist/luci-app-open-hotspot-1.2.0-r16.apk`](dist/luci-app-open-hotspot-1.2.0-r16.apk)،
+[`dist/luci-app-open-hotspot-1.2.0-r35.apk`](dist/luci-app-open-hotspot-1.2.0-r35.apk)،
 وبصمة SHA-256 هي:
-`cfc03526e5e8c9cfe6dace0968b24ff4e63aabeab72144232196ed0ded7ad16a`.
+`9095b936e575aaf15766bc60e2bbe228f526e2ec9c3b8a3fdeaf563c3ed14856`.
 
-يتحقق الإصدار r16 من حمولة FAS الموثقة التي تستخدم الحقل `hid`، ويقبل أيضاً
+سجل الحزم والإصدارات المحفوظة موجود في
+[docs/release-history.md](docs/release-history.md).
+
+يتحقق الإصدار r35 من حمولة FAS الموثقة التي تستخدم الحقل `hid`، ويقبل أيضاً
 التسمية التوافقية `client_hid` التي ظهرت في بعض مسارات العميل captive portal.
 أما الطلبات التي لا تحمل سياق FAS موثقاً فتبقى مرفوضة لأسباب أمنية.
 
@@ -36,7 +39,7 @@
 
 الصورة التي تعرض بطاقة «بيانات FAS الناقصة» هي صفحة تشخيص آمنة ومغلقة
 افتراضياً، وليست دليلاً على غياب صفحة FAS من حزمة APK؛ فالصفحة وملف CSS
-مضمّنان في الإصدار r16. وما يزال اختبار العميل الفعلي المتبقي هو إتمام
+مضمّنان في الإصدار r35. وما يزال اختبار العميل الفعلي المتبقي هو إتمام
 التسلسل: البوابة → تسجيل FAS → ظهور العميل بحالة `Authenticated` في openNDS.
 
 ## التوزيع عبر GitHub
@@ -52,9 +55,9 @@ Workflow ينشرها تلقائياً كملف مرفق في **Releases** عن�
 ## التثبيت
 
 ```sh
-tar -C .build -cf - luci-app-open-hotspot-1.2.0-r16.apk | \
+tar -C dist -cf - luci-app-open-hotspot-1.2.0-r35.apk | \
   ssh root@192.168.70.1 'tar -xf - -C /tmp'
-ssh root@192.168.70.1 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r16.apk'
+ssh root@192.168.70.1 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r35.apk'
 ```
 
 بعدها افتح: **Services → Open-HotSpot → Setup**. التفعيل المحلي الصريح:
@@ -91,7 +94,7 @@ BinAuth → جلسة openNDS، ثم اختبار الحصص وتعدد الأج�
 [`specs/001-open-hotspot/quickstart.md`](specs/001-open-hotspot/quickstart.md).
 
 للتجربة الحالية اتصل بالشبكة المفتوحة `Open-HotSpot-Test`، ثم أعد فتح صفحة
-الدخول إذا كانت مفتوحة قبل تثبيت r16، وسجّل بالحساب التجريبي الذي أُنشئ على
+الدخول إذا كانت مفتوحة قبل تثبيت r27، وسجّل بالحساب التجريبي الذي أُنشئ على
 الراوتر. لا تُعدّ التجربة مكتملة حتى يظهر العميل `Authenticated` في
 `ndsctl status`.
 

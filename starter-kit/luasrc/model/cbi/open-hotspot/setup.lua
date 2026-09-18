@@ -1,4 +1,5 @@
 local uci = require("luci.model.uci").cursor()
+local ubus = require("ubus")
 
 local m = Map("open-hotspot", translate("Open-HotSpot setup"))
 m.description = translate(
@@ -23,6 +24,25 @@ end
 local state = readonly("setup_state", translate("State"),
 	translate("The setup state is recorded by the restartable base setup."))
 state.rawhtml = false
+
+local action = s:option(Button, "run_base_setup", translate("Base setup action"),
+	translate("Runs only the bounded preflight and database initialization. It does not replace the current FAS or dnsmasq."))
+action.inputtitle = translate("Run / retry base setup")
+action.inputstyle = "apply"
+function action.write()
+	local connection = ubus.connect(nil, 1000)
+	if not connection then
+		m.errmessage = translate("Setup failed: ubus is unavailable.")
+		return
+	end
+	local result = connection:call("open_hotspot", "setup_base", {})
+	connection:close()
+	if result and result.ok then
+		m.message = translate("Base setup completed. Refresh the page to see the recorded state.")
+	else
+		m.errmessage = translate("Base setup failed. Review the recorded setup state and error.")
+	end
+end
 
 readonly("setup_last_error", translate("Last setup error"),
 	translate("A blocker is recorded here without changing network services."))

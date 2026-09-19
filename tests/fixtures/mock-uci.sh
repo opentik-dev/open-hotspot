@@ -18,6 +18,14 @@ case "$command_name" in
 			END { if (found) print value; else exit 1 }
 		' "$state"
 		;;
+	show)
+		[ -f "$state" ] || exit 1
+		while IFS= read -r entry; do
+			key=${entry%%=*}
+			value=${entry#*=}
+			printf 'open-hotspot.global.%s=%s\n' "$key" "$value"
+		done < "$state"
+		;;
 	set)
 		assignment=${1:?missing assignment}
 		path=${assignment%%=*}

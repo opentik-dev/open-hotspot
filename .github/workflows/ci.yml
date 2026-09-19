@@ -1,34 +1,38 @@
-name: Build and publish release
+name: CI
 
 on:
   push:
-    tags:
-      - 'v*-r*'
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   OPENWRT_VERSION: 25.12.5
   OPENWRT_TARGET: ipq40xx/generic
 
 jobs:
-  release:
-    name: Rebuild and publish APK
+  checks:
+    name: Contract and unit checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Run release checks
+      - name: Run required checks
         run: |
           python3 -m unittest discover -s tests -v
           sh tests/test_shell_syntax.sh
           sh tests/test_quota.sh
           for test in tests/test_*.sh; do sh "$test"; done
+
+  build-apk:
+    name: Build APK from source
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Restore OpenWrt SDK cache
         id: sdk-cache
         uses: actions/cache@v4
@@ -46,32 +50,25 @@ jobs:
           test -n "$sdk_name"
           curl -fL --retry 3 "$index$sdk_name" -o "$RUNNER_TEMP/sdk-download/$sdk_name"
           tar --zstd -xf "$RUNNER_TEMP/sdk-download/$sdk_name" -C "$RUNNER_TEMP/openwrt-sdk" --strip-components=1
-      - name: Rebuild APK from source
+      - name: Build APK
         env:
           OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
         run: sh tools/build-apk.sh
-      - name: Verify tag, package version, and checksum
-        id: metadata
+      - name: Verify generated artifact
         shell: bash
         run: |
           set -euo pipefail
-          version="$(sed -n 's/^PKG_VERSION:=//p' starter-kit/Makefile)"
           release="$(sed -n 's/^PKG_RELEASE:=//p' starter-kit/Makefile)"
-          expected="v${version}-r${release}"
-          test "$GITHUB_REF_NAME" = "$expected"
+          version="$(sed -n 's/^PKG_VERSION:=//p' starter-kit/Makefile)"
           apk="dist/luci-app-open-hotspot-${version}-r${release}.apk"
           test -s "$apk"
-          sha256sum "$apk" | tee "$RUNNER_TEMP/SHA256SUMS"
-          echo "apk=$apk" >> "$GITHUB_OUTPUT"
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+          sha256sum "$apk" > "$RUNNER_TEMP/SHA256SUMS"
+          cat "$RUNNER_TEMP/SHA256SUMS"
+      - name: Upload built APK
+        uses: actions/upload-artifact@v4
         with:
-          name: Open-HotSpot ${{ github.ref_name }}
-          generate_release_notes: true
-          body: |
-            Built from commit `${{ github.sha }}` by the release workflow.
-
-            Acceptance status: see `docs/release-acceptance-matrix.md` and `docs/release-gates.md`.
-          files: |
-            ${{ steps.metadata.outputs.apk }}
+          name: open-hotspot-apk-${{ github.sha }}
+          path: |
+            dist/luci-app-open-hotspot-*.apk
             ${{ runner.temp }}/SHA256SUMS
+          if-no-files-found: error

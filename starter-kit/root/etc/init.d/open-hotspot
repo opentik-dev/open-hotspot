@@ -1,0 +1,88 @@
+#!/bin/sh /etc/rc.common
+# open-hotspot init script.
+#
+# Article II: this is NOT a `while true` daemon. start() only ensures a
+# cron entry exists for cycle.sh (every check_interval) and maintenance.sh
+# (daily); stop() removes them. There is no long-running process owned by
+# this script.
+
+START=95
+STOP=10
+USE_PROCD=1
+
+CRON_MARK="# open-hotspot-managed"
+CRONTAB=/etc/crontabs/root
+
+_interval_minutes() {
+	secs=$(uci -q get open-hotspot.global.check_interval || echo 300)
+	[ "$secs" -lt 60 ] && secs=60   # Article II floor
+	m=$(( secs / 60 ))
+	[ "$m" -lt 1 ] && m=1
+	echo "$m"
+}
+
+ensure_opennds_ready() {
+	# The base package does not enable FAS. Once the administrator has enabled
+	# local FAS, however, the router must not leave a captive client online
+	# while openNDS is still respawning after boot/network/firewall ordering.
+	[ "$(uci -q get open-hotspot.global.local_fas_enabled || true)" = 1 ] || return 0
+	[ -x /etc/init.d/opennds ] || return 1
+	[ -r /usr/lib/open-hotspot/opennds.sh ] || return 1
+	. /usr/lib/open-hotspot/opennds.sh
+	if opennds_validate_config; then
+		return 0
+	fi
+	# S15opennds may still be completing its normal cold-start sequence. Wait
+	# for that existing process before deciding that a recovery restart is
+	# needed; restarting it at this point races its firewall hook and can leave
+	# procd with a segmentation-fault respawn loop.
+	if pidof opennds >/dev/null 2>&1 && opennds_wait_ready; then
+		return 0
+	fi
+	# openNDS can start before br-lan or the firewall is ready. The adapter
+	# restarts it through procd and waits for ndsctl readiness, rather than
+	# treating a successful init-script return as service health.
+	opennds_reload
+}
+
+start_service() {
+	[ -f /etc/open-hotspot/hotspot.db ] || /etc/uci-defaults/40-open-hotspot
+	# Always run the versioned DB boundary, including package upgrades. A
+	# migration failure must stop cron registration instead of running against
+	# an unknown schema.
+	if ! sh -c '. /usr/lib/open-hotspot/db.sh; db_init'; then
+		uci set open-hotspot.global.setup_state='DATABASE_FAILED'
+		uci set open-hotspot.global.setup_last_error='database-init-failed'
+		uci commit open-hotspot
+		return 1
+	fi
+	if ! ensure_opennds_ready; then
+		uci set open-hotspot.global.setup_state='SERVICE_FAILED'
+		uci set open-hotspot.global.setup_last_error='opennds-not-ready'
+		uci commit open-hotspot
+		return 1
+	fi
+	# Restore manager-owned active sessions once after a boot. The helper is
+	# outside BinAuth and re-applies current SQLite policy through ndsctl.
+	[ -x /usr/lib/open-hotspot/session-restore.sh ] &&
+		/usr/lib/open-hotspot/session-restore.sh restore >/dev/null 2>&1 || true
+
+	stop_service   # avoid duplicate lines on restart
+	min="$(_interval_minutes)"
+	{
+		echo "*/${min} * * * * /usr/lib/open-hotspot/cycle.sh ${CRON_MARK}"
+		echo "7 3 * * * /usr/lib/open-hotspot/maintenance.sh ${CRON_MARK}"
+	} >> "$CRONTAB"
+	/etc/init.d/cron restart >/dev/null 2>&1
+}
+
+stop_service() {
+	[ -f "$CRONTAB" ] || return 0
+	grep -v "$CRON_MARK" "$CRONTAB" > "${CRONTAB}.tmp" 2>/dev/null
+	mv "${CRONTAB}.tmp" "$CRONTAB"
+	/etc/init.d/cron restart >/dev/null 2>&1
+}
+
+reload_service() {
+	start_service   # re-derive the interval from current UCI settings
+}

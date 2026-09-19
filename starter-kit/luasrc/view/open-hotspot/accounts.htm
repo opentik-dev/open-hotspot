@@ -1,0 +1,50 @@
+<%+header%>
+<div class="oh-page">
+<h2><%:Open-HotSpot accounts%></h2>
+<% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
+<% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
+
+<fieldset class="cbi-section">
+<legend><%:Create account%></legend>
+<form class="oh-form" method="post" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="create" />
+<div class="cbi-value"><label><%:Username%></label><input name="username" required maxlength="64" /></div>
+<div class="cbi-value"><label><%:PIN%></label><input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" /></div>
+<div class="cbi-value"><label><%:Profile%></label><select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"><%=pcdata(p.name)%></option><% end %></select></div>
+<div class="cbi-value"><label><%:Expiry (UTC ISO-8601)%></label><input name="expires_at" placeholder="YYYY-MM-DDTHH:MM:SSZ" /></div>
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Create%>" />
+</form>
+</fieldset>
+
+<div class="oh-table-wrap">
+<table class="table cbi-section-table">
+<tr class="tr table-titles"><th><%:Username%></th><th><%:Profile%></th><th><%:Status%></th><th><%:Expiry%></th><th><%:Actions%></th></tr>
+<% for _, account in ipairs(accounts) do %>
+<tr class="tr">
+<td colspan="5">
+<form class="oh-record-form oh-account-update" method="post" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=account.id%>" />
+<label class="oh-field"><span><%:Username%></span><input name="username" value="<%=pcdata(account.username)%>" maxlength="64" /></label>
+<label class="oh-field"><span><%:Profile%></span><select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"<% if p.id == account.profile_id then %> selected<% end %>><%=pcdata(p.name)%></option><% end %></select></label>
+<label class="oh-field"><span><%:Status%></span><select name="status"><option value="active"<% if account.status == "active" then %> selected<% end %>><%:active%></option><option value="suspended"<% if account.status == "suspended" then %> selected<% end %>><%:suspended%></option></select></label>
+<label class="oh-field"><span><%:Expiry%></span><input name="expires_at" value="<%=pcdata(account.expires_at or "")%>" placeholder="YYYY-MM-DDTHH:MM:SSZ" /></label>
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
+</form>
+<form class="oh-inline-form" method="post" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="renew" /><input type="hidden" name="id" value="<%=account.id%>" />
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Renew quota period%>" onclick="return confirm('<%:Start a fresh quota period and disconnect current sessions?%>');" />
+</form>
+<form class="oh-inline-form" method="post" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="set-pin" /><input type="hidden" name="id" value="<%=account.id%>" />
+<label class="oh-compact-field"><span><%:New PIN%></span><input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" placeholder="<%:New PIN%>" /></label>
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Set PIN%>" />
+</form>
+<form class="oh-delete-form" method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=account.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Suspend this account?%>');" /></form>
+</td>
+</tr>
+<% end %>
+</table>
+</div>
+ </div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+<%+footer%>

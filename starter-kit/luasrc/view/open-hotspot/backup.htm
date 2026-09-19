@@ -1,0 +1,21 @@
+<%+header%>
+<div class="oh-page">
+<h2><%:Open-HotSpot backup%></h2>
+<% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
+
+<p><%:Exports contain the manager SQLite database and UCI configuration. Imports are validated before replacement and create a rollback archive.%></p>
+<form method="post" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" />
+<input type="hidden" name="action" value="export" />
+<input class="cbi-button cbi-button-save" type="submit" value="<%:Download backup%>" />
+</form>
+
+<form method="post" enctype="multipart/form-data" action="<%=page_url%>">
+<input type="hidden" name="token" value="<%=pcdata(token)%>" />
+<label><%:Backup archive%> <input type="file" name="archive" accept=".tar.gz,application/gzip" required /></label>
+<button type="submit" name="action" value="validate"><%:Validate archive%></button>
+<button type="submit" name="action" value="import" onclick="return confirm('<%:Import this backup and replace manager state?%>');"><%:Import archive%></button>
+</form>
+</div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+<%+footer%>

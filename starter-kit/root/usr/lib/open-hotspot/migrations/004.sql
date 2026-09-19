@@ -1,0 +1,4 @@
+BEGIN IMMEDIATE;
+ALTER TABLE accounts ADD COLUMN renewed_at TEXT;
+INSERT OR IGNORE INTO schema_meta(version) VALUES (4);
+COMMIT;

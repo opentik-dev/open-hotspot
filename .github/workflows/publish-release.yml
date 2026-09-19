@@ -1,0 +1,50 @@
+name: Publish OpenWrt APK release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        env:
+          CHECKSUM_PATH: dist/SHA256SUMS
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const tag = context.ref.replace('refs/tags/', '');
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Open-HotSpot ${tag}`,
+              generate_release_notes: true
+            });
+            const packageName = tag.replace(/^v/, '');
+            const apk = `luci-app-open-hotspot-${packageName}.apk`;
+            if (!fs.existsSync(path.join('dist', apk))) {
+              core.setFailed(`No APK matches tag ${tag}: expected dist/${apk}`);
+              return;
+            }
+            for (const file of [path.join('dist', apk), process.env.CHECKSUM_PATH]) {
+              const data = fs.readFileSync(file);
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+                name: path.basename(file),
+                data,
+                headers: {
+                  'content-type': 'application/octet-stream',
+                  'content-length': data.length
+                }
+              });
+            }

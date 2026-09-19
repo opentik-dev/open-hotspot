@@ -1,0 +1,242 @@
+# Quickstart — Manual Validation Walkthrough (v1.2)
+
+## Phase 0 target evidence
+
+The target is a Linksys EA8300 (OpenWrt 25.12.5, `ipq40xx/generic`, openNDS
+10.3.1-r3). Set `TARGET_IP` to the currently discovered management address;
+the address is runtime state, not a project constant. The read-only inspection
+commands are:
+
+```sh
+TARGET_IP="${TARGET_IP:?Set TARGET_IP to the current management address}"
+ssh root@"$TARGET_IP" 'ubus call system board'
+ssh root@"$TARGET_IP" 'opennds -v; ndsctl; uci show opennds'
+ssh root@"$TARGET_IP" 'sed -n "1,220p" /usr/lib/opennds/binauth_log.sh'
+ssh root@"$TARGET_IP" 'sed -n "1,260p" /usr/lib/opennds/authmon.sh'
+```
+
+Observed target v10.3.1 contract from the installed
+`/usr/lib/opennds/binauth_log.sh`: `auth_client` receives method, MAC, origin
+URL, user agent, client IP, token, and custom value (7 arguments total). Other
+callback reasons receive method, MAC, incoming/outgoing byte counters, session
+start/end, token, and custom value. The default script returns five numeric
+policy values and uses exit status 0/1 for allow/deny. FAS level 1
+returns the documented HID flow; FAS level 4 returns `rhid`, session length in
+minutes, rates in kbit/s, quotas in kBytes, and a custom BinAuth value.
+
+The router initially had no WAN route, which made the old external FAS probe
+fail with status 4. After the reversible cleanup and local-FAS activation on
+2026-09-17, openNDS reported its dynamically assigned upstream gateway online
+and the local FAS listener was reachable from the LAN.
+
+Local-only implementation baseline: use FAS level 1 on a separate uhttpd HTTP
+port, planned as `2080`, with `.php=/usr/bin/php-cgi`; port 80 remains reserved
+for the openNDS captive portal. The bundled endpoint is `/nds/fas.php` and
+returns the documented HID/token handoff with an opaque `custom` transaction
+key. This baseline is derived from the official FAS guide. It is now active on
+the test router only after an explicit second-stage activation; the base
+package still does not change openNDS configuration implicitly.
+
+Startup timing observed after a router reboot: the first openNDS attempt failed
+because `br-lan` was not ready; the second attempt took about 15 seconds from
+startup to `openNDS is now running`. The service became usable after the router
+recovery window at roughly 80–100 seconds in the SSH polling test. A service
+restart command returns in about 1 second, but readiness took about 30 seconds
+after the old process exited because procd respawned the daemon.
+
+The Phase 1 foundation was also checked on the target: SQLite initialization
+created an idempotent v2 database and rejected an unversioned database, while
+the period helper produced valid UTC boundaries on the router's ash/BusyBox
+environment.
+
+## Completed installation checkpoint — 2026-09-17
+
+The old application state was archived, not destroyed, at:
+
+```text
+/etc/open-hotspot/legacy-20260917T005422Z
+/usr/lib/open-hotspot-legacy-20260917T005422Z
+```
+
+The sysupgrade and state backups are stored locally under
+`.build/backups/20260917T003034Z.*`. The installed package is
+`luci-app-open-hotspot 1.2.0-r39`, built for `noarch` as an OpenWrt APK:
+
+```text
+sha256 89ca098440256e1624938aa8b4e7b51cee1fe28f6ee266c0f1621c8b5f7867e1
+```
+
+بعد إضافة التجديد الإداري وإعادة ربط MAC بشكل صريح، بُني r39 لترقية r36
+وثُبّت على الراوتر؛ ونجحت عليه migration v4 وفحوصات RPC وPHP والنسخ الاحتياطية
+واختبارات الإدارة المعزولة:
+
+```text
+dist/luci-app-open-hotspot-1.2.0-r39.apk
+sha256 89ca098440256e1624938aa8b4e7b51cee1fe28f6ee266c0f1621c8b5f7867e1
+```
+
+أعاد `account_status_list` JSON فعلياً من قاعدة الحسابات، كما نجح تصدير
+النسخة الاحتياطية والتحقق منها (`valid`) وفحص صياغة `fas.php`. لا يغلق ذلك
+بوابات العميل الحقيقي والحصة والاستعادة بعد إعادة التشغيل.
+
+The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
+`local_fas_enabled=1`. `openNDS` reports the local FAS endpoint on the current
+gateway address and uhttpd listens on port 2080. The gateway client-status
+hostname is `status.client`; openNDS refreshes its local resolution at runtime.
+The FAS configuration leaves both `fasremoteip` and `fasremotefqdn` unset, so
+the upstream router/WAN address is not a dependency.
+
+The custom FAS page is packaged at `/www/nds/fas.php` with its stylesheet at
+`/www/nds/open-hotspot-fas.css`. It is intentionally fail-closed: the page
+requires the FAS context supplied by openNDS. A direct request to
+`http://<current-gateway>:2080/nds/fas.php` (or a captive-client probe that omits
+the FAS payload) displays the styled missing-data diagnostic and cannot
+authenticate a client. The supported manual entry point is the built-in
+openNDS status hostname, `http://status.client`, which then starts the portal
+→ FAS flow.
+The WAN lease and gateway/DNS were dynamically assigned; the reported
+`udhcpc: no lease` occurred during a service restart and did not replace the
+active lease. `dnsmasq-full` is installed and provides the required nftset
+build option.
+The FAS login was tested with a temporary account using a real HTTP POST; the
+response contained the `tok`, `custom`, and `redir` handoff fields and created
+one pending SQLite transaction. The account was then suspended and the test
+transaction expired; database integrity remained `ok`.
+
+For the current Wi-Fi trial, all three radio interfaces are enabled with the
+open SSID `Open-HotSpot-Test` on the LAN bridge. The first active account is
+`firstuser` on `default-unlimited`; its credentials are intentionally not
+stored in repository documentation.
+
+Submitting those handoff fields from the management host to `/nds/` returned
+HTTP 511 and did not create an openNDS client, which is expected because the
+host was not a separate captive client on the managed path. Therefore the
+portal-to-BinAuth/session-close gate is intentionally still open.
+
+To inspect or reverse the explicit activation:
+
+```sh
+ssh root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh status'
+ssh root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh rollback'
+```
+
+## SDK/feed build procedure
+
+The official SDK is a package-focused buildroot, not a complete firmware
+build. Add the project as a local feed, update feeds, install the package, and
+disable “Select all target specific packages by default” in Global Build
+Settings before selecting the application. The relevant official references
+are the [OpenWrt SDK package-feed guide](https://openwrt.org/docs/guide-developer/toolchain/using_the_sdk#package_feeds),
+the [OpenWrt feeds guide](https://openwrt.org/docs/guide-developer/feeds), and
+the [single-package build guide](https://openwrt.org/docs/guide-developer/toolchain/single.package).
+
+For this APK-based 25.12 SDK, the final package was assembled with the SDK's
+own `staging_dir/host/bin/apk mkpkg` after staging the local feed payload. This
+avoids rebuilding PHP, Lua, and unrelated target defaults; runtime dependency
+availability is checked on the target during preflight. A normal SDK
+`make package/luci-app-open-hotspot/compile V=s` remains valid when the host
+has working fakeroot and all selected feed dependencies; in this environment
+the generic invocation additionally tried to rebuild the toolchain and was
+blocked by the sandbox's fakeroot restriction.
+
+1. Flash/boot a stock OpenWrt 25.12.x device; install
+   `luci-app-open-hotspot`. Confirm the verified core dependency plan completes
+   without a lost DNS/DHCP window; `dnsmasq-full` must not be swapped in by the
+   package.
+2. **LuCI → Services → Open-HotSpot → Setup**: confirm the state reaches
+   `BASE_READY`, the planned FAS is `local-level1` on port `2080`, and
+   `local_fas_enabled` is `0` before the deliberate activation step. A
+   preflight or database blocker must be visible as a recorded state, not a
+   silent partial install.
+3. After the base acceptance gate is closed, run
+   `activate-local-fas.sh enable` and validate portal → FAS → BinAuth on a
+   disposable client. The installed router has completed the FAS portion; the
+   remaining closure requires a separate Wi-Fi/LAN client session through the
+   captive portal.
+4. **Profiles**: create "daily-light" — daily, time_limit=2h,
+   download_limit=500MB, max_devices=2.
+5. **Accounts**: create "ahmed" (set a PIN), profile=daily-light.
+6. Connect test device A, log in on the portal as "ahmed" with the PIN
+   (not by MAC). Confirm a row appears in `devices` for A, linked to
+   ahmed's account (SC-007 setup).
+7. Connect test device B, log in as "ahmed" again. Confirm B is
+   registered as ahmed's second device.
+8. Attempt a third device C. Confirm it is refused (max_devices=2)
+   until A or B is removed/blocked (**SC-007**).
+9. Consume time/data past the daily-light limit (or temporarily lower
+   limits for the test), combined across A+B. Confirm both devices are
+   disconnected automatically at whichever limit is hit first, and the
+   portal reflects "quota exceeded" on the next attempt.
+10. **Status**: confirm the dashboard shows ahmed's consumed vs. remaining
+   time/data and device count correctly before and after cutoff.
+11. From **Accounts**, click **Renew** on ahmed; confirm A/B can
+    reconnect immediately with a fresh period. Confirm the previous aggregate
+    remains in History, the current dashboard period starts at the renewal UTC
+    timestamp, and an `account_renew` audit event exists.
+12. From **Devices**, select an active target account and click **Reassign**.
+    The operation must fail while the device has a live session; after the
+    session is observed closed, it must move the MAC once and create a
+    `device_reassign` audit event. A later login must not silently move it.
+13. Reboot the router mid-session for a second connected test account;
+    confirm on reboot that already-accrued usage for the current period
+    is unchanged (not reset, not doubled) (**SC-002**).
+14. Kill the `open-hotspot` init script only (not `opennds`); confirm
+    already-authenticated devices keep Internet access uninterrupted
+    (**FR-011 / SC-004 / SC-005**).
+15. Set a 2-minute test period on a profile; let it roll over while a
+    device is connected; confirm `cycle.sh` closes/opens the period and
+    reissues an updated ceiling to the live device without a hard
+    disconnect (**FR-006**).
+15. **Vouchers**: generate a batch of 2 codes on "daily-light". Redeem one
+    code from a fresh browser session; confirm it creates a new account
+    and flips the voucher to `redeemed`. From two separate sessions,
+    attempt to redeem the *same* code simultaneously; confirm exactly one
+    succeeds and the other is rejected (**SC-008**).
+16. Trigger two rapid deauth events for the same device in immediate
+    succession (e.g. `ndsctl deauth` called twice back to back); confirm
+    `usage_periods` reflects the session once, not twice (**SC-006**).
+
+## Corrective implementation checkpoint — r30
+
+The source and test router are now aligned on `luci-app-open-hotspot 1.2.0-r30`.
+The database was upgraded in place from schema v1 to v4 through the numbered
+`002.sql` and `003.sql` migrations; no factory reset was used. The release also
+contains timezone-aware period boundaries, timestamp-based expiry checks,
+bounded PIN backoff, atomic voucher redemption, conditional maintenance
+vacuuming, period-scoped policy refresh, live dashboard/history RPC methods,
+and validated backup export/import helpers. The local FAS also includes
+allow-listed English and Arabic RTL templates with atomic validation/apply. The
+SQLite transaction paths set a per-connection busy timeout so concurrent
+admission does not degrade into a partial lock failure.
+
+The following checks passed on the target's then-current management address
+after installation:
+
+```sh
+ssh root@"$TARGET_IP" 'sh -c ". /usr/lib/open-hotspot/db.sh; db_init; db_schema_version"'
+ssh root@"$TARGET_IP" 'ubus call open_hotspot overview "{}"'
+ssh root@"$TARGET_IP" 'ubus call open_hotspot history_list "{}"'
+ssh root@"$TARGET_IP" '/usr/lib/open-hotspot/backup.sh validate /tmp/open-hotspot-validation.tar.gz'
+ssh root@"$TARGET_IP" 'php-cgi -l /www/nds/fas.php'
+```
+
+The target reported schema `4`, local FAS level 1 at port `2080`, openNDS
+10.3.1 running, and valid JSON from the new RPC methods. The remaining
+blocking gates are deliberately unchanged: a separate captive client is still
+needed for portal → FAS → BinAuth → native enforcement → accounting, and a
+controlled upload/download experiment plus reboot/session-restore test are
+needed before closing T006, T011, and T012.
+
+The r29 concurrency proof used disposable databases on the target: with
+`max_devices=2`, three simultaneous official `auth_client` callbacks produced
+exactly two successes, two active sessions, one pending transaction, and one
+duplicate callback rejection. Two simultaneous FAS voucher submissions
+produced exactly one redeemed voucher and one account. These checks do not
+replace the separate real-client gate below.
+
+The r29 real-client attempt exposed a contract mismatch: the installed stock
+`binauth_log.sh` passes seven `auth_client` arguments, while the adapter had
+been validating an older nine-argument layout. The stock default allow path
+therefore left the client `Authenticated` without consuming the manager
+transaction. r30 uses the exact seven-field target layout and must be
+retested through the real portal flow.

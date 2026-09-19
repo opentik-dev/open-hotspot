@@ -1,0 +1,17 @@
+<%+header%>
+<div class="oh-page">
+<h2><%:Open-HotSpot history%></h2>
+<% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
+<p><%:Usage history is read-only. PINs and authentication transaction payloads are never displayed.%></p>
+<div class="oh-table-wrap">
+<table class="table cbi-section-table">
+<tr class="tr table-titles"><th><%:Account%></th><th><%:Period start%></th><th><%:Period end%></th><th><%:Seconds%></th><th><%:Upload bytes%></th><th><%:Download bytes%></th><th><%:Closed%></th></tr>
+<% for _, item in ipairs(history) do %>
+<tr class="tr"><td><%=pcdata(item.username)%></td><td><%=pcdata(item.period_start)%></td><td><%=pcdata(item.period_end)%></td><td><%=item.seconds_used%></td><td><%=item.bytes_up%></td><td><%=item.bytes_down%></td><td><%=item.closed%></td></tr>
+<% end %>
+<% if #history == 0 then %><tr class="tr"><td class="oh-empty" colspan="7"><%:No closed usage sessions yet. History appears after a client is deauthenticated and accounting is recorded.%></td></tr><% end %>
+</table>
+</div>
+</div>
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+<%+footer%>

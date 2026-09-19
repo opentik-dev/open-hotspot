@@ -1,0 +1,15 @@
+{
+	"luci-app-open-hotspot": {
+		"description": "Grant access to Open-HotSpot",
+		"read": {
+			"uci": [ "open-hotspot", "opennds" ],
+			"ubus": { "open_hotspot": [ "profile_list", "account_list", "device_list", "voucher_list", "overview", "account_status_list", "history_list", "template_list" ] },
+			"file": { "/etc/open-hotspot/hotspot.db": [ "read" ] }
+		},
+		"write": {
+			"uci": [ "open-hotspot", "opennds" ],
+			"ubus": { "open_hotspot": [ "profile_create", "profile_update", "profile_delete", "account_create", "account_update", "account_renew", "account_set_pin", "account_delete", "device_block", "device_unblock", "device_remove", "device_force_deauth", "device_reassign", "voucher_generate", "voucher_revoke", "template_apply", "setup_base", "router_access_set", "session_restore_set" ] },
+			"file": { "/etc/open-hotspot/hotspot.db": [ "read", "write" ] }
+		}
+	}
+}

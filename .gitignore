@@ -1,0 +1,10 @@
+.build/
+dist/
+.pytest_cache/
+__pycache__/
+*.pyc
+sdk/
+*.apk
+*.tar.zst
+*.tar.gz
+*.zip

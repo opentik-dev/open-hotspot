@@ -29,6 +29,8 @@ jobs:
           sh tests/test_shell_syntax.sh
           sh tests/test_quota.sh
           for test in tests/test_*.sh; do sh "$test"; done
+      - name: Enforce physical acceptance gates
+        run: sh tools/check-release-gates.sh
       - name: Restore OpenWrt SDK cache
         id: sdk-cache
         uses: actions/cache@v4

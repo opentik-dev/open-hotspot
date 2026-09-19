@@ -22,11 +22,14 @@ luci-app-open-hotspot-${PKG_VERSION}-r${PKG_RELEASE}.apk
 3. Tags are created only from a commit that passed CI. The release workflow
    rebuilds the APK from source and never publishes a committed APK as the
    build input.
-4. The release body links the exact commit SHA, APK SHA-256, acceptance matrix,
+4. The release workflow checks `tools/check-release-gates.sh`; T003, T006, T011,
+   T012, T052, T086, T087, T088, and T090 must be checked off in `tasks.md`.
+   An open physical-acceptance gate makes the release fail.
+5. The release body links the exact commit SHA, APK SHA-256, acceptance matrix,
    delivery manifest, and all open release gates.
-5. A release is not production-approved while a Critical or Release-stop gate
+6. A release is not production-approved while a Critical or Release-stop gate
    is open in `docs/release-gates.md`.
-6. Target-specific compatibility patches must name the OpenWrt/openNDS build,
+7. Target-specific compatibility patches must name the OpenWrt/openNDS build,
    preserve a rollback artifact, and include field evidence before the gate is
    closed.
 

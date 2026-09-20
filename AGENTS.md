@@ -4,6 +4,12 @@ This file is the shared operating contract for Codex, Claude, Gemini, and any
 other agent working in this repository. It does not replace the specification;
 it explains how an agent must use the specification and report its work.
 
+For target operations, packaging, field acceptance, and release publication,
+also use the project skill at
+`skills/open-hotspot-ops-governance/SKILL.md` and append outcomes to
+`docs/operational-ledger.md`. Known environmental failures must not be retried
+without a changed variable and a recorded reason.
+
 ## Source of truth
 
 Before changing implementation, read:

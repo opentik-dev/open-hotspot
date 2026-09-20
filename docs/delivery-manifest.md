@@ -1,9 +1,9 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r60`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r70`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
 **SHA-256:** recorded beside the artifact by the release workflow
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 10.3.1-r3.
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** Controlled pilot / factory-reset acceptance candidate; not yet a production baseline.
 
 ## Delivered
@@ -38,12 +38,17 @@
   failures return nonzero before any firewall mutation. The package documents
   the supported upstream-Wi-Fi/Ethernet-management topology in
   [`topology.md`](topology.md).
+- r70 packages the read-only integration diagnostic at
+  `/usr/lib/open-hotspot/diagnose.sh`; the repeatable factory-reset procedure
+  is in [`installation-and-integration-runbook.md`](installation-and-integration-runbook.md)
+  and the failure/closure ledger is in
+  [`integration-gap-register.md`](integration-gap-register.md).
 
 ## Evidence already available
 
 The release artifact is built from source by CI and its SHA-256 is published
 next to the APK in the matching GitHub Release; generated `dist/` output is
-not a release input. The r60 source checkpoint includes the target-specific
+not a release input. The r67 source checkpoint includes the target-specific
 procd stdout compatibility fix: the target reports stable `ndsctl` readiness
 and a preauthenticated client is rejected by the openNDS nftables chain.
 Schema migration
@@ -98,12 +103,12 @@ local FAS configuration and report this runtime blocker explicitly.
 
 Run [`factory-reset-acceptance-runbook.md`](factory-reset-acceptance-runbook.md)
 on a disposable router. Only after its evidence is attached to
-`docs/release-gates.md` should the tasks be changed to `[x]` and r60 be
-declared the v1.2 production baseline.
+`docs/release-gates.md` should the tasks be changed to `[x]` and r67 be
+declared the v1.2 production baseline. r60 remains the rollback baseline.
 
 The first live A/B attempt is recorded in
 [`field-evidence-20260918.md`](field-evidence-20260918.md). It proved the
 partition discovery, backup, boot selection, and management-address transition.
 The follow-up run restored SSH on the current slot and installed earlier
-checkpoints; r60 is the source-built candidate, and live client gates remain
+checkpoints; r67 is the source-built candidate, and live client gates remain
 open until the acceptance matrix is completed.

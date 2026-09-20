@@ -1,8 +1,8 @@
 # Open-HotSpot project status
 
 **As of:** 2026-09-20  
-**Product candidate:** Open-HotSpot 1.2.0-r60  
-**Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 10.3.1-r3  
+**Product candidate:** Open-HotSpot 1.2.0-r70
+**Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
 ## What is established
@@ -18,6 +18,10 @@
   `specs/001-open-hotspot/research.md` and `quickstart.md`.
 - The two-slot router layout is treated as rollback capability, not shared
   application state.
+- The installation, integration, and troubleshooting chain is centralized in
+  [`installation-and-integration-runbook.md`](installation-and-integration-runbook.md),
+  [`integration-gap-register.md`](integration-gap-register.md), and the
+  read-only `/usr/lib/open-hotspot/diagnose.sh` command shipped in r70.
 
 ## What is not accepted yet
 
@@ -39,12 +43,13 @@ register is [`release-gates.md`](release-gates.md); the evidence workflow is in
 
 ## Active workstreams
 
-1. Close the remaining v1.2 physical-router gates against the r60 baseline.
+1. Close the remaining physical-router gates against the r70 candidate while
+   preserving r60/openNDS 10.3.1 as the documented rollback baseline.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
-3. Evaluate openNDS 11 in an isolated compatibility track. No v11 package is
-   installed on the acceptance router until its contract and rollback proof
-   are complete.
+3. Keep the openNDS 11 compatibility record separate from the r60 rollback
+   baseline; r70 is installed on the disposable acceptance slot, but it is
+   not production-accepted until the physical gates close.
 
 ## Decision rule
 

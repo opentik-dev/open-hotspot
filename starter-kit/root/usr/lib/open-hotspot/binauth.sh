@@ -2,7 +2,7 @@
 # binauth.sh — source-safe OpenNDS callback adapter.
 #
 # This file is sourced by custombinauth.sh after the stock openNDS BinAuth
-# logger has initialized session_length/rate/quota/exitlevel. It contains no
+# logger has initialized sessiontimeout/rate/quota/exitlevel. It contains no
 # administrative control calls. The installed target v10.3.1 stock
 # binauth_log.sh has two layouts: auth_client receives method, MAC, origin URL,
 # user agent, client IP, token, and custom data (7 arguments total); other
@@ -113,9 +113,9 @@ EOF
 	# openNDS native units are minutes, kbit/s, and kBytes. Round positive
 	# internal values upward; zero remains the documented unlimited value.
 	if [ "$remaining_time" -eq 0 ]; then
-		session_length=0
+		sessiontimeout=0
 	else
-		session_length=$(( (remaining_time + 59) / 60 ))
+		sessiontimeout=$(( (remaining_time + 59) / 60 ))
 	fi
 	upload_rate="$upload_rate"
 	download_rate="$download_rate"

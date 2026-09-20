@@ -10,7 +10,7 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r60` is the current source/build checkpoint. r60 is the candidate for
+`1.2.0-r70` is the current source/build checkpoint. r70 is the candidate for
 the next CI-built release; its exact commit SHA, APK SHA-256, and acceptance
 evidence must be recorded by the release workflow. Earlier packages remain
 field evidence and rollback checkpoints. r40 removes upstream-address assumptions
@@ -74,6 +74,16 @@ final release freeze.
 | r58 | `9b00c3dddcb7ec164260ee1965f326294db9f08d5c09f0078abcee92a03aa34f` | Runs the compatibility patch on both fresh install and upgrade; target post-upgrade applied it and openNDS reached stable `ndsctl` readiness with preauthenticated-client rejection. |
 | r59 | pending | Adds the LuCI enable/disable control and SQLite-backed, quota-aware reboot/session-process restore outside BinAuth; target validation pending. |
 | r60 | CI-generated | Resolves the target's `ndsctl auth` MAC limitation by discovering the live client IP from `ndsctl status` without hardcoding any router address; enabled and disabled restore paths were validated on the EA8300. The release workflow records the exact commit SHA and artifact SHA-256. |
+| r61 | pending | Forces local FAS mode 0 during activation so openNDS does not let its default ThemeSpec/PreAuth flow override the Open-HotSpot username/PIN portal; adds the explicit IoT-device exception guidance. Target retest pending. |
+| r62 | pending | Explicitly enables openNDS DHCP option 114 during local-FAS activation so Android captive assistants receive the dynamic `status.client` portal URL instead of guessing the gateway address. Target retest pending. |
+| r63 | pending | Corrects the openNDS 11 local-FAS contract by setting `fasremotefqdn=status.client` while leaving `fasremoteip` unset. This prevents the mode-0 `Remote Portal Not Defined`/2050-to-404 failure without storing a LAN or WAN address. Target phone retest pending. |
+| r64 | pending | Connects the stock openNDS BinAuth dispatcher to the manager adapter through the `custombinauth` UCI hook and adds a recoverable UCI fallback for the target openNDS 11 `ndscfg` stdin behavior. Target fresh-login/accounting retest pending. |
+| r65 | pending | Corrects the BusyBox `sed` expression in the dispatcher fallback installer. The r64 package installed but did not apply that fallback. |
+| r66 | pending | Aligns the BinAuth session-duration variable with the verified openNDS contract (`sessiontimeout`), preserving native rate/quota output. Fresh-login/accounting and quota field proof remain pending. |
+| r67 | pending | Packages the read-only integration diagnostic, documents the complete openNDS → uhttpd/FAS → BinAuth → SQLite → LuCI service chain and its known failure modes, and preserves r60 as the rollback baseline. Fresh physical-client proof remains pending. |
+| r68 | pending | Corrects the diagnostic FAS probe to recognize the expected HTTP 400 response from a bare endpoint request, while still failing on transport or endpoint errors. Fresh physical-client proof remains pending. |
+| r69 | pending | Ensures the diagnostic creates its temporary workspace before the uhttpd/FAS probe. The prior r68 field run exposed this diagnostic-only ordering defect; fresh physical-client proof remains pending. |
+| r70 | pending | Preserves BusyBox wget diagnostics output so the expected HTTP 400 response from a bare FAS request is recognized; transport failures remain release failures. Fresh physical-client proof remains pending. |
 
 ## Existing GitHub history
 

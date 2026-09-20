@@ -66,9 +66,11 @@ assert_dynamic_local_fas() {
 	remote_ip=$($UCI_BIN -q get opennds.@opennds[0].fasremoteip 2>/dev/null || true)
 	remote_fqdn=$($UCI_BIN -q get opennds.@opennds[0].fasremotefqdn 2>/dev/null || true)
 	gateway_fqdn=$($UCI_BIN -q get opennds.@opennds[0].gatewayfqdn 2>/dev/null || true)
+	custom_binauth=$($UCI_BIN -q get opennds.@opennds[0].custombinauth 2>/dev/null || true)
 	[ -z "$remote_ip" ] || return 1
-	[ -z "$remote_fqdn" ] || return 1
+	[ "$remote_fqdn" = 'status.client' ] || return 1
 	[ "$gateway_fqdn" = 'status.client' ] || return 1
+	[ "$custom_binauth" = '/usr/lib/opennds/custombinauth.sh' ] || return 1
 }
 
 discover_gateway_interface() {
@@ -132,11 +134,27 @@ activate() {
 	# Only replace the active BinAuth after the local FAS listener is healthy.
 	cp /usr/lib/open-hotspot/custombinauth.sh /usr/lib/opennds/custombinauth.sh || return 1
 	chmod 0755 /usr/lib/opennds/custombinauth.sh || return 1
+	# openNDS 11's mode-0 status page reports "Remote Portal Not Defined"
+	# when both remote endpoint options are absent. Use its dynamically
+	# maintained local hostname; never persist a LAN or WAN address.
 	"$UCI_BIN" delete opennds.@opennds[0].fasremoteip 2>/dev/null || true
-	"$UCI_BIN" delete opennds.@opennds[0].fasremotefqdn 2>/dev/null || true
+	"$UCI_BIN" set opennds.@opennds[0].fasremotefqdn='status.client' || return 1
 	"$UCI_BIN" set opennds.@opennds[0].fasport='2080' || return 1
 	"$UCI_BIN" set opennds.@opennds[0].faspath='/nds/fas.php' || return 1
 	"$UCI_BIN" set opennds.@opennds[0].fas_secure_enabled='1' || return 1
+	# Mode 0 selects the configured FAS. The openNDS default login mode 1
+	# invokes the built-in ThemeSpec/PreAuth flow and overrides FAS, which
+	# would bypass the manager's username/PIN page.
+	"$UCI_BIN" set opennds.@opennds[0].login_option_enabled='0' || return 1
+	# Keep the stock binauth_log.sh/auth_restore path and explicitly load the
+	# manager adapter from its documented custombinauth include hook. Setting
+	# the whole `binauth` option would replace the stock dispatcher and lose
+	# openNDS's restore/logging behavior.
+	"$UCI_BIN" set opennds.@opennds[0].custombinauth='/usr/lib/opennds/custombinauth.sh' || return 1
+	# Advertise the captive-portal URL through DHCP option 114 so Android's
+	# network assistant opens the portal URL instead of guessing the gateway
+	# address after association.
+	"$UCI_BIN" set opennds.@opennds[0].dhcp_default_url_enable='1' || return 1
 	"$UCI_BIN" set opennds.@opennds[0].gatewayinterface="$gateway_if" || return 1
 	# Use openNDS's documented local client-status hostname so clients can
 	# reach the portal without depending on an upstream router address.

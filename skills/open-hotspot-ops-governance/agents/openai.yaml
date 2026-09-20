@@ -1,0 +1,4 @@
+interface:
+  display_name: Open-HotSpot Operations Governance
+  short_description: Reuse recorded router outcomes and prevent repeated failures
+  default_prompt: Use $open-hotspot-ops-governance before operating the router, packaging a release, or recording hardware acceptance.

@@ -19,7 +19,7 @@ export OPEN_HOTSPOT_DB_HELPER="$mock"
 export OPEN_HOTSPOT_PERIOD_HELPER="$root/starter-kit/root/usr/lib/open-hotspot/period.sh"
 . "$root/starter-kit/root/usr/lib/open-hotspot/binauth.sh"
 
-session_length=0
+sessiontimeout=0
 upload_rate=0
 download_rate=0
 upload_quota=0
@@ -29,7 +29,7 @@ open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 	http://example.test/ test-agent 192.168.70.20 token \
 	0123456789abcdef0123456789abcdef
 [ "$exitlevel" = 0 ]
-[ "$session_length" = 2 ]
+[ "$sessiontimeout" = 2 ]
 [ "$upload_rate" = 128 ]
 [ "$download_rate" = 1024 ]
 [ "$upload_quota" = 2 ]
@@ -39,7 +39,7 @@ open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 # callback. The adapter must normalize that form to the same opaque key.
 encoded_key=$(printf '%s' 0123456789abcdef0123456789abcdef | base64 | tr -d '\n')
 rm -f "$state"
-session_length=0
+sessiontimeout=0
 upload_rate=0
 download_rate=0
 upload_quota=0
@@ -48,7 +48,7 @@ exitlevel=1
 open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 	http://example.test/ test-agent 192.168.70.20 token "$encoded_key"
 [ "$exitlevel" = 0 ]
-[ "$session_length" = 2 ]
+[ "$sessiontimeout" = 2 ]
 
 if open_hotspot_binauth_apply auth_client AA:BB:CC:DD:EE:FF user pass redir ua \
 	192.168.70.20 token 0123456789abcdef0123456789abcdef; then

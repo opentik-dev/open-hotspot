@@ -1,6 +1,6 @@
 # openNDS 11 adapter contract
 
-This is the current v11 compatibility contract for the r73 acceptance
+This is the current v11 compatibility contract for the r74 acceptance
 candidate. A row marked by the release gates as open remains a release blocker;
 this document does not convert source or screenshot evidence into acceptance.
 

@@ -1,6 +1,6 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r73`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r74`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
 **SHA-256:** recorded beside the artifact by the release workflow
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.

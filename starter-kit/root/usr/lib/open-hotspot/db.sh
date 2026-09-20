@@ -11,6 +11,15 @@ SCHEMA_PATH="${OPEN_HOTSPOT_SCHEMA_PATH:-/usr/lib/open-hotspot/schema.sql}"
 DB_SCHEMA_VERSION=4
 DB_MIGRATIONS_PATH="${OPEN_HOTSPOT_MIGRATIONS_PATH:-/usr/lib/open-hotspot/migrations}"
 
+# All manager-side sqlite3 calls use the same bounded lock wait and enforce
+# foreign keys for every connection.  The shell entry points source this file
+# before doing reads or writes; wrapping the command here prevents a new
+# maintenance/admin path from silently reintroducing unbounded or orphaning
+# behavior.
+sqlite3() {
+	command sqlite3 -cmd '.timeout 5000' -cmd 'PRAGMA foreign_keys=ON;' "$@"
+}
+
 _db_is_empty() {
 	[ "$(sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" \
 		"SELECT count(*) FROM sqlite_master WHERE type IN ('table','index','trigger','view') AND name NOT LIKE 'sqlite_%';" 2>/dev/null || echo 1)" = "0" ]

@@ -163,7 +163,7 @@ _oh_binauth_segments() {
 	[ "$session_end" -ge "$session_start" ] || return 1
 	renewed_epoch=0
 	if [ -n "$renewed_at" ]; then
-		renewed_epoch=$(date -u -d "$renewed_at" '+%s' 2>/dev/null) || return 1
+		renewed_epoch=$(_period_epoch_utc "$renewed_at") || return 1
 		case "$renewed_epoch" in ''|*[!0-9]*) return 1 ;; esac
 	fi
 	if [ "$session_end" -eq "$session_start" ]; then

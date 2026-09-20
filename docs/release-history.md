@@ -10,7 +10,7 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r73` is the current source/build checkpoint. r73 is the candidate for
+`1.2.0-r74` is the current source/build checkpoint. r74 is the candidate for
 the next CI-built release; its exact commit SHA, APK SHA-256, and acceptance
 evidence must be recorded by the release workflow. Earlier packages remain
 field evidence and rollback checkpoints. r40 removes upstream-address assumptions
@@ -87,6 +87,7 @@ final release freeze.
 | r71 | pending | Adds versioned openNDS adapter contracts for v10.3.1-r3 rollback and v11.0.0 current target; `opennds.sh` rejects unknown daemon versions. Runtime accounting, quota, restart, and failure-containment gates remain open. |
 | r72 | pending | Detects and reports an active SQLite manager session with zero live openNDS clients, preventing a stale restart/close state from appearing healthy. Runtime accounting, quota, restart, and failure-containment gates remain open. |
 | r73 | pending | Makes the packaged diagnostic validate the installed daemon's versioned adapter contract in addition to `ndsctl`, while retaining the explicit stale-session warning. Runtime gates remain open. |
+| r74 | `9d318a81aea8038fa36d77a8e137d0635793e290032f790f39935cbb792c2da2` | Unifies the period/renewal source across FAS, BinAuth, cycle, and restore; normalizes ISO timestamps for BusyBox; applies shared SQLite timeout/foreign-key defaults; runtime gates remain open. |
 
 ## Existing GitHub history
 

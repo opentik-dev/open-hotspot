@@ -19,6 +19,7 @@ chmod +x "$init"
 export OPEN_HOTSPOT_NDSCTL_BIN="$mock"
 export OPEN_HOTSPOT_NDS_INIT="$init"
 export OPEN_HOTSPOT_MOCK_LOG="$log"
+export OPEN_HOTSPOT_ADAPTER_DIR="$root/starter-kit/root/usr/lib/open-hotspot/adapters"
 . "$root/starter-kit/root/usr/lib/open-hotspot/opennds.sh"
 
 opennds_validate_config

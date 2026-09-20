@@ -71,7 +71,7 @@ Router:       Linksys EA8300
 OpenWrt:      25.12.5
 Target:       ipq40xx/generic
 openNDS:      11.0.0
-Open-HotSpot: 1.2.0-r73
+Open-HotSpot: 1.2.0-r74
 ```
 
 The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS

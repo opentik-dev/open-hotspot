@@ -67,7 +67,7 @@ segments=$(_oh_binauth_segments daily 1789257600 1789347600 3000 2000)
 [ "$(printf '%s' "$segments" | awk -F'|' '{s += $3; u += $4; d += $5} END {print s "|" u "|" d}')" = '90000|2000|3000' ]
 
 renewed='2026-01-02T12:00:00Z'
-renewed_epoch=$(date -u -d "$renewed" +%s)
+renewed_epoch=$(_period_epoch_utc "$renewed")
 segments=$(_oh_binauth_segments daily "$renewed" $((renewed_epoch - 60)) $((renewed_epoch + 60)) 120 60)
 [ "$(printf '%s' "$segments" | awk 'END { print NR }')" = 2 ]
 [ "$(printf '%s' "$segments" | awk -F'|' 'NR == 2 {print $1}')" = "$renewed" ]

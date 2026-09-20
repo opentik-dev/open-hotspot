@@ -39,7 +39,7 @@ set_mode() {
 }
 
 restore_one() {
-	mac="$1"; account_id="$2"; profile_id="$3"; session_key="$4"
+	mac="$1"; account_id="$2"; profile_id="$3"; session_key="$4"; renewed_at="${5:-}"
 	prof=$(db_profile_get "$profile_id") || return 1
 	period_type=$(printf '%s' "$prof" | cut -d'|' -f1)
 	time_limit=$(printf '%s' "$prof" | cut -d'|' -f2)
@@ -49,8 +49,10 @@ restore_one() {
 	download_rate=$(printf '%s' "$prof" | cut -d'|' -f6)
 	[ -n "$period_type" ] || return 1
 
-	bounds=$(period_bounds "$period_type") || return 1
-	period_start=$(printf '%s' "$bounds" | cut -f1)
+	# The account renewal is part of the policy identity.  Restoring against
+	# the calendar window would resurrect a session with an old quota window.
+	window=$(period_window_effective "$period_type" "$renewed_at" "$RESTORE_NOW") || return 1
+	period_start=$(printf '%s' "$window" | cut -f1)
 	used=$(db_usage_get "$account_id" "$period_start") || return 1
 	used_time=$(printf '%s' "$used" | cut -d'|' -f1); used_time=${used_time:-0}
 	used_upload=$(printf '%s' "$used" | cut -d'|' -f2); used_upload=${used_upload:-0}
@@ -79,6 +81,7 @@ restore_sessions() {
 	. "$PERIOD_HELPER"
 	. "$NDS_HELPER"
 	. "$QUOTA_HELPER"
+	RESTORE_NOW=$(date -u '+%s') || return 1
 	opennds_validate_config || return 1
 	current_pid=$(opennds_pid)
 	[ -n "$current_pid" ] || return 1
@@ -87,7 +90,8 @@ restore_sessions() {
 	fi
 
 	rows=$(sqlite3 -batch -separator '|' "$DB_PATH" \
-		"SELECT DISTINCT d.mac, a.id, a.profile_id, s.session_key
+		"SELECT DISTINCT d.mac, a.id, a.profile_id, s.session_key,
+		                COALESCE(a.renewed_at,'')
 		   FROM devices d
 		   JOIN accounts a ON a.id=d.account_id
 		   JOIN active_sessions s ON s.device_id=d.id
@@ -95,9 +99,9 @@ restore_sessions() {
 		    AND a.deleted_at IS NULL AND s.state='active';") || return 1
 
 	failed=0
-	while IFS='|' read -r mac account_id profile_id session_key; do
+	while IFS='|' read -r mac account_id profile_id session_key renewed_at; do
 		[ -n "$mac" ] || continue
-		if ! restore_one "$mac" "$account_id" "$profile_id" "$session_key"; then
+		if ! restore_one "$mac" "$account_id" "$profile_id" "$session_key" "$renewed_at"; then
 			failed=1
 		fi
 	done <<EOF

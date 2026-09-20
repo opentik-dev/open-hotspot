@@ -39,7 +39,7 @@ if [ -x /usr/lib/open-hotspot/session-restore.sh ]; then
 		db_log_event session_restore_failed '' 'restore-not-ready-or-policy-failed' || true
 fi
 
-now=$(date -u '+%Y-%m-%d %H:%M:%S')
+now_epoch=$(date -u '+%s')
 
 # 1) Close any usage_periods whose period_end has passed; open the next one
 #    implicitly happens on next accrual/auth (rows are created on demand).
@@ -51,12 +51,13 @@ sqlite3 -batch "$DB_PATH" "UPDATE usage_periods SET closed=1, closed_at=datetime
 	db_log_event cycle_database_error '' 'period-close-failed' || true
 
 sqlite3 -batch "$DB_PATH" "
-	SELECT DISTINCT d.mac, a.id, a.profile_id, COALESCE(s.policy_period_start,'')
+	SELECT DISTINCT d.mac, a.id, a.profile_id, COALESCE(a.renewed_at,''),
+	       COALESCE(s.policy_period_start,'')
 	FROM devices d
 	JOIN accounts a ON a.id = d.account_id
 	JOIN active_sessions s ON s.device_id = d.id
 	WHERE d.status='active' AND a.status='active' AND a.deleted_at IS NULL
-		AND s.state='active';" | while IFS='|' read -r mac acct_id profile_id policy_period_start; do
+	AND s.state='active';" | while IFS='|' read -r mac acct_id profile_id renewed_at policy_period_start; do
 	# The policy is refreshed once for a newly entered period. A failed
 	# refresh leaves the marker unchanged, so the next tick retries it.
 	[ -n "$mac" ] || continue
@@ -68,8 +69,11 @@ sqlite3 -batch "$DB_PATH" "
 	up_rate=$(printf '%s' "$prof"     | cut -d'|' -f5)
 	down_rate=$(printf '%s' "$prof"   | cut -d'|' -f6)
 
-	bounds=$(period_bounds "$period_type")
-	period_start=$(printf '%s' "$bounds" | cut -f1)
+	window=$(period_window_effective "$period_type" "$renewed_at" "$now_epoch") || {
+		db_log_event period_window_error "$acct_id" "$mac" || true
+		continue
+	}
+	period_start=$(printf '%s' "$window" | cut -f1)
 	used=$(db_usage_get "$acct_id" "$period_start")
 	used_s=$(printf '%s' "$used" | cut -d'|' -f1); used_s=${used_s:-0}
 	used_up=$(printf '%s' "$used" | cut -d'|' -f2); used_up=${used_up:-0}

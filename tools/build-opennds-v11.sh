@@ -40,13 +40,34 @@ test "$actual_hash" = "$SOURCE_HASH"
 tar -xzf "$tmp/opennds.tar.gz" -C "$tmp/source" --strip-components=1
 cp -a "$tmp/source/linux_openwrt/opennds/." "$tmp_package/"
 sed -i "s|^PKG_HASH:=.*|PKG_HASH:=$SOURCE_HASH|" "$tmp_package/Makefile"
+# The v11 source archive expands to `openNDS-<version>` while OpenWrt's
+# default package directory is based on the lower-case package name.
+# Pin the build directory to the archive's actual root, as the v10 routing
+# feed did, so the source Makefile and files are visible to the package step.
+sed -i "/^PKG_VERSION:=/a PKG_BUILD_DIR:=\$(BUILD_DIR)/openNDS-\$(PKG_VERSION)" "$tmp_package/Makefile"
+# openNDS v11 ships a hand-written top-level Makefile, not an autotools
+# project.  The upstream package template still carries the legacy
+# PKG_FIXUP:=autoreconf line; applying it removes the usable Makefile and
+# leaves OpenWrt with no compile target.  Keep the source build contract
+# explicit and use the shipped Makefile directly.
+sed -i '/^PKG_FIXUP:=autoreconf$/d' "$tmp_package/Makefile"
+
+# A previous interrupted SDK build can leave OpenWrt's prepare/configure stamp
+# without the corresponding source tree.  Clean this temporary package target
+# before compiling so the SDK must unpack and prepare the verified archive in
+# the current run.
+make -C "$SDK" \
+	"package/$(basename "$tmp_package")/clean" V=s
 
 make -C "$SDK" \
+	CONFIG_PACKAGE_opennds=m \
 	"package/$(basename "$tmp_package")/compile" V=s
 
 mkdir -p "$OUTPUT"
 found=0
-for artifact in "$SDK"/bin/packages/*/*/opennds_${VERSION}-*.apk \
+for artifact in "$SDK"/bin/packages/*/*/opennds-${VERSION}-*.apk \
+	"$SDK"/bin/packages/*/*/opennds_${VERSION}-*.apk \
+	"$SDK"/bin/packages/*/*/opennds-${VERSION}-*.ipk \
 	"$SDK"/bin/packages/*/*/opennds_${VERSION}-*.ipk; do
 	[ -f "$artifact" ] || continue
 	cp -f "$artifact" "$OUTPUT/"

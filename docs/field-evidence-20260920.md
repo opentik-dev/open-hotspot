@@ -3,9 +3,11 @@
 **Date:** 2026-09-20
 **Target:** Linksys EA8300, `boot_part=2`, OpenWrt 25.12.5, `ipq40xx/generic`
 **Target address observed during this run:** `192.168.2.1`
-**Packages:** openNDS 11.0.0, Open-HotSpot 1.2.0-r70, dnsmasq-full 2.93
+**Packages:** openNDS 11.0.0, Open-HotSpot 1.2.0-r73, dnsmasq-full 2.93
 **r63 APK SHA-256:** `14ef1bf5f93e9fcf9b53df5465496e7ea5e60b8dda86124bce05649a089d10c1`
 **r66 APK SHA-256:** `c5caeae7302c5f9446e1ced57588fa76202b8053139e53951179740be75fb83d`
+**r72 APK SHA-256:** `984efa7479ba4e3e90c68ada9bd28a8afcff62b7c40bc8fed671d7693e3be69a`
+**r73 APK SHA-256:** `7197e979029cb87002ea81533cc28f01e3111358390bfaa324f5771e9d1a99f8`
 **r70 APK SHA-256:** `77c87c184b17f8d609c56ddf833971c881fd9f9a6f5640af4967bf34b65a7f28`
 
 ## Observed failure before r61
@@ -128,6 +130,25 @@ defects during this run: r68 treated the expected bare-request HTTP 400 as a
 transport failure; r69 created its temporary directory too late; and r70
 preserved the BusyBox wget status text needed to distinguish HTTP 400 from no
 response. The final r70 field run passed.
+
+## r71/r72 adapter and stale-session evidence
+
+r71 installed the versioned v10.3.1-r3 rollback and v11.0.0 current-target
+adapter contracts. The repository contract suite accepted both known versions
+and rejected an unknown version. r72 installed those contracts on the target
+and kept openNDS 11/uhttpd/FAS healthy.
+
+The r72 post-install diagnostic reported zero live openNDS clients but one
+active SQLite manager session while session restore was disabled. This is
+negative evidence: the manager state was not silently called healthy. It
+leaves T011 open for an explicit interrupted-session reconciliation policy and
+a separate restart/reboot accounting test.
+
+r73 adds an explicit diagnostic check for the installed versioned adapter. The
+target run showed `adapter=versioned-opennds-contract`, openNDS 11.0.0, and a
+preauthenticated client. It also retained the warning condition that one
+SQLite active session exists without an authenticated openNDS client; T011
+remains open until that stale-session policy is resolved and tested.
 
 ## Still pending
 

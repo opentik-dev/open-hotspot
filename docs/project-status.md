@@ -1,7 +1,7 @@
 # Open-HotSpot project status
 
 **As of:** 2026-09-20  
-**Product candidate:** Open-HotSpot 1.2.0-r70
+**Product candidate:** Open-HotSpot 1.2.0-r73
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -21,7 +21,8 @@
 - The installation, integration, and troubleshooting chain is centralized in
   [`installation-and-integration-runbook.md`](installation-and-integration-runbook.md),
   [`integration-gap-register.md`](integration-gap-register.md), and the
-  read-only `/usr/lib/open-hotspot/diagnose.sh` command shipped in r70.
+  read-only `/usr/lib/open-hotspot/diagnose.sh` command shipped in r70; r71
+  adds versioned openNDS adapter contracts and stale-session diagnostics.
 
 ## What is not accepted yet
 
@@ -43,7 +44,7 @@ register is [`release-gates.md`](release-gates.md); the evidence workflow is in
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the r70 candidate while
+1. Close the remaining physical-router gates against the r73 candidate while
    preserving r60/openNDS 10.3.1 as the documented rollback baseline.
 2. Improve agent governance and traceability without rewriting historical
    evidence.

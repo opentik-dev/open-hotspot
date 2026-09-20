@@ -70,9 +70,13 @@ The recorded acceptance baseline is:
 Router:       Linksys EA8300
 OpenWrt:      25.12.5
 Target:       ipq40xx/generic
-openNDS:      10.3.1-r3
-Open-HotSpot: 1.2.0-r60
+openNDS:      11.0.0
+Open-HotSpot: 1.2.0-r73
 ```
+
+The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS
+10.3.1-r3. These are separate compatibility tracks; see
+[`docs/current-state.md`](docs/current-state.md) before operating a target.
 
 The router address is discovered from the current LAN configuration; it is not
 part of the FAS contract. The two-slot layout is used as an A/B rollback aid,

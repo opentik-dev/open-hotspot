@@ -4,7 +4,7 @@ The package version is the pair declared in `starter-kit/Makefile`:
 
 ```text
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=63
+PKG_RELEASE:=73
 ```
 
 The installable artifact is named:
@@ -32,6 +32,9 @@ luci-app-open-hotspot-${PKG_VERSION}-r${PKG_RELEASE}.apk
 7. Target-specific compatibility patches must name the OpenWrt/openNDS build,
    preserve a rollback artifact, and include field evidence before the gate is
    closed.
+8. The current and rollback compatibility tracks are recorded in
+   [`current-state.md`](current-state.md); versioned adapters must reject an
+   unknown openNDS daemon version.
 
 ## Release sequence
 

@@ -1,8 +1,8 @@
-# Proposed openNDS 11 adapter contract
+# openNDS 11 adapter contract
 
-This is a verification checklist, not a claim that the current target already
-implements openNDS 11. Every row needs exact target evidence before code relies
-on it.
+This is the current v11 compatibility contract for the r73 acceptance
+candidate. A row marked by the release gates as open remains a release blocker;
+this document does not convert source or screenshot evidence into acceptance.
 
 | Area | Required contract | Evidence required |
 |---|---|---|

@@ -88,8 +88,18 @@ diag_nds_clients() {
 	printf 'INFO opennds_version=%s\n' "${version:-unknown}"
 	printf 'INFO opennds_current_clients=%s\n' "${clients:-unknown}"
 	[ -n "$version" ] || diag_fail 'opennds=version-unavailable'
+	if [ -x /usr/lib/open-hotspot/opennds.sh ] &&
+		/usr/lib/open-hotspot/opennds.sh adapter-contract >/dev/null 2>&1; then
+		diag_ok 'adapter=versioned-opennds-contract'
+	else
+		diag_fail 'adapter=versioned-opennds-contract-unavailable'
+	fi
 	[ -n "$clients" ] || diag_warn 'opennds=current-client-count-unavailable'
 	[ -n "$state" ] && printf 'INFO first_client_state=%s\n' "$state"
+	if [ "${clients:-0}" -eq 0 ]; then
+		sessions=$(sqlite3 "$DIAG_DB" 'select count(*) from active_sessions where state="active";' 2>/dev/null || printf 0)
+		[ "$sessions" -eq 0 ] || diag_warn 'integration=manager-active-session-without-opennds-client'
+	fi
 	if [ "${clients:-0}" -gt 0 ] && [ "${state:-}" = Authenticated ]; then
 		sessions=$(sqlite3 "$DIAG_DB" 'select count(*) from active_sessions where state="active";' 2>/dev/null || printf 0)
 		[ "$sessions" -gt 0 ] || diag_warn 'integration=opennds-authenticated-without-manager-session'

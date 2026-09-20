@@ -1,6 +1,6 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r70`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r73`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
 **SHA-256:** recorded beside the artifact by the release workflow
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
@@ -43,6 +43,12 @@
   is in [`installation-and-integration-runbook.md`](installation-and-integration-runbook.md)
   and the failure/closure ledger is in
   [`integration-gap-register.md`](integration-gap-register.md).
+- r71 adds versioned openNDS adapter contracts for the r60 rollback baseline
+  and the current openNDS 11 target; unknown daemon versions fail closed.
+- r72 reports an active SQLite session with no live openNDS client as an
+  explicit T011 reconciliation warning.
+- r73 makes the packaged diagnostic verify that the installed daemon resolves
+  to a versioned adapter contract, not only that `ndsctl` responds.
 
 ## Evidence already available
 

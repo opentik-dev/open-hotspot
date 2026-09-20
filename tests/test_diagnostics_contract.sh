@@ -9,6 +9,8 @@ grep -F 'OPEN_HOTSPOT_DIAGNOSTIC_V1' "$script" >/dev/null
 grep -F 'custombinauthpath=$(uci -q get opennds.@opennds[0].custombinauth' "$script" >/dev/null
 grep -F 'database_counts=' "$script" >/dev/null
 grep -F 'opennds-authenticated-without-manager-session' "$script" >/dev/null
+grep -F 'manager-active-session-without-opennds-client' "$script" >/dev/null
+grep -F 'versioned-opennds-contract' "$script" >/dev/null
 grep -F 'fas=http-local-listener-responds' "$script" >/dev/null
 grep -F 'fasremoteip=' "$script" >/dev/null
 ! grep -Eq '192\.168\.[0-9]+\.[0-9]+' "$script"

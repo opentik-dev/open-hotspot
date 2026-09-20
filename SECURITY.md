@@ -22,9 +22,10 @@ and a safe mitigation if known.
 - Backup/import paths must validate archives before replacing state.
 - A physical-router result is not accepted from source inspection alone.
 
-## Supported baseline
+## Supported tracks
 
-The documented acceptance baseline is Open-HotSpot 1.2.0-r60 on OpenWrt 25.12.5
-and the recorded openNDS target package. openNDS 11 is a proposed, isolated
-compatibility track; do not install an unverified architecture or package on
-the acceptance router.
+The current acceptance candidate is Open-HotSpot 1.2.0-r73 on OpenWrt 25.12.5
+with the verified openNDS 11.0.0 target contract. Open-HotSpot 1.2.0-r60 with
+openNDS 10.3.1-r3 remains the rollback baseline. Keep the tracks isolated and
+do not replace the rollback slot in place. See
+[`docs/current-state.md`](docs/current-state.md) for the authoritative state.

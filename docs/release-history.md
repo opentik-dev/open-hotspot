@@ -1,16 +1,19 @@
 # Open-HotSpot release history
 
-This ledger records the OpenWrt APK artifacts preserved in `dist/`. The
-checksums are authoritative for the files in this repository. Releases r18–r51
-were produced during the same implementation run; where no separate Git
-commit was preserved for an individual artifact, the entry is marked as an
-artifact checkpoint rather than presented as a fabricated commit history.
+This ledger records package release checkpoints and the evidence associated
+with them. Historical APK checksums refer to artifacts preserved during the
+implementation run. Current releases are rebuilt from source by CI; the
+release asset and its `SHA256SUMS` file are authoritative for that release.
+Where no separate Git commit was preserved for an individual historical
+artifact, the entry is marked as an artifact checkpoint rather than presented
+as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r51` is the current source/build checkpoint; r51 is the final installed
-and tested package on the current target. r50 is the preceding checkpoint.
-target-validated on the current target. r40 removes upstream-address assumptions
+`1.2.0-r60` is the current source/build checkpoint. r60 is the candidate for
+the next CI-built release; its exact commit SHA, APK SHA-256, and acceptance
+evidence must be recorded by the release workflow. Earlier packages remain
+field evidence and rollback checkpoints. r40 removes upstream-address assumptions
 from local FAS activation, r41 adds a dynamic-address contract guard and
 rejects duplicate/overlapping LAN/WAN topology, r42 makes the preflight
 directly executable, r44 discovers the LAN interface from UCI, and r45 waits
@@ -70,7 +73,7 @@ final release freeze.
 | r57 | `f1a25782cca49f2a63baca43348394ca4feb0142a4e579988a3f445155b60fab` | Refines live-apk image-root detection for the stdout compatibility post-install path. |
 | r58 | `9b00c3dddcb7ec164260ee1965f326294db9f08d5c09f0078abcee92a03aa34f` | Runs the compatibility patch on both fresh install and upgrade; target post-upgrade applied it and openNDS reached stable `ndsctl` readiness with preauthenticated-client rejection. |
 | r59 | pending | Adds the LuCI enable/disable control and SQLite-backed, quota-aware reboot/session-process restore outside BinAuth; target validation pending. |
-| r60 | `e3f696fc7244f5924b172efe0e8d90744ab742edd5fe600366eaab2d020e2649` | Resolves the target's `ndsctl auth` MAC limitation by discovering the live client IP from `ndsctl status` without hardcoding any router address; enabled and disabled restore paths were validated on the EA8300. |
+| r60 | CI-generated | Resolves the target's `ndsctl auth` MAC limitation by discovering the live client IP from `ndsctl status` without hardcoding any router address; enabled and disabled restore paths were validated on the EA8300. The release workflow records the exact commit SHA and artifact SHA-256. |
 
 ## Existing GitHub history
 

@@ -65,14 +65,18 @@ but the target still has an independent openNDS startup/reload blocker
 compatibility fix during install and upgrade. The package intentionally does not replace `dnsmasq` or
 silently alter an existing FAS configuration.
 
-The current candidate APK is available at
-[`dist/luci-app-open-hotspot-1.2.0-r60.apk`](dist/luci-app-open-hotspot-1.2.0-r60.apk)
-with SHA-256 recorded in `dist/SHA256SUMS` after the build.
+The current APK is built by CI from source and attached to the matching GitHub
+Release. Local `dist/` files are build outputs and are not release inputs.
+The exact commit SHA and SHA-256 are recorded in the release assets and
+acceptance matrix. See [`docs/release-policy.md`](docs/release-policy.md),
+[`docs/release-acceptance-matrix.md`](docs/release-acceptance-matrix.md), and
+[`docs/branch-protection.md`](.github/branch-protection.md) for the release
+and repository-governance gates.
 
 The preserved APK-by-APK ledger is in
 [docs/release-history.md](docs/release-history.md).
 
-Release r51 preserves the topology preflight, makes it directly executable,
+Release r60 preserves the topology preflight, makes it directly executable,
 discovers the LAN interface from UCI, waits for the target's observed startup
 window, keeps the FAS firewall allowance idempotent, and checks openNDS
 readiness during the Open-HotSpot init path when local FAS is enabled. It is
@@ -82,7 +86,7 @@ the WARP/captive-portal and isolated-SSID acceptance tests in
 [`docs/router-access-and-iot.md`](docs/router-access-and-iot.md);
 r53 removes the upgrade-time openNDS restart race and r54 waits for an
 already-starting openNDS process before recovery; both add bounded runtime
-r58 includes the dedicated-client lockout guard fail-closed behavior before touching
+r60 includes the dedicated-client lockout guard fail-closed behavior before touching
 firewall state;
 the preflight rejects duplicate local addresses,
 an Open-HotSpot LAN equal to the default gateway, and LAN/WAN subnet overlap.

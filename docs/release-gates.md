@@ -28,7 +28,7 @@ gate below has evidence from the physical target.
 
 ## Current decision
 
-`r52` is suitable for controlled pilot validation and rollback testing. It is
+`r60` is suitable for controlled pilot validation and rollback testing. It is
 not approved as a production baseline. The next field session must prioritize
 the disposable client flow, counter/quota mapping, and restart behavior; code
 changes must not claim those gates closed without target evidence.

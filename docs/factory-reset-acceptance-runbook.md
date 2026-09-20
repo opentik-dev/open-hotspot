@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Install the r51 candidate on a disposable factory-reset OpenWrt router and
+Install the r60 candidate on a disposable factory-reset OpenWrt router and
 collect the evidence required to close the remaining spec-kit gates. This is a
 pilot/acceptance procedure, not a production deployment procedure.
 
@@ -17,7 +17,7 @@ pilot/acceptance procedure, not a production deployment procedure.
 - [ ] Preserve any required configuration backup before pressing reset.
 - [ ] Have an Ethernet admin laptop, a separate Wi-Fi/LAN client, and a WAN
       uplink available.
-- [ ] Have the r51 APK and its checksum available from the repository.
+- [ ] Download the r60 APK and `SHA256SUMS` from the matching GitHub Release.
 - [ ] Have a traffic test endpoint available for both upload and download. If
       `iperf3` is used, place the server outside the router's management plane.
 - [ ] Use a new root password before any client test.
@@ -70,7 +70,7 @@ address or subnet. Use this separation during the test:
 The Ethernet cable to the Open-HotSpot router is a management path only unless
 it is connected to the router's WAN/uplink interface. A separate test client
 must join the Open-HotSpot SSID or LAN to traverse openNDS; a client that stays
-on the primary Wi-Fi will bypass the captive portal. The r51 preflight reports
+on the primary Wi-Fi will bypass the captive portal. The r60 preflight reports
 and blocks duplicate local addresses, LAN equal to the default gateway, and
 LAN/WAN subnet overlap; it does not rewrite network settings automatically.
 
@@ -102,10 +102,12 @@ record the new fingerprint.
 
 ### 1. Freeze the delivered artifact
 
-From the repository root:
+From the repository root, after downloading the APK and checksum file from the
+matching GitHub Release:
 
 ```sh
-sha256sum -c <(grep 'luci-app-open-hotspot-1.2.0-r51.apk' dist/SHA256SUMS)
+RELEASE_DIR="${RELEASE_DIR:?Set RELEASE_DIR to the downloaded release directory}"
+sha256sum -c "$RELEASE_DIR/SHA256SUMS"
 python3 -m unittest discover -s tests -v
 sh tests/test_shell_syntax.sh
 sh tests/test_quota.sh
@@ -114,7 +116,7 @@ sh tests/test_quota.sh
 **Expected result:** the checksum is `OK` and all checks pass. Record the
 terminal output with the test evidence.
 
-**If it fails:** stop. Do not install a rebuilt or unverified APK under the r51
+**If it fails:** stop. Do not install a rebuilt or unverified APK under the r60
 name.
 
 ### 2. Factory reset and establish admin access on candidate slot 01
@@ -138,7 +140,7 @@ router is reachable by the admin plane only; no client is connected yet.
 **If it fails:** stop and recover Ethernet/IP access before installing. Do not
 change the package or reset again without recording the failure.
 
-After the first login, verify the boot identity before installing r51. Capture
+After the first login, verify the boot identity before installing r60. Capture
 the Advanced Reboot page showing slot 01 as the current candidate and slot 02
 as the protected recovery slot. Install `admin-slot-01.pub` and confirm that
 key-only access works with the slot-01 known-hosts file.
@@ -177,14 +179,14 @@ path to use if slot 01 becomes unreachable after a reversible change.
 router's documented recovery/boot-selector procedure and keep the candidate
 slot unchanged until access is restored.
 
-### 4. Preflight the target and install r51 on candidate slot 01
+### 4. Preflight the target and install r60 on candidate slot 01
 
 Copy and install the exact artifact:
 
 ```sh
-tar -C dist -cf - luci-app-open-hotspot-1.2.0-r51.apk | \
+tar -C "$RELEASE_DIR" -cf - luci-app-open-hotspot-1.2.0-r60.apk | \
 $SLOT01_SSH root@"$TARGET_IP" 'tar -xf - -C /tmp'
-$SLOT01_SSH root@"$TARGET_IP" 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r51.apk'
+$SLOT01_SSH root@"$TARGET_IP" 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r60.apk'
 $SLOT01_SSH root@"$TARGET_IP" 'uci set system.@system[0].hostname=open-hotspot-test; uci commit system'
 $SLOT01_SSH -tt root@"$TARGET_IP" 'passwd'
 ```
@@ -303,7 +305,7 @@ and verify all of the following there:
 4. Slot 02 does not show slot-01's SQLite accounts unless an explicit backup
    import was performed.
 
-Switch back to slot 01 and verify the r51 package, schema, and evidence are
+Switch back to slot 01 and verify the r60 package, schema, and evidence are
 still present. This demonstrates rollback availability without claiming that
 an active client session survives a partition switch. A partition switch is a
 router reboot and must be accounted for separately in T011.
@@ -340,7 +342,8 @@ operator records the final decision as either `GO` or `NO-GO`.
       gates.
 - [ ] `T090` is closed only after the complete physical-router acceptance.
 - [ ] The router has a non-default root password and a recorded management IP.
-- [ ] The final APK checksum matches `dist/SHA256SUMS`.
+- [ ] The installed APK checksum matches the `SHA256SUMS` file downloaded from
+      the matching GitHub Release.
 - [ ] Temporary test accounts, vouchers, and client data are removed or marked
       as intentionally retained test fixtures.
 

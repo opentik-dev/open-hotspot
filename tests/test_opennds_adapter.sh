@@ -9,11 +9,11 @@ mock="$tmp/ndsctl"
 log="$tmp/args"
 printf '%s\n' '#!/bin/sh' \
 	'printf "%s\\n" "$*" >>"${OPEN_HOTSPOT_MOCK_LOG:?}"' \
-	'case "$1" in status) exit 0;; esac' >"$mock"
+	'case "$1" in status|stop|start|restart) exit 0;; esac' >"$mock"
 chmod +x "$mock"
 
 init="$tmp/opennds-init"
-printf '%s\n' '#!/bin/sh' 'test "$1" = restart' >"$init"
+printf '%s\n' '#!/bin/sh' 'case "$1" in stop|start|restart) exit 0;; esac' >"$init"
 chmod +x "$init"
 
 export OPEN_HOTSPOT_NDSCTL_BIN="$mock"

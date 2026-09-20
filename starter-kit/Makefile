@@ -4,7 +4,7 @@ PKG_NAME:=luci-app-open-hotspot
 PKG_VERSION:=1.2.0
 PKG_RELEASE:=60
 PKG_LICENSE:=GPL-2.0-or-later
-PKG_MAINTAINER:=
+PKG_MAINTAINER:=Mohammed Al-Haddad <mohammed@example.com>
 
 LUCI_TITLE:=LuCI support for Open-HotSpot (openNDS account/quota manager)
 LUCI_DEPENDS:=+opennds +sqlite3-cli +php8-cgi +php8-mod-pdo-sqlite +luci-base +luci-compat

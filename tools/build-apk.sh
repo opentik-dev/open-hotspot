@@ -16,10 +16,11 @@ VERSION=$(sed -n 's/^PKG_VERSION:=//p' "$PROJECT/starter-kit/Makefile")
 
 output="$PROJECT/dist/luci-app-open-hotspot-${VERSION}-r${RELEASE}.apk"
 build_dir="$PROJECT/.build/dist-r${RELEASE}"
+mkdir -p "$PROJECT/.build" "$PROJECT/dist"
+mkdir -p "$build_dir"
 root=$(mktemp -d "$PROJECT/.build/apk-root-r${RELEASE}.XXXXXX")
 trap 'rm -rf "$root"' EXIT
-
-mkdir -p "$root/usr/lib/lua/luci" "$root/lib/apk/packages" "$build_dir"
+mkdir -p "$root/usr/lib/lua/luci" "$root/lib/apk/packages"
 cp -a "$PROJECT/starter-kit/luasrc/." "$root/usr/lib/lua/luci/"
 cp -a "$PROJECT/starter-kit/root/." "$root/"
 printf '%s\n' '/etc/config/open-hotspot' > "$root/lib/apk/packages/luci-app-open-hotspot.conffiles"

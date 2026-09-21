@@ -74,6 +74,11 @@ admin_profile_update() {
 	_admin_nonnegative "$time_limit" && _admin_nonnegative "$upload_limit" || return 1
 	_admin_nonnegative "$download_limit" && _admin_nonnegative "$upload_rate" || return 1
 	_admin_nonnegative "$download_rate" && _admin_positive "$max_devices" || return 1
+	account_ids=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT id FROM accounts WHERE profile_id=$id AND status='active' AND deleted_at IS NULL;") || return 1
+	for account_id in $account_ids; do
+		_admin_deauth_account_sessions "$account_id" || return 1
+	done
 	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE profiles SET name='$(_sql_escape "$name")', period_type='$period',
 	 time_limit_s=$time_limit, upload_limit_b=$upload_limit,
@@ -126,6 +131,12 @@ admin_account_update() {
 	_valid_int "$profile_id" || return 1
 	_admin_status "$status" || return 1
 	expires_sql=$(_admin_expiry_sql "$expires_at") || return 1
+	old_profile=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT profile_id FROM accounts WHERE id=$id AND deleted_at IS NULL LIMIT 1;") || return 1
+	[ -n "$old_profile" ] || return 1
+	if [ "$status" = suspended ] || [ "$old_profile" -ne "$profile_id" ]; then
+		_admin_deauth_account_sessions "$id" || return 1
+	fi
 	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE accounts SET username='$(_sql_escape "$username")', profile_id=$profile_id,
 	 status='$status', expires_at=$expires_sql, updated_at=datetime('now')
@@ -158,6 +169,17 @@ admin_account_renew() {
 	db_log_event account_renew "$id" "$renewed_at" || true
 }
 
+_admin_deauth_account_sessions() {
+	id="$1"; _valid_int "$id" || return 1
+	macs=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT d.mac FROM devices d JOIN active_sessions s ON s.device_id=d.id
+		  WHERE d.account_id=$id AND s.state='active' ORDER BY d.mac;") || return 1
+	for mac in $macs; do
+		_valid_mac "$mac" || return 1
+		"$OPEN_HOTSPOT_NDS_HELPER" deauth "$mac" || return 1
+	done
+}
+
 admin_account_set_pin() {
 	id="$1"; _valid_int "$id" || return 1
 	iter=$(uci -q get open-hotspot.global.pin_iterations 2>/dev/null || printf '100000')
@@ -174,6 +196,7 @@ admin_account_set_pin() {
 
 admin_account_delete() {
 	id="$1"; _valid_int "$id" || return 1
+	_admin_deauth_account_sessions "$id" || return 1
 	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE accounts SET status='suspended', deleted_at=datetime('now'),
 	 updated_at=datetime('now') WHERE id=$id AND deleted_at IS NULL;
@@ -202,6 +225,22 @@ admin_device_set_status() {
 	id="$1"; status="$2"
 	_valid_int "$id" || return 1
 	case "$status" in blocked|active) ;; *) return 1 ;; esac
+	if [ "$status" = blocked ]; then
+		row=$(sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
+			"SELECT account_id,mac FROM devices WHERE id=$id LIMIT 1;") || return 1
+		[ -n "$row" ] || return 1
+		old_ifs="$IFS"; IFS='|'
+		read -r account_id mac <<EOF
+$row
+EOF
+		IFS="$old_ifs"
+		_valid_int "$account_id" && _valid_mac "$mac" || return 1
+		active=$(sqlite3 -batch -noheader "$DB_PATH" \
+			"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state='active';") || return 1
+		if [ "$active" -gt 0 ]; then
+			"$OPEN_HOTSPOT_NDS_HELPER" deauth "$mac" || return 1
+		fi
+	fi
 	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE devices SET status='$status', updated_at=datetime('now') WHERE id=$id;
 	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null

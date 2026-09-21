@@ -165,71 +165,41 @@ function normalized_mac(string $mac): string
     return $mac;
 }
 
-function router_timezone(): DateTimeZone
+function period_helper_window(string $type, ?string $renewedAt, DateTimeImmutable $now): array
 {
-    $candidate = getenv('OPEN_HOTSPOT_TIMEZONE') ?: '';
-    if ($candidate === '' && is_readable('/etc/TZ')) {
-        $candidate = trim((string) file_get_contents('/etc/TZ'));
+    if (!in_array($type, ['hourly', 'daily', 'monthly', 'yearly', 'none'], true)) {
+        fail_page('نوع الفترة غير صالح.');
     }
-    if ($candidate === '' && is_executable('/sbin/uci')) {
-        $candidate = trim((string) shell_exec('/sbin/uci -q get system.@system[0].timezone 2>/dev/null'));
+    $helper = getenv('OPEN_HOTSPOT_PERIOD_HELPER') ?: '/usr/lib/open-hotspot/period.sh';
+    if (!is_readable($helper)) {
+        fail_page('مساعد الفترات غير متاح.', 503);
     }
-    try {
-        return new DateTimeZone($candidate !== '' ? $candidate : 'UTC');
-    } catch (Throwable $error) {
-        return new DateTimeZone('UTC');
+    $renewed = $renewedAt ?? '';
+    $command = '/bin/sh -c ' . escapeshellarg(
+        '. ' . escapeshellarg($helper) . '; period_window_effective "$1" "$2" "$3"'
+    ) . ' -- ' . escapeshellarg($type) . ' ' . escapeshellarg($renewed)
+        . ' ' . escapeshellarg((string) $now->format('U'));
+    $output = shell_exec($command);
+    if (!is_string($output)) {
+        fail_page('تعذر حساب فترة الحصة.', 503);
     }
+    $parts = explode("\t", trim($output));
+    if (count($parts) !== 4
+        || preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $parts[0]) !== 1
+        || preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $parts[1]) !== 1) {
+        fail_page('نتيجة الفترة غير صالحة.', 503);
+    }
+    return [$parts[0], $parts[1]];
 }
 
 function period_bounds(string $type, DateTimeImmutable $now): array
 {
-    $local = $now->setTimezone(router_timezone());
-    switch ($type) {
-        case 'hourly':
-            $start = $local->setTime((int) $local->format('H'), 0, 0);
-            $end = $start->modify('+1 hour');
-            break;
-        case 'daily':
-            $start = $local->setTime(0, 0, 0);
-            $end = $start->modify('+1 day');
-            break;
-        case 'monthly':
-            $start = $local->modify('first day of this month')->setTime(0, 0, 0);
-            $end = $start->modify('+1 month');
-            break;
-        case 'yearly':
-            $start = $local->setDate((int) $local->format('Y'), 1, 1)->setTime(0, 0, 0);
-            $end = $start->modify('+1 year');
-            break;
-        case 'none':
-            return ['1970-01-01T00:00:00Z', '9999-12-31T23:59:59Z'];
-        default:
-            fail_page('نوع الفترة غير صالح.');
-    }
-    $utc = new DateTimeZone('UTC');
-    return [
-        $start->setTimezone($utc)->format('Y-m-d\TH:i:s\Z'),
-        $end->setTimezone($utc)->format('Y-m-d\TH:i:s\Z'),
-    ];
+    return period_helper_window($type, null, $now);
 }
 
 function effective_period_bounds(string $type, DateTimeImmutable $now, ?string $renewedAt): array
 {
-    [$start, $end] = period_bounds($type, $now);
-    if ($renewedAt === null || $renewedAt === '') {
-        return [$start, $end];
-    }
-    try {
-        $renewed = new DateTimeImmutable($renewedAt, new DateTimeZone('UTC'));
-        $startTime = new DateTimeImmutable($start, new DateTimeZone('UTC'));
-        $endTime = new DateTimeImmutable($end, new DateTimeZone('UTC'));
-        if ($renewed > $startTime && $renewed < $endTime) {
-            return [$renewed->format('Y-m-d\TH:i:s\Z'), $end];
-        }
-    } catch (Throwable $error) {
-        // Invalid renewal state falls back to the normal calendar window.
-    }
-    return [$start, $end];
+    return period_helper_window($type, $renewedAt, $now);
 }
 
 function post_value(string $name): string

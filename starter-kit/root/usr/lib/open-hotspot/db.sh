@@ -11,6 +11,15 @@ SCHEMA_PATH="${OPEN_HOTSPOT_SCHEMA_PATH:-/usr/lib/open-hotspot/schema.sql}"
 DB_SCHEMA_VERSION=4
 DB_MIGRATIONS_PATH="${OPEN_HOTSPOT_MIGRATIONS_PATH:-/usr/lib/open-hotspot/migrations}"
 
+# All manager-side sqlite3 calls use the same bounded lock wait and enforce
+# foreign keys for every connection.  The shell entry points source this file
+# before doing reads or writes; wrapping the command here prevents a new
+# maintenance/admin path from silently reintroducing unbounded or orphaning
+# behavior.
+sqlite3() {
+	command sqlite3 -cmd '.timeout 5000' -cmd 'PRAGMA foreign_keys=ON;' "$@"
+}
+
 _db_is_empty() {
 	[ "$(sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" \
 		"SELECT count(*) FROM sqlite_master WHERE type IN ('table','index','trigger','view') AND name NOT LIKE 'sqlite_%';" 2>/dev/null || echo 1)" = "0" ]
@@ -92,6 +101,11 @@ _sql() { sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" "$1"; }
 
 db_schema_version() {
 	_sql "SELECT version FROM schema_meta ORDER BY version DESC LIMIT 1;"
+}
+
+db_expire_pending_auth() {
+	_sql "UPDATE auth_transactions SET state='expired'
+	       WHERE state='pending' AND julianday(expires_at) <= julianday('now');"
 }
 
 db_account_get_by_username() {
@@ -225,6 +239,16 @@ db_session_period_type() {
          JOIN profiles p ON p.id = a.profile_id
         WHERE s.session_key = '$(_sql_escape "$session_key")'
           AND s.state = 'active' AND d.mac = '$mac' LIMIT 1;"
+}
+
+db_session_key_by_mac() {
+	mac="$1"
+	_valid_mac "$mac" || return 1
+	_sql "SELECT s.session_key
+         FROM active_sessions s
+         JOIN devices d ON d.id = s.device_id
+        WHERE s.state = 'active' AND d.mac = '$mac'
+        ORDER BY s.id DESC LIMIT 1;"
 }
 
 # db_session_close <method> <mac> <session_key> <incoming> <outgoing>

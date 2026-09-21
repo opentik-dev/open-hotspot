@@ -83,8 +83,19 @@ The router now reports `BASE_READY`, local FAS level 1 on port `2080`, and
 `local_fas_enabled=1`. `openNDS` reports the local FAS endpoint on the current
 gateway address and uhttpd listens on port 2080. The gateway client-status
 hostname is `status.client`; openNDS refreshes its local resolution at runtime.
-The FAS configuration leaves both `fasremoteip` and `fasremotefqdn` unset, so
-the upstream router/WAN address is not a dependency.
+The FAS configuration leaves `fasremoteip` unset and uses
+`fasremotefqdn=status.client` together with `gatewayfqdn=status.client`. This
+is the openNDS 11 mode-0 local-FAS contract: the hostname is resolved by the
+router's captive-DNS state, so the upstream router/WAN address is not a
+dependency.
+
+The manager does not replace the stock `binauth_log.sh`; activation sets
+`custombinauth=/usr/lib/opennds/custombinauth.sh` so the SQLite adapter runs
+inside the stock dispatcher. On the observed openNDS 11 target, `ndscfg` can
+drop command-line arguments with non-tty stdin, so the package also installs a
+recoverable UCI fallback in that dispatcher. Without this fallback, openNDS
+can show a client as `Authenticated` while the manager database remains
+`pending` with no device or active session.
 
 The custom FAS page is packaged at `/www/nds/fas.php` with its stylesheet at
 `/www/nds/open-hotspot-fas.css`. It is intentionally fail-closed: the page

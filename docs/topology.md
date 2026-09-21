@@ -33,11 +33,12 @@ checks are diagnostics and do not automatically rewrite router networking.
 
 ## FAS address rule
 
-Local activation must leave both `fasremoteip` and `fasremotefqdn` unset. It
-sets `gatewayfqdn` to `status.client` and keeps the FAS listener on the local
-router at port `2080`. openNDS then derives the current gateway address at
-runtime and maintains the local status hostname; no upstream router address is
-stored in the FAS contract.
+Local activation must leave `fasremoteip` unset and set both
+`fasremotefqdn` and `gatewayfqdn` to `status.client`. openNDS 11 otherwise
+renders `Remote Portal Not Defined` when `login_option_enabled=0`, even when a
+local listener exists. The FAS listener remains on the local router at port
+`2080`. `status.client` is resolved by the router's captive-DNS state, so no
+LAN/WAN address is stored in the FAS contract.
 
 This does not make the local router address irrelevant to packet delivery: a
 client still needs a route to the Open-HotSpot gateway. It removes the fragile
@@ -48,7 +49,8 @@ network change so its generated local DNS/redirect state is refreshed.
 ## Acceptance checks
 
 - [ ] Change the upstream router/Wi-Fi source without editing openNDS FAS UCI.
-- [ ] Confirm `fasremoteip` and `fasremotefqdn` are empty.
+- [ ] Confirm `fasremoteip` is empty and both FAS/gateway hostnames are
+      `status.client`.
 - [ ] Confirm `gatewayfqdn=status.client`.
 - [ ] Confirm `http://status.client` resolves for a client connected to
       Open-HotSpot `br-lan`.

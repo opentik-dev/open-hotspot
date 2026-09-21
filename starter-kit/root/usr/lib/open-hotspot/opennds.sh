@@ -1,12 +1,14 @@
 #!/bin/sh
 # opennds.sh — the only non-BinAuth openNDS control adapter.
 #
-# The target contract is openNDS 10.3.1-r3 on OpenWrt 25.12.5. This is the
-# only module that knows the ndsctl argument order and native units. It must
-# never be sourced by BinAuth.
+# This is the only module that knows the ndsctl argument order and native
+# units. The installed openNDS version must resolve to a versioned contract
+# below; unknown versions fail closed. This module must never be sourced by
+# BinAuth.
 
 OPEN_HOTSPOT_NDSCTL_BIN="${OPEN_HOTSPOT_NDSCTL_BIN:-/usr/bin/ndsctl}"
 OPEN_HOTSPOT_NDS_INIT="${OPEN_HOTSPOT_NDS_INIT:-/etc/init.d/opennds}"
+OPEN_HOTSPOT_ADAPTER_DIR="${OPEN_HOTSPOT_ADAPTER_DIR:-/usr/lib/open-hotspot/adapters}"
 
 _opennds_nonneg_int() {
 	case "$1" in
@@ -48,15 +50,49 @@ _opennds_seconds_to_minutes() {
 	[ "$seconds" -eq 0 ] && printf '0\n' || printf '%s\n' $(( (seconds + 59) / 60 ))
 }
 
+opennds_adapter_id() {
+	case "$1" in
+		10.3.1*) printf '%s\n' 'opennds-v10.3.1-r3' ;;
+		11.0.*) printf '%s\n' 'opennds-v11.0.0' ;;
+		*) return 1 ;;
+	esac
+}
+
+opennds_adapter_contract() {
+	adapter_id=$(opennds_adapter_id "$1") || return 1
+	adapter_file="$OPEN_HOTSPOT_ADAPTER_DIR/$adapter_id.sh"
+	[ -r "$adapter_file" ] || return 1
+	# shellcheck disable=SC1090
+	. "$adapter_file"
+	opennds_adapter_contract_selftest
+}
+
+opennds_detect_version() {
+	"$OPEN_HOTSPOT_NDSCTL_BIN" status 2>/dev/null |
+		sed -n 's/^Version:[[:space:]]*//p' | sed -n '1p'
+}
+
+opennds_current_clients() {
+	clients=$("$OPEN_HOTSPOT_NDSCTL_BIN" status 2>/dev/null |
+		sed -n 's/^Current clients:[[:space:]]*//p' | sed -n '1p')
+	case "$clients" in ''|*[!0-9]*) return 1 ;; esac
+	printf '%s\n' "$clients"
+}
+
 opennds_validate_config() {
 	[ -x "$OPEN_HOTSPOT_NDSCTL_BIN" ] || return 1
-	"$OPEN_HOTSPOT_NDSCTL_BIN" status >/dev/null 2>&1
+	status=$([ -x "$OPEN_HOTSPOT_NDSCTL_BIN" ] &&
+		"$OPEN_HOTSPOT_NDSCTL_BIN" status 2>/dev/null) || return 1
+	version=$(printf '%s\n' "$status" | sed -n 's/^Version:[[:space:]]*//p' | sed -n '1p')
+	[ -n "$version" ] || return 1
+	opennds_adapter_contract "$version"
 }
 
 opennds_wait_ready() {
 	tries=0
 	while [ "$tries" -lt 120 ]; do
-		if "$OPEN_HOTSPOT_NDSCTL_BIN" status >/dev/null 2>&1; then
+		if "$OPEN_HOTSPOT_NDSCTL_BIN" status >/dev/null 2>&1 &&
+			[ -n "$(opennds_detect_version)" ]; then
 			return 0
 		fi
 		tries=$((tries + 1))
@@ -90,7 +126,11 @@ opennds_reload() {
 opennds_deauth() {
 	[ "$#" -eq 1 ] || return 1
 	_opennds_mac "$1" || return 1
-	"$OPEN_HOTSPOT_NDSCTL_BIN" deauth "$1"
+	# Some openNDS 11 target builds accept IP for deauth but reject an
+	# otherwise valid MAC. Resolve from live state first and retain the MAC as
+	# the documented ndsctl fallback when no live IP is available.
+	target=$(_opennds_auth_target "$1") || return 1
+	"$OPEN_HOTSPOT_NDSCTL_BIN" deauth "$target"
 }
 
 _opennds_auth_target() {
@@ -139,6 +179,7 @@ opennds_live_clients() {
 
 case "${1:-}" in
 	status) opennds_validate_config ;;
+	adapter-contract) opennds_adapter_contract "${2:-$(opennds_detect_version)}" ;;
 	live-clients) opennds_live_clients ;;
 	deauth) shift; opennds_deauth "$@" ;;
 esac

@@ -1,154 +1,143 @@
-# Open-HotSpot — Spec-Kit Project (v1.2)
+# Open-HotSpot
 
-A LuCI management layer over **openNDS** for a single OpenWrt router:
-accounts (with multiple devices each), quota/speed profiles, vouchers,
-automatic cutoff, and a live dashboard — all local, SQLite-backed, no
-RADIUS/external server. See `specs/001-open-hotspot/spec.md` for the full
-specification.
+Open-HotSpot is a local captive-portal and hotspot management system for
+OpenWrt, built around [openNDS](https://opennds.readthedocs.io/) and managed
+through LuCI.
 
-## What changed from v1.0 (post architecture-review)
-1. **Identity model fixed**: an Account is no longer a MAC address. It owns
-   0..N `devices`, each with its own MAC, capped by `profiles.max_devices`.
-2. **Local FAS flow is implemented and fail-closed**: `www/nds/fas.php`
-   verifies username+PIN locally (PIN never reaches openNDS or a log), creates
-   an opaque one-time transaction, and hands BinAuth a verified identity via
-   the custom variable — `binauth.sh` no longer trusts a bare MAC to mean a
-   specific account. The real-client authorization and accounting proof is
-   still an open acceptance gate.
-3. **Password hashing corrected**: PBKDF2-HMAC-SHA256 (`pbkdf2.sh`, via the
-   verified PHP `hash_pbkdf2` API) is the only accepted credential scheme. If
-   the target's `php8-cgi` KDF path is unavailable, setup fails closed.
-4. **`db.sh`'s security claim corrected**: it does allow-list validation
-   (`_valid_ident`/`_valid_mac`/`_valid_int`) + SQL-string escaping, not
-   SQLite parameter binding — v1.0's comment overclaimed this.
-5. **SC-006 (no double-counting) now has a mechanism, not just a test**: the
-   `usage_events.event_key` unique constraint with `INSERT OR IGNORE` gates
-   every usage accrual — covered by the domain contract tests (two identical
-   callbacks accrue once).
-6. **Vouchers added to v1** (batch-generate, self-service redemption),
-   using the same DB-native concurrency pattern (`UPDATE ... WHERE
-   status='unused'`) — also smoke-tested here.
-7. **`cycle.sh` trimmed**; WAL checkpoint/log rotation/pruning moved to a
-   separate once-daily `maintenance.sh` so the fast tick stays minimal.
-8. **`init.d/open-hotspot` clarified**: it registers/deregisters cron
-   entries and exits — it is not a persistent daemon.
-9. **Period-boundary behavior made explicit** (FR-006): a live session is
-   never force-disconnected purely for a calendar rollover; `cycle.sh`
-   reissues an updated ceiling at the next tick instead.
-10. Target-specific contracts are recorded, while the live-client gates remain
-    explicit in `tasks.md`: counter direction (T006), restart/session restore
-    (T011), the disposable end-to-end flow (T012), and final acceptance.
+It provides local accounts, multiple devices per account, vouchers, bandwidth
+profiles, aggregate quotas, automatic access control, usage history, and a live
+dashboard without RADIUS, cloud services, or an external database.
 
-## Layout
-Same spec-kit shape as before: `.specify/memory/constitution.md`,
-`specs/001-open-hotspot/{spec,research,data-model,plan,quickstart,tasks}.md`,
-and `starter-kit/` with a working schema + shell implementation of the
-riskiest pieces (already smoke-tested for SQL-injection rejection and the
-two concurrency guarantees — see commit history / test output).
+> **Status: pre-production acceptance candidate.**
+>
+> The project has a working implementation and a substantial automated test
+> suite, but the physical-router gates listed in [`docs/project-status.md`](docs/project-status.md)
+> are not all accepted yet. Do not treat the current candidate as a production
+> baseline until the release gates are closed.
 
-## Physical-router checkpoint
+## Why Open-HotSpot?
 
-The OpenWrt 25.12.5 SDK package was built as
-`luci-app-open-hotspot 1.2.0-r60`; r60 is the current candidate package for the Linksys EA8300.
-The local FAS listener is active on port `2080`; the exact
-installation record, backup locations, SHA-256, rollback command, SDK/feed
-procedure, and remaining live-client gates are in
-[`specs/001-open-hotspot/quickstart.md`](specs/001-open-hotspot/quickstart.md).
-The release decision and closure evidence for every remaining blocker are
-tracked in [`docs/release-gates.md`](docs/release-gates.md).
+Small hotspot networks should not need a cloud subscription or a separate
+authentication server. Open-HotSpot keeps identity, policy, accounting, and
+administration on the OpenWrt router while delegating captive-portal and
+traffic enforcement to openNDS.
 
-The router's upstream can be Ethernet, Wi-Fi, or another DHCP source; its
-address is not part of the local FAS contract. `dnsmasq-full` is installed with
-nftset support on the recorded target. This closes the nftset capability gap,
-but the target still has an independent openNDS startup/reload blocker
-(`exit_code=139`) before r58. r58 applies the target-proven procd stdout
-compatibility fix during install and upgrade. The package intentionally does not replace `dnsmasq` or
-silently alter an existing FAS configuration.
+## What you get
 
-The current candidate APK is available at
-[`dist/luci-app-open-hotspot-1.2.0-r60.apk`](dist/luci-app-open-hotspot-1.2.0-r60.apk)
-with SHA-256 recorded in `dist/SHA256SUMS` after the build.
+| Capability | Description |
+|---|---|
+| Accounts | Local username and PIN accounts |
+| Multiple devices | Several devices associated with one account |
+| Vouchers | Atomic one-time voucher redemption |
+| Profiles | Time, rate, quota, and device-limit policies |
+| Quotas | Aggregate account usage by period |
+| Automatic cutoff | New access is denied when a budget is exhausted |
+| Dashboard | Live openNDS state combined with SQLite history |
+| Local authentication | No RADIUS, cloud, or external auth service |
+| LuCI | Native OpenWrt administration interface |
+| Arabic portal | Bundled Arabic RTL and English templates |
 
-The preserved APK-by-APK ledger is in
-[docs/release-history.md](docs/release-history.md).
+## How it works
 
-Release r51 preserves the topology preflight, makes it directly executable,
-discovers the LAN interface from UCI, waits for the target's observed startup
-window, keeps the FAS firewall allowance idempotent, and checks openNDS
-readiness during the Open-HotSpot init path when local FAS is enabled. It is
-target-validated with local FAS enabled. r52 adds an address-independent
-router-admin deny control for a dedicated client/IoT UCI network and documents
-the WARP/captive-portal and isolated-SSID acceptance tests in
-[`docs/router-access-and-iot.md`](docs/router-access-and-iot.md);
-r53 removes the upgrade-time openNDS restart race and r54 waits for an
-already-starting openNDS process before recovery; both add bounded runtime
-r58 includes the dedicated-client lockout guard fail-closed behavior before touching
-firewall state;
-the preflight rejects duplicate local addresses,
-an Open-HotSpot LAN equal to the default gateway, and LAN/WAN subnet overlap.
-It also accepts the documented openNDS `hid` field and the
-`client_hid` compatibility spelling observed in some captive-client flows.
-Requests without a verified FAS payload remain rejected.
-
-### Captive-portal URL contract
-
-The built-in openNDS client-status page is available at
-`http://status.client`; openNDS maintains this hostname as the current local
-gateway alias at runtime. The custom Arabic/English login page is
-served by the local FAS endpoint at `/nds/fas.php`, but it must be opened by
-the openNDS captive-portal flow so that the documented FAS context is present.
-Opening `/nds/fas.php` directly, or when a captive-client probe omits the FAS
-payload, intentionally shows the styled “missing FAS data” page and does not
-authenticate the client. Use the page's **Open portal** button or navigate to
-`http://status.client` over plain HTTP, then submit the login form.
-
-Local FAS activation intentionally leaves both `fasremoteip` and
-`fasremotefqdn` unset. openNDS therefore derives the current gateway address
-at runtime; changing the upstream router or WAN lease does not require a FAS
-address edit. The client must connect to the Open-HotSpot router's managed
-`br-lan`; a client connected only to upstream Wi-Fi bypasses openNDS.
-
-The screenshot showing the “missing FAS data” card is therefore a captured
-fail-closed diagnostic page, not evidence that the FAS page is absent from the
-APK. The plain status page seen during the field test was captured while
-openNDS was in a startup loop; after r51 recovery, its CSS/image paths and the
-CPD-to-FAS redirect were verified. The package post-install also runs the base
-setup boundary on fresh installs and upgrades. Explicit FAS activation generates
-a random local key if the factory router has none; the key is never printed or
-committed. The remaining physical-router gate is a
-successful disposable-client session: portal → FAS login → openNDS
-`Authenticated` state.
-
-## Distribution
-
-The OpenWrt APK is not a GitHub Packages format. GitHub Packages currently
-supports npm, RubyGems, Maven/Gradle, NuGet, Docker, and OCI registries, so the
-repository's Packages page correctly remains empty. The APK is distributed as
-a repository artifact and, when a `v*` tag is pushed, the included workflow
-publishes it as a GitHub Release asset. See [Releases](https://github.com/opentik-dev/open-hotspot/releases).
-
-## LuCI screenshots
-
-These screenshots were captured from the installed package on the test router.
-The yellow banner is intentional: the router still needs a root password before
-handoff.
-
-![Open-HotSpot setup](docs/screenshots/setup.jpg)
-
-![Open-HotSpot profiles](docs/screenshots/profiles.jpg)
-
-![Open-HotSpot accounts](docs/screenshots/accounts.jpg)
-
-![Open-HotSpot devices](docs/screenshots/devices.jpg)
-
-![Open-HotSpot vouchers](docs/screenshots/vouchers.jpg)
-
-## Continue with the real spec-kit CLI
-```bash
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-cd open-hotspot
-specify init --here --integration claude
+```text
+Client
+  │
+  ▼
+openNDS captive portal
+  │
+  ▼
+Open-HotSpot local FAS ── verify account/PIN ── SQLite
+  │
+  ▼
+verified openNDS authorization
+  │
+  ▼
+openNDS enforcement ── BinAuth events ── usage/accounting in SQLite
+  │
+  ▼
+LuCI / RPC administration
 ```
-Then, in order: `/speckit.plan` → `/speckit.tasks` → `/speckit.analyze` →
-`/speckit.implement`. Close the remaining target gates T003, T006, T011, T012,
-T052, and T086–T088 before declaring the package a production release.
+
+The architectural boundary is deliberate: openNDS remains the enforcement
+engine, while Open-HotSpot owns local identity, policy, accounting, and
+management. BinAuth is event-driven and must not call `ndsctl`.
+
+## Current target candidate
+
+The recorded acceptance baseline is:
+
+```text
+Router:       Linksys EA8300
+OpenWrt:      25.12.5
+Target:       ipq40xx/generic
+openNDS:      11.0.0
+Open-HotSpot: 1.2.0-r76
+```
+
+The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS
+10.3.1-r3. These are separate compatibility tracks; see
+[`docs/current-state.md`](docs/current-state.md) before operating a target.
+
+The router address is discovered from the current LAN configuration; it is not
+part of the FAS contract. The two-slot layout is used as an A/B rollback aid,
+not as shared application storage.
+
+## Installation and first use
+
+Use the [factory-reset acceptance runbook](docs/factory-reset-acceptance-runbook.md)
+for a disposable router. It covers the A/B slots, separate SSH identities,
+dynamic management addresses, package verification, setup recovery, and field
+evidence.
+
+After installing the verified APK on the candidate router:
+
+1. Open **Services → Open-HotSpot → Setup**.
+2. Run the preflight and base setup checks.
+3. Create a profile with a period, rate, quota, and device limit.
+4. Create an account and register its client device.
+5. Connect a test client to the Open-HotSpot LAN/SSID, not the upstream Wi-Fi.
+6. Open the captive portal, authenticate, and inspect the session in LuCI.
+
+Never use a fixed router address in scripts or documentation. Keep the admin
+plane and client/IoT plane on non-overlapping networks.
+
+## Screenshots
+
+The repository includes LuCI screenshots for [accounts](docs/screenshots/accounts.jpg),
+[devices](docs/screenshots/devices.jpg), [profiles](docs/screenshots/profiles.jpg),
+[setup](docs/screenshots/setup.jpg), and [vouchers](docs/screenshots/vouchers.jpg).
+
+## Development
+
+The project uses specification-driven development. Spec-Kit documents
+requirements and engineering decisions; it is not the product identity shown to
+users.
+
+- [Development guide](docs/development.md)
+- [Project status and open gates](docs/project-status.md)
+- [Acceptance runbook](docs/factory-reset-acceptance-runbook.md)
+- [Release gate register](docs/release-gates.md)
+- [Release history](docs/release-history.md)
+- [OpenNDS 11 migration decision](docs/decisions/ADR-003-opennds-v11-migration.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+
+Before handoff, run:
+
+```sh
+python3 -m unittest discover -s tests -v
+sh tests/test_shell_syntax.sh
+sh tests/test_quota.sh
+```
+
+Run the complete `tests/test_*.sh` contract suite when changing adapters,
+setup, packaging, security boundaries, or release documentation.
+
+## Maintainer
+
+Open-HotSpot is maintained and developed by **Mohammed Al-Haddad**, with
+contributions from the open-source community.
+
+## License
+
+The package is distributed under the [GPL-2.0-or-later](LICENSE) license.

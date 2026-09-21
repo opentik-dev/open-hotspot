@@ -21,6 +21,7 @@ export OPEN_HOTSPOT_PBKDF2_HELPER="$root/starter-kit/root/usr/lib/open-hotspot/p
 export OPEN_HOTSPOT_KDF_PATH="$root/starter-kit/root/usr/lib/open-hotspot/kdf.php"
 export OPEN_HOTSPOT_TEMPLATE_ROOT="$root/starter-kit/root/usr/share/open-hotspot/templates"
 export OPEN_HOTSPOT_FAS_KEY='test-fas-key'
+export OPEN_HOTSPOT_PERIOD_HELPER="$root/starter-kit/root/usr/lib/open-hotspot/period.sh"
 
 . "$root/starter-kit/root/usr/lib/open-hotspot/pbkdf2.sh"
 stored=$(pw_hash '123456' 5000)

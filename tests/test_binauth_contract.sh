@@ -19,7 +19,7 @@ export OPEN_HOTSPOT_DB_HELPER="$mock"
 export OPEN_HOTSPOT_PERIOD_HELPER="$root/starter-kit/root/usr/lib/open-hotspot/period.sh"
 . "$root/starter-kit/root/usr/lib/open-hotspot/binauth.sh"
 
-session_length=0
+sessiontimeout=0
 upload_rate=0
 download_rate=0
 upload_quota=0
@@ -29,7 +29,7 @@ open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 	http://example.test/ test-agent 192.168.70.20 token \
 	0123456789abcdef0123456789abcdef
 [ "$exitlevel" = 0 ]
-[ "$session_length" = 2 ]
+[ "$sessiontimeout" = 2 ]
 [ "$upload_rate" = 128 ]
 [ "$download_rate" = 1024 ]
 [ "$upload_quota" = 2 ]
@@ -39,7 +39,7 @@ open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 # callback. The adapter must normalize that form to the same opaque key.
 encoded_key=$(printf '%s' 0123456789abcdef0123456789abcdef | base64 | tr -d '\n')
 rm -f "$state"
-session_length=0
+sessiontimeout=0
 upload_rate=0
 download_rate=0
 upload_quota=0
@@ -48,7 +48,7 @@ exitlevel=1
 open_hotspot_binauth_apply auth_client aa:bb:cc:dd:ee:ff \
 	http://example.test/ test-agent 192.168.70.20 token "$encoded_key"
 [ "$exitlevel" = 0 ]
-[ "$session_length" = 2 ]
+[ "$sessiontimeout" = 2 ]
 
 if open_hotspot_binauth_apply auth_client AA:BB:CC:DD:EE:FF user pass redir ua \
 	192.168.70.20 token 0123456789abcdef0123456789abcdef; then
@@ -67,7 +67,7 @@ segments=$(_oh_binauth_segments daily 1789257600 1789347600 3000 2000)
 [ "$(printf '%s' "$segments" | awk -F'|' '{s += $3; u += $4; d += $5} END {print s "|" u "|" d}')" = '90000|2000|3000' ]
 
 renewed='2026-01-02T12:00:00Z'
-renewed_epoch=$(date -u -d "$renewed" +%s)
+renewed_epoch=$(_period_epoch_utc "$renewed")
 segments=$(_oh_binauth_segments daily "$renewed" $((renewed_epoch - 60)) $((renewed_epoch + 60)) 120 60)
 [ "$(printf '%s' "$segments" | awk 'END { print NR }')" = 2 ]
 [ "$(printf '%s' "$segments" | awk -F'|' 'NR == 2 {print $1}')" = "$renewed" ]
@@ -83,6 +83,20 @@ export OPEN_HOTSPOT_DB_HELPER="$failure_db"
 exitlevel=1
 open_hotspot_binauth_apply client_deauth AA:BB:CC:DD:EE:FF 100 200 1789257600 1789257660 token \
 	0123456789abcdef0123456789abcdef
+[ "$exitlevel" = 0 ]
+
+# The target openNDS 11 deauth callback may carry the base64 encoding of the
+# literal marker "empty" instead of the auth transaction key. The adapter may
+# correlate only that explicit marker to the active MAC session.
+close_db="$tmp/close-db.sh"
+printf '%s\n' \
+	'db_session_key_by_mac() { printf "%s\\n" 0123456789abcdef0123456789abcdef; }' \
+	'db_session_period_type() { [ "$1" = 0123456789abcdef0123456789abcdef ] && printf "%s\\n" "daily|"; }' \
+	'db_session_close() { [ "$3" = 0123456789abcdef0123456789abcdef ]; }' >"$close_db"
+export OPEN_HOTSPOT_DB_HELPER="$close_db"
+exitlevel=1
+open_hotspot_binauth_apply ndsctl_deauth AA:BB:CC:DD:EE:FF 100 200 \
+	1789257600 1789257660 token ZW1wdHk=
 [ "$exitlevel" = 0 ]
 
 # Restore/authmon observation uses the same documented eight-field layout as

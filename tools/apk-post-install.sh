@@ -39,6 +39,35 @@ patch_opennds_procd_stdout() {
 
 patch_opennds_procd_stdout
 
+# openNDS 11's ndscfg wrapper treats a non-tty stdin as a pipe and can discard
+# command-line arguments.  In binauth_log.sh that makes the documented
+# custombinauth lookup return empty, so the manager callback is silently
+# skipped while openNDS still allows the client.  Keep the stock dispatcher
+# and restore path, but provide a UCI fallback for this one include hook.
+patch_opennds_custom_binauth() {
+	script=/usr/lib/opennds/binauth_log.sh
+	backup=/etc/open-hotspot/binauth_log.before-custom-fallback
+	[ -r "$script" ] || return 0
+	grep -F 'custombinauthpath=$(uci -q get opennds.@opennds[0].custombinauth' "$script" >/dev/null 2>&1 && return 0
+	grep -F 'custombinauthpath=$(ndscfg get_option_from_config custombinauth 2> /dev/null)' "$script" >/dev/null 2>&1 || return 0
+	mkdir -p /etc/open-hotspot || return 0
+	[ -e "$backup" ] || cp -p "$script" "$backup" || return 0
+	sed -i 's|^custombinauthpath=$(ndscfg get_option_from_config custombinauth 2> /dev/null)$|custombinauthpath=$(ndscfg get_option_from_config custombinauth 2> /dev/null); if [ -z "$custombinauthpath" ]; then custombinauthpath=$(uci -q get opennds.@opennds[0].custombinauth 2> /dev/null); fi|' "$script"
+}
+
+patch_opennds_custom_binauth
+
+# A live upgrade can find a router where local FAS is already enabled but the
+# manager init service was never enabled (for example, an older package or a
+# factory-reset image). Repair that operational boundary without enabling the
+# service in an offline image root.
+if [ -z "${IPKG_INSTROOT:-}" ] &&
+	[ "$(uci -q get open-hotspot.global.local_fas_enabled 2>/dev/null || true)" = 1 ] &&
+	[ -x /etc/init.d/open-hotspot ]; then
+	/etc/init.d/open-hotspot enable >/dev/null 2>&1 || true
+	/etc/init.d/open-hotspot start >/tmp/open-hotspot-service-start.log 2>&1 || true
+fi
+
 # Do not restart an already-running openNDS/open-hotspot stack during an APK
 # upgrade. The package may be installed while netifd is reloading the
 # firewall; a second restart in that window races openNDS's own fwhook and can

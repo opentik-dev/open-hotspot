@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  OPENWRT_VERSION: 25.12.5
+  OPENWRT_TARGET: ipq40xx/generic
+
+jobs:
+  checks:
+    name: Contract and unit checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Run required checks
+        run: |
+          python3 -m unittest discover -s tests -v
+          sh tests/test_shell_syntax.sh
+          sh tests/test_quota.sh
+          for test in tests/test_*.sh; do sh "$test"; done
+
+  build-apk:
+    name: Build APK from source
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore OpenWrt SDK cache
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/openwrt-sdk
+          key: openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_TARGET }}-v1
+      - name: Download and unpack target SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          index="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/"
+          mkdir -p "$RUNNER_TEMP/sdk-download" "$RUNNER_TEMP/openwrt-sdk"
+          sdk_name="$(curl -fsSL "$index" | grep -oE 'openwrt-sdk-[^"]+\.tar\.zst' | head -n 1)"
+          test -n "$sdk_name"
+          curl -fL --retry 3 "$index$sdk_name" -o "$RUNNER_TEMP/sdk-download/$sdk_name"
+          tar --zstd -xf "$RUNNER_TEMP/sdk-download/$sdk_name" -C "$RUNNER_TEMP/openwrt-sdk" --strip-components=1
+      - name: Build APK
+        env:
+          OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
+        run: sh tools/build-apk.sh
+      - name: Verify generated artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          release="$(sed -n 's/^PKG_RELEASE:=//p' starter-kit/Makefile)"
+          version="$(sed -n 's/^PKG_VERSION:=//p' starter-kit/Makefile)"
+          apk="dist/luci-app-open-hotspot-${version}-r${release}.apk"
+          test -s "$apk"
+          sha256sum "$apk" > "$RUNNER_TEMP/SHA256SUMS"
+          cat "$RUNNER_TEMP/SHA256SUMS"
+      - name: Upload built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-hotspot-apk-${{ github.sha }}
+          path: |
+            dist/luci-app-open-hotspot-*.apk
+            ${{ runner.temp }}/SHA256SUMS
+          if-no-files-found: error

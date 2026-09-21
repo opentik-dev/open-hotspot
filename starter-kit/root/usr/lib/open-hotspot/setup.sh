@@ -18,6 +18,11 @@ setup_uci_set() {
 	"$SETUP_UCI_BIN" set "open-hotspot.global.$1=$2"
 }
 
+setup_uci_has() {
+	"$SETUP_UCI_BIN" -q show open-hotspot.global 2>/dev/null |
+		grep -F ".${1}=" >/dev/null
+}
+
 setup_state() {
 	setup_uci_get setup_state
 }
@@ -30,9 +35,9 @@ setup_record() {
 }
 
 setup_ensure_policy_defaults() {
-	[ -n "$(setup_uci_get client_network)" ] || setup_uci_set client_network '' || return 1
-	[ -n "$(setup_uci_get client_router_access)" ] || setup_uci_set client_router_access deny || return 1
-	[ -n "$(setup_uci_get session_restore)" ] || setup_uci_set session_restore disabled || return 1
+	setup_uci_has client_network || setup_uci_set client_network '' || return 1
+	setup_uci_has client_router_access || setup_uci_set client_router_access deny || return 1
+	setup_uci_has session_restore || setup_uci_set session_restore disabled || return 1
 	"$SETUP_UCI_BIN" commit open-hotspot
 }
 

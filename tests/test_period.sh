@@ -27,7 +27,11 @@ aden=$(OPEN_HOTSPOT_TIMEZONE=Asia/Aden period_window_at daily \
 [ "$(printf '%s' "$aden" | cut -f2)" = '2026-01-02T21:00:00Z' ]
 
 renewed='2026-01-02T12:00:00Z'
-renewed_epoch=$(date -u -d "$renewed" +%s)
+renewed_epoch=$(_period_epoch_utc "$renewed")
 effective=$(OPEN_HOTSPOT_TIMEZONE=UTC period_window_effective daily "$renewed" "$renewed_epoch")
 [ "$(printf '%s' "$effective" | cut -f1)" = "$renewed" ]
 [ "$(printf '%s' "$effective" | cut -f2)" = '2026-01-03T00:00:00Z' ]
+
+# BusyBox does not accept the GNU ISO T/Z spelling directly.  The shared
+# parser must still accept the persisted renewed_at representation.
+[ "$(OPEN_HOTSPOT_TIMEZONE=UTC _period_epoch_utc "$renewed")" = "$renewed_epoch" ]

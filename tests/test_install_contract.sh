@@ -35,6 +35,8 @@ grep -F 'patch_opennds_procd_stdout' "$postinstall" >/dev/null
 grep -F 'procd_set_param stdout 1' "$postinstall" >/dev/null
 grep -F 'patch_opennds_custom_binauth' "$postinstall" >/dev/null
 grep -F 'opennds.@opennds[0].custombinauth' "$postinstall" >/dev/null
+grep -F 'open-hotspot enable' "$postinstall" >/dev/null
+grep -F 'open-hotspot start' "$postinstall" >/dev/null
 grep -F 'pidof opennds' "$root/starter-kit/root/usr/lib/open-hotspot/opennds.sh" >/dev/null
 grep -F 'opennds_wait_ready' "$root/starter-kit/root/etc/init.d/open-hotspot" >/dev/null
 grep -F 'ensure_opennds_runtime' "$root/starter-kit/root/usr/lib/open-hotspot/cycle.sh" >/dev/null

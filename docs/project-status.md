@@ -1,7 +1,7 @@
 # Open-HotSpot project status
 
 **As of:** 2026-09-22
-**Product candidate:** Open-HotSpot 1.2.0-r78
+**Product candidate:** Open-HotSpot 1.2.0-r79
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -28,7 +28,8 @@
   manager-session reconciliation; r76 expires abandoned pending FAS
   transactions during cycle/maintenance; r77 resolves target-specific live
   deauthentication through IP lookup; r78 correlates the target's empty
-  deauth custom marker to the active session.
+  deauth custom marker to the active session; r79 enables the manager service
+  when local FAS is activated or an enabled installation is upgraded.
 
 ## What is not accepted yet
 
@@ -39,7 +40,7 @@ acceptance run:
 |---|---|---|
 | T003 | Verified | FAS redirect, custom data, and secure local login on target |
 | T006 | Pending Hardware Validation | Controlled upload/download counter mapping and cutoff |
-| T011 | Partial | Separate openNDS restart and router reboot, restore policy, and usage deduplication |
+| T011 | Partial / Verified restore slice | Separate openNDS restart and router reboot; disabled restore reconciliation and enabled automatic restore after client traffic; full dedup/restart matrix remains |
 | T012 | Verified — primary physical path | Portal → FAS → authorization → BinAuth → close → SQLite; duplicate callback remains automated-only |
 | T052/T087 | Pending Hardware Validation | Interrupted setup/retry, dependency health, and package recovery |
 | T086 | Pending Hardware Validation | Existing sessions preserved while new decisions fail closed |
@@ -51,12 +52,12 @@ register is [`release-gates.md`](release-gates.md); the evidence workflow is in
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the r78 candidate while
+1. Close the remaining physical-router gates against the r79 candidate while
    preserving r60/openNDS 10.3.1 as the documented rollback baseline.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-  baseline; r78 is installed on the disposable acceptance slot, but it is
+  baseline; r79 is installed on the disposable acceptance slot, but it is
    not production-accepted until the physical gates close.
 
 ## Decision rule

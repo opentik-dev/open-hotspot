@@ -33,7 +33,12 @@ for the target's `ndsctl deauth` control path.
 ## Gates still open
 
 T006 still needs controlled upload/download quota cutoff evidence. T011 still
-needs the separate restart/reboot matrix and duplicate-callback evidence.
+needs the separate restart/reboot matrix and duplicate-callback evidence, but
+the r79 restore slice is now physically verified: the service was enabled with
+two cron entries, reboot preserved the manager row, first client traffic made
+the client visible, and automatic cycle restored `Authenticated` without a
+new usage event. The final test configuration was returned to check interval
+300 and restore disabled.
 T052/T087, T086, T088, and T090 still require their physical acceptance
 procedures. Internet reachability through the upstream WAN was not claimed in
 this Ethernet-only probe because the host's default route is on another

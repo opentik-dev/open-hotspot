@@ -24,7 +24,7 @@ and a safe mitigation if known.
 
 ## Supported tracks
 
-The current acceptance candidate is Open-HotSpot 1.2.0-r78 on OpenWrt 25.12.5
+The current acceptance candidate is Open-HotSpot 1.2.0-r79 on OpenWrt 25.12.5
 with the verified openNDS 11.0.0 target contract. Open-HotSpot 1.2.0-r60 with
 openNDS 10.3.1-r3 remains the rollback baseline. Keep the tracks isolated and
 do not replace the rollback slot in place. See

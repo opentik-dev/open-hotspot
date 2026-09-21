@@ -1,7 +1,7 @@
 # Open-HotSpot release-gate register
 
 This register is the operational release decision for `luci-app-open-hotspot
-1.2.0-r78`. r78 is the current candidate with router-access isolation,
+1.2.0-r79`. r79 is the current candidate with router-access isolation,
 runtime readiness recovery, and a packaged read-only integration diagnostic;
 it
 is not a production release until every critical
@@ -11,7 +11,7 @@ gate below has evidence from the physical target.
 |---|---|---:|---:|---|---|---|
 | Critical | Portal/FAS succeeds but BinAuth does not create the manager session or accounting record. | Medium | High | Disposable client completes portal → FAS → openNDS → BinAuth → active session → close callback; SQLite shows one consumed transaction, one session, and one usage event. | Engineering + field validation | Verified on r78 primary physical path; duplicate callback remains covered by automated idempotency tests |
 | Critical | Upload/download counters are reversed or native quota cutoff is not enforced. | Medium | High | Controlled upload/download test maps both counters and records the measured cutoff bound for time and bytes. | Engineering + field validation | Open — T006 |
-| Critical | Router/openNDS restart duplicates usage or loses the live-session policy. | Medium | High | Separate openNDS restart and router reboot tests, with before/after session and usage queries. | Engineering + field validation | Partial — r75 adds zero-client stale-session reconciliation; restart accounting and usage-deduplication remain open (T011/E-013) |
+| Critical | Router/openNDS restart duplicates usage or loses the live-session policy. | Medium | High | Separate openNDS restart and router reboot tests, with before/after session and usage queries. | Engineering + field validation | Partial — r79 service/cron repaired; disabled restore/restart accounting and enabled automatic restore after client traffic verified; full dedup/restart matrix remains open (T011/E-013) |
 | High | Manager, BinAuth, or cycle failure disconnects existing clients or permits unsafe new authentication. | Medium | High | Inject each failure while a client is connected: existing authorization remains unchanged; new identity decisions fail closed; failure is logged. | Engineering | Open — T086 |
 | High | Interrupted setup leaves partial configuration or an unhealthy service. | Medium | High | Interrupt setup at each state, rerun it, verify rollback/recovery, dependency health, and service readiness. | Engineering | Open — T052/T087 |
 | High | LuCI/RPC management surface is reachable from the client or captive-portal plane. | Low | High | From a client network, management ports and RPC are unreachable; from the admin plane, authenticated LuCI works. | Network/operations | Open — field test |
@@ -29,7 +29,7 @@ gate below has evidence from the physical target.
 
 ## Current decision
 
-`r78` is suitable for controlled pilot validation and rollback testing. It is
+`r79` is suitable for controlled pilot validation and rollback testing. It is
 not approved as a production baseline. The next field session must prioritize
 the disposable client flow, counter/quota mapping, and restart behavior; code
 changes must not claim those gates closed without target evidence.

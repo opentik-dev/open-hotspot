@@ -57,6 +57,17 @@ patch_opennds_custom_binauth() {
 
 patch_opennds_custom_binauth
 
+# A live upgrade can find a router where local FAS is already enabled but the
+# manager init service was never enabled (for example, an older package or a
+# factory-reset image). Repair that operational boundary without enabling the
+# service in an offline image root.
+if [ -z "${IPKG_INSTROOT:-}" ] &&
+	[ "$(uci -q get open-hotspot.global.local_fas_enabled 2>/dev/null || true)" = 1 ] &&
+	[ -x /etc/init.d/open-hotspot ]; then
+	/etc/init.d/open-hotspot enable >/dev/null 2>&1 || true
+	/etc/init.d/open-hotspot start >/tmp/open-hotspot-service-start.log 2>&1 || true
+fi
+
 # Do not restart an already-running openNDS/open-hotspot stack during an APK
 # upgrade. The package may be installed while netifd is reloading the
 # firewall; a second restart in that window races openNDS's own fwhook and can

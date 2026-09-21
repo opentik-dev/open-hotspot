@@ -1,8 +1,8 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r78`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r79`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `c12a42df803b8ff50188a0849350510b0d9bb6ee71e684119d0af6a1b38ca57d`
+**SHA-256:** `d443169ed707f55d6412392ce666f96f9fe44f295731466da1937d05725eb1e2`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** Controlled pilot / factory-reset acceptance candidate; not yet a production baseline.
 
@@ -17,6 +17,8 @@
 - Package checks, schema checks, shell checks, quota checks, and target installation checks.
 - r78 target proof: FAS 200, handoff 307, Authenticated session, IP-based deauth,
   automatic BinAuth close, and SQLite usage event.
+- r79 target proof: manager service enabled/active with two cron entries and
+  automatic session restore after reboot and first client traffic.
 - The LuCI CSRF fix for the target dispatcher (`context.authtoken`) is included in r39.
 - The Linksys EA8300 two-slot layout can be used as an A/B rollback boundary;
   the factory-reset runbook now treats slot 01 as candidate and slot 02 as

@@ -26,6 +26,9 @@ therefore r74, a source-tested correction checkpoint, not a production release.
 - Account suspension/deletion, device blocking, and profile changes now request
   adapter-backed deauthentication for affected live MACs; BinAuth remains the
   only close/accounting callback.
+- Disabled reboot restore now reconciles manager-only sessions only when a
+  healthy openNDS status reports zero clients; it records the reconciliation
+  without fabricating usage counters.
 - The gap register now records these failures and the evidence requirement for
   each one.
 
@@ -37,6 +40,8 @@ the period/BinAuth checks also passed with BusyBox `date` selected in `PATH`.
 These are `Tested` results; they are not physical-router `Verified` results.
 The r74 APK SHA-256 is
 `9d318a81aea8038fa36d77a8e137d0635793e290032f790f39935cbb792c2da2`.
+r75 adds stale manager-session reconciliation and remains pending target
+installation at the time of this decision update.
 
 ## Still blocking delivery
 

@@ -103,6 +103,11 @@ db_schema_version() {
 	_sql "SELECT version FROM schema_meta ORDER BY version DESC LIMIT 1;"
 }
 
+db_expire_pending_auth() {
+	_sql "UPDATE auth_transactions SET state='expired'
+	       WHERE state='pending' AND julianday(expires_at) <= julianday('now');"
+}
+
 db_account_get_by_username() {
 	u="$1"; _valid_ident "$u" || return 1
 	_sql "SELECT id, pin_hash, pin_salt, pin_iter, profile_id, status, expires_at
@@ -234,6 +239,16 @@ db_session_period_type() {
          JOIN profiles p ON p.id = a.profile_id
         WHERE s.session_key = '$(_sql_escape "$session_key")'
           AND s.state = 'active' AND d.mac = '$mac' LIMIT 1;"
+}
+
+db_session_key_by_mac() {
+	mac="$1"
+	_valid_mac "$mac" || return 1
+	_sql "SELECT s.session_key
+         FROM active_sessions s
+         JOIN devices d ON d.id = s.device_id
+        WHERE s.state = 'active' AND d.mac = '$mac'
+        ORDER BY s.id DESC LIMIT 1;"
 }
 
 # db_session_close <method> <mac> <session_key> <incoming> <outgoing>

@@ -10,7 +10,7 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r74` is the current source/build checkpoint. r74 is the candidate for
+`1.2.0-r78` is the current source/build checkpoint. r78 is the candidate for
 the next CI-built release; its exact commit SHA, APK SHA-256, and acceptance
 evidence must be recorded by the release workflow. Earlier packages remain
 field evidence and rollback checkpoints. r40 removes upstream-address assumptions
@@ -88,6 +88,10 @@ final release freeze.
 | r72 | pending | Detects and reports an active SQLite manager session with zero live openNDS clients, preventing a stale restart/close state from appearing healthy. Runtime accounting, quota, restart, and failure-containment gates remain open. |
 | r73 | pending | Makes the packaged diagnostic validate the installed daemon's versioned adapter contract in addition to `ndsctl`, while retaining the explicit stale-session warning. Runtime gates remain open. |
 | r74 | `9d318a81aea8038fa36d77a8e137d0635793e290032f790f39935cbb792c2da2` | Unifies the period/renewal source across FAS, BinAuth, cycle, and restore; normalizes ISO timestamps for BusyBox; applies shared SQLite timeout/foreign-key defaults; runtime gates remain open. |
+| r75 | `ec19fd6470c96bd45417e3799f9d1b613f1ba65f07d9f6db0a75137331ab778f` | Adds zero-client stale manager-session reconciliation after restart/reboot; runtime gates remain open pending target evidence. |
+| r76 | `12547af79c3ee5ed4927f90b1853d2e90023cdc38ddaf1f63d4d3801a6444a1e` | Expires abandoned pending FAS transactions during cycle/maintenance; runtime gates remain open pending target evidence. |
+| r77 | pending | Resolves the target-specific live deauthentication path by using the current client IP from `ndsctl status` before falling back to MAC; physical close/accounting proof pending. |
+| r78 | `c12a42df803b8ff50188a0849350510b0d9bb6ee71e684119d0af6a1b38ca57d` | Correlates the target openNDS 11 deauth callback's explicit base64 `empty` marker to the active MAC session so BinAuth can close and account the session without accepting unknown custom data. Physical close/accounting proof recorded; quota/restart/failure gates remain open. |
 
 ## Existing GitHub history
 

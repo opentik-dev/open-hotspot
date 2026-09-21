@@ -1,6 +1,6 @@
 # Open-HotSpot current state
 
-**As of:** 2026-09-20
+**As of:** 2026-09-22
 
 This is the short operational truth for agents and release reviewers. The
 specification, release-gate register, and field evidence remain authoritative
@@ -10,7 +10,7 @@ for detailed acceptance decisions.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current acceptance candidate | Open-HotSpot r74 / openNDS 11.0.0 | EA8300 `boot_part=2` field validation | Period/accounting consistency candidate; r73 remains the last installed field checkpoint |
+| Current acceptance candidate | Open-HotSpot r78 / openNDS 11.0.0 | EA8300 `boot_part=2` field validation | r77 deauth succeeded but exposed empty-custom close gap; r78 correction pending proof |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1
@@ -67,6 +67,7 @@ close-callback reconciliation issue under T011, not as a healthy session.
   close callback is observed.
 - Any displayed LAN address is field evidence only. No package contract uses a
   fixed router address.
-- The report-driven r74 changes are source-tested but not yet target-verified:
+- The report-driven r74/r75/r76/r77 changes are target-tested; r78 contains
+  the empty-custom close correction and remains pending installation:
   the period helper is now the single boundary source, renewal state is used by
   every policy path, and manager SQLite calls share timeout/foreign-key rules.

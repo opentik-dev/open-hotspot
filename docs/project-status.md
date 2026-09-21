@@ -1,7 +1,7 @@
 # Open-HotSpot project status
 
-**As of:** 2026-09-20  
-**Product candidate:** Open-HotSpot 1.2.0-r74
+**As of:** 2026-09-22
+**Product candidate:** Open-HotSpot 1.2.0-r78
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -24,18 +24,23 @@
   read-only `/usr/lib/open-hotspot/diagnose.sh` command shipped in r70; r71
   adds versioned openNDS adapter contracts and stale-session diagnostics. r74
   unifies period/renewal handling across FAS, BinAuth, cycle, and restore and
-  hardens manager-side SQLite invocation defaults.
+  hardens manager-side SQLite invocation defaults; r75 adds zero-client stale
+  manager-session reconciliation; r76 expires abandoned pending FAS
+  transactions during cycle/maintenance; r77 resolves target-specific live
+  deauthentication through IP lookup; r78 correlates the target's empty
+  deauth custom marker to the active session.
 
 ## What is not accepted yet
 
-The following remain release blockers until real-router evidence is attached:
+The following are the current release-gate states after the r78 physical
+acceptance run:
 
 | Gate | Current state | Required proof |
 |---|---|---|
-| T003 | Pending Hardware Validation | FAS redirect, custom data, and secure local login on target |
+| T003 | Verified | FAS redirect, custom data, and secure local login on target |
 | T006 | Pending Hardware Validation | Controlled upload/download counter mapping and cutoff |
 | T011 | Partial | Separate openNDS restart and router reboot, restore policy, and usage deduplication |
-| T012 | Pending Hardware Validation | Portal → FAS → authorization → BinAuth → close → SQLite |
+| T012 | Verified — primary physical path | Portal → FAS → authorization → BinAuth → close → SQLite; duplicate callback remains automated-only |
 | T052/T087 | Pending Hardware Validation | Interrupted setup/retry, dependency health, and package recovery |
 | T086 | Pending Hardware Validation | Existing sessions preserved while new decisions fail closed |
 | T088/T090 | Pending Hardware Validation | Complete quickstart and release freeze evidence |
@@ -46,12 +51,12 @@ register is [`release-gates.md`](release-gates.md); the evidence workflow is in
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the r74 candidate while
+1. Close the remaining physical-router gates against the r78 candidate while
    preserving r60/openNDS 10.3.1 as the documented rollback baseline.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-   baseline; r70 is installed on the disposable acceptance slot, but it is
+  baseline; r78 is installed on the disposable acceptance slot, but it is
    not production-accepted until the physical gates close.
 
 ## Decision rule

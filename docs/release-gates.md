@@ -1,7 +1,7 @@
 # Open-HotSpot release-gate register
 
 This register is the operational release decision for `luci-app-open-hotspot
-1.2.0-r74`. r74 is the current candidate with router-access isolation,
+1.2.0-r78`. r78 is the current candidate with router-access isolation,
 runtime readiness recovery, and a packaged read-only integration diagnostic;
 it
 is not a production release until every critical
@@ -9,9 +9,9 @@ gate below has evidence from the physical target.
 
 | Priority | Risk / failure mode | Likelihood | Impact | Required closure evidence | Owner | Status |
 |---|---|---:|---:|---|---|---|
-| Critical | Portal/FAS succeeds but BinAuth does not create the manager session or accounting record. | Medium | High | Disposable client completes portal → FAS → openNDS → BinAuth → active session → close callback; SQLite shows one consumed transaction, one session, and one usage event. | Engineering + field validation | Session/device boundary verified in r70; close/accounting proof open |
+| Critical | Portal/FAS succeeds but BinAuth does not create the manager session or accounting record. | Medium | High | Disposable client completes portal → FAS → openNDS → BinAuth → active session → close callback; SQLite shows one consumed transaction, one session, and one usage event. | Engineering + field validation | Verified on r78 primary physical path; duplicate callback remains covered by automated idempotency tests |
 | Critical | Upload/download counters are reversed or native quota cutoff is not enforced. | Medium | High | Controlled upload/download test maps both counters and records the measured cutoff bound for time and bytes. | Engineering + field validation | Open — T006 |
-| Critical | Router/openNDS restart duplicates usage or loses the live-session policy. | Medium | High | Separate openNDS restart and router reboot tests, with before/after session and usage queries. | Engineering + field validation | Partial — r74 unifies renewal-window selection and detects stale manager sessions; restart accounting and usage-deduplication remain open (T011/E-013) |
+| Critical | Router/openNDS restart duplicates usage or loses the live-session policy. | Medium | High | Separate openNDS restart and router reboot tests, with before/after session and usage queries. | Engineering + field validation | Partial — r75 adds zero-client stale-session reconciliation; restart accounting and usage-deduplication remain open (T011/E-013) |
 | High | Manager, BinAuth, or cycle failure disconnects existing clients or permits unsafe new authentication. | Medium | High | Inject each failure while a client is connected: existing authorization remains unchanged; new identity decisions fail closed; failure is logged. | Engineering | Open — T086 |
 | High | Interrupted setup leaves partial configuration or an unhealthy service. | Medium | High | Interrupt setup at each state, rerun it, verify rollback/recovery, dependency health, and service readiness. | Engineering | Open — T052/T087 |
 | High | LuCI/RPC management surface is reachable from the client or captive-portal plane. | Low | High | From a client network, management ports and RPC are unreachable; from the admin plane, authenticated LuCI works. | Network/operations | Open — field test |
@@ -19,7 +19,7 @@ gate below has evidence from the physical target.
 | Medium | Renewal could discard history or leave active devices on stale policy. | Medium | High | `account_renew` records `renewed_at`, preserves prior aggregates, deauthenticates active devices, and starts a fresh effective window. | Engineering | Implemented — isolated target proof; reconnect proof open |
 | Medium | Backup import is accepted but recovery is not proven on the target. | Low | High | Export, validate, import into a disposable state, verify rollback archive, and confirm accounts/profiles/history after reload. | Engineering + field validation | Partially closed — r38 helper validated; restore flow open |
 | High | A/B slot rollback is mistaken for shared application state or SSH identity. | Medium | High | Switch 02 → 01 → 02 through Advanced Reboot using the currently discovered management address; verify separate host-key files, admin keys, firmware identity, and explicit backup/import boundaries. | Network/operations | Open — runbook added |
-| High | FAS keeps a stale upstream/WAN address after the Internet source changes. | Medium | High | `fasremoteip` remains unset, `fasremotefqdn=gatewayfqdn=status.client`, and a client on Open-HotSpot `br-lan` completes the portal after changing upstream connectivity. | Engineering + field validation | Code guard in r63 — client proof open |
+| High | FAS keeps a stale upstream/WAN address after the Internet source changes. | Medium | High | `fasremoteip` remains unset, `fasremotefqdn=gatewayfqdn=status.client`, and a client on Open-HotSpot `br-lan` completes the portal after changing upstream connectivity. | Engineering + field validation | Verified on r78 through direct Ethernet portal flow; full external-internet/changed-upstream retest remains open |
 | High | Two routers expose the same LAN address/subnet, causing duplicate gateways or a broken laptop route. | High | High | Preflight rejects duplicate local IPs, LAN equal to the default gateway, and LAN/WAN subnet overlap; field setup uses two discovered, non-overlapping networks. | Engineering + network validation | Code guard in r48 — field topology proof open |
 | Critical | openNDS exits with `exit_code=139` during startup and leaves `ndsctl` busy/unavailable. | Medium | High | Identify and correct the target openNDS/OpenWrt binary/runtime fault, then prove stable `ndsctl`, portal 511/FAS redirect, and restart recovery. | Platform/network validation | Resolved on r58 startup and reboot — service/captive-session gates remain open (E-011/E-012) |
 | High | dnsmasq lacks nftset support required by a selected openNDS walled-garden/blocklist feature. | Medium | Medium | Install the target-feed `dnsmasq-full` replacement with config hashes preserved, then verify `dnsmasq --test`, DHCP, and the selected openNDS feature. | Platform/network validation | Capability installed on target — feature/runtime proof open (E-010) |
@@ -29,7 +29,7 @@ gate below has evidence from the physical target.
 
 ## Current decision
 
-`r74` is suitable for controlled pilot validation and rollback testing. It is
+`r78` is suitable for controlled pilot validation and rollback testing. It is
 not approved as a production baseline. The next field session must prioritize
 the disposable client flow, counter/quota mapping, and restart behavior; code
 changes must not claim those gates closed without target evidence.

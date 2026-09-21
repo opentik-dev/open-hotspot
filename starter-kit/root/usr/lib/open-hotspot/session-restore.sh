@@ -122,9 +122,33 @@ status() {
 	fi
 }
 
+reconcile_stale() {
+	# Disabled restore means a previous boot's manager rows are not entitled to
+	# remain live forever. Only reconcile when the daemon is healthy and reports
+	# zero clients; an unreadable status or any live client fails closed.
+	[ "$(mode)" = disabled ] || return 0
+	. "$DB_HELPER"
+	. "$NDS_HELPER"
+	opennds_validate_config || return 1
+	clients=$(opennds_current_clients) || return 1
+	[ "$clients" -eq 0 ] || return 0
+	closed=$(sqlite3 -batch -noheader "$DB_PATH" "BEGIN IMMEDIATE;
+	UPDATE active_sessions
+	   SET state='closed', closed_at=COALESCE(closed_at,datetime('now')),
+	       last_seen_at=datetime('now')
+	 WHERE state='active';
+	SELECT changes(); COMMIT;") || return 1
+	case "$closed" in
+		0) ;;
+		*[!0-9]*) return 1 ;;
+		*) db_log_event stale_session_reconciled '' 'opennds-reported-zero-clients' || true ;;
+	esac
+}
+
 case "${1:-}" in
 	apply) set_mode "${2:-}" ;;
 	restore) restore_sessions ;;
+	reconcile) reconcile_stale ;;
 	status) status ;;
-	*) printf 'usage: session-restore.sh {apply enabled|disabled|restore|status}\n' >&2; exit 2 ;;
+	*) printf 'usage: session-restore.sh {apply enabled|disabled|restore|reconcile|status}\n' >&2; exit 2 ;;
 esac

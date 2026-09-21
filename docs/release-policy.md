@@ -4,7 +4,7 @@ The package version is the pair declared in `starter-kit/Makefile`:
 
 ```text
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=74
+PKG_RELEASE:=78
 ```
 
 The installable artifact is named:

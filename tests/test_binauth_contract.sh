@@ -85,6 +85,20 @@ open_hotspot_binauth_apply client_deauth AA:BB:CC:DD:EE:FF 100 200 1789257600 17
 	0123456789abcdef0123456789abcdef
 [ "$exitlevel" = 0 ]
 
+# The target openNDS 11 deauth callback may carry the base64 encoding of the
+# literal marker "empty" instead of the auth transaction key. The adapter may
+# correlate only that explicit marker to the active MAC session.
+close_db="$tmp/close-db.sh"
+printf '%s\n' \
+	'db_session_key_by_mac() { printf "%s\\n" 0123456789abcdef0123456789abcdef; }' \
+	'db_session_period_type() { [ "$1" = 0123456789abcdef0123456789abcdef ] && printf "%s\\n" "daily|"; }' \
+	'db_session_close() { [ "$3" = 0123456789abcdef0123456789abcdef ]; }' >"$close_db"
+export OPEN_HOTSPOT_DB_HELPER="$close_db"
+exitlevel=1
+open_hotspot_binauth_apply ndsctl_deauth AA:BB:CC:DD:EE:FF 100 200 \
+	1789257600 1789257660 token ZW1wdHk=
+[ "$exitlevel" = 0 ]
+
 # Restore/authmon observation uses the same documented eight-field layout as
 # other non-auth_client callbacks and must not be treated as a new login.
 exitlevel=1

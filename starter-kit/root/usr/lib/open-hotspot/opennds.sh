@@ -72,6 +72,13 @@ opennds_detect_version() {
 		sed -n 's/^Version:[[:space:]]*//p' | sed -n '1p'
 }
 
+opennds_current_clients() {
+	clients=$("$OPEN_HOTSPOT_NDSCTL_BIN" status 2>/dev/null |
+		sed -n 's/^Current clients:[[:space:]]*//p' | sed -n '1p')
+	case "$clients" in ''|*[!0-9]*) return 1 ;; esac
+	printf '%s\n' "$clients"
+}
+
 opennds_validate_config() {
 	[ -x "$OPEN_HOTSPOT_NDSCTL_BIN" ] || return 1
 	status=$([ -x "$OPEN_HOTSPOT_NDSCTL_BIN" ] &&
@@ -119,7 +126,11 @@ opennds_reload() {
 opennds_deauth() {
 	[ "$#" -eq 1 ] || return 1
 	_opennds_mac "$1" || return 1
-	"$OPEN_HOTSPOT_NDSCTL_BIN" deauth "$1"
+	# Some openNDS 11 target builds accept IP for deauth but reject an
+	# otherwise valid MAC. Resolve from live state first and retain the MAC as
+	# the documented ndsctl fallback when no live IP is available.
+	target=$(_opennds_auth_target "$1") || return 1
+	"$OPEN_HOTSPOT_NDSCTL_BIN" deauth "$target"
 }
 
 _opennds_auth_target() {

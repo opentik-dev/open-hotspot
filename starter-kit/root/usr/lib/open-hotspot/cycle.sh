@@ -31,12 +31,17 @@ ensure_opennds_runtime() {
 # bounded recovery; new clients remain fail-closed until ndsctl is ready.
 ensure_opennds_runtime || exit 0
 
+db_expire_pending_auth ||
+	db_log_event auth_expiry_failed '' 'pending-auth-expiry-failed' || true
+
 # Retry the one-per-boot manager-owned restore if openNDS was not ready during
 # init ordering. The helper uses SQLite identity/policy and the verified
 # ndsctl adapter; it never runs from BinAuth and never keys on an IP address.
 if [ -x /usr/lib/open-hotspot/session-restore.sh ]; then
 	/usr/lib/open-hotspot/session-restore.sh restore >/dev/null 2>&1 ||
 		db_log_event session_restore_failed '' 'restore-not-ready-or-policy-failed' || true
+	/usr/lib/open-hotspot/session-restore.sh reconcile >/dev/null 2>&1 ||
+		db_log_event session_reconcile_failed '' 'reconcile-not-ready-or-status-unavailable' || true
 fi
 
 now_epoch=$(date -u '+%s')

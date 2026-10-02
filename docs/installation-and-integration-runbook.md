@@ -30,7 +30,7 @@ existing FAS.
 ## 2. Deploy candidate package via guarded deployment driver
 
 For candidate deployment (such as `1.2.0-r92`), use the official guarded driver
-only on the isolated r90/openNDS 11.0.x candidate slot. The r60/openNDS
+only on the isolated r90/r91/openNDS 11.0.x candidate slot. The r60/openNDS
 10.3.x baseline is a rollback target and must not be upgraded in place by this
 driver:
 
@@ -50,7 +50,7 @@ The driver executes with `set -euo pipefail` and `umask 077`, enforcing strict f
    - Creates consistent SQLite snapshot via `/usr/lib/open-hotspot/backup.sh export`.
    - Archives configuration, database, runtime code, both service init files, LuCI views, and installed APK metadata with strict error handling (no `|| true`).
    - Verifies all required members and archives with mode 0600.
-   - Separates rollback paths: `r60`/openNDS 10.3.1-r3 is the official production baseline; `r90`/openNDS 11.0.0-r1 is the previous field candidate. Installed package identity is read from the version file, packaged Makefile, offline installed APK listing, or the local `/lib/apk/db/installed` record; description/size-only output is rejected and no repository refresh is allowed. Unknown or mismatched target state aborts before the archive or package transaction.
+   - Separates rollback paths: `r60`/openNDS 10.3.1-r3 is the official production baseline; `r90`/`r91` with openNDS 11.0.x are previous field candidates. Installed package identity is read from the version file, packaged Makefile, offline installed APK listing, or the local `/lib/apk/db/installed` record; description/size-only output is rejected and no repository refresh is allowed. Unknown or mismatched target state aborts before the archive or package transaction.
 5. **Remote checksum verification**: Validates that the remote file SHA-256 matches the local verified checksum before invoking the package manager.
 6. **Conditional installation**: Executes `apk add --allow-untrusted` only after all prior barriers pass.
 7. **Post-install verification**: Executes `preflight.sh`, `diagnose.sh`, and `ndsctl status`.

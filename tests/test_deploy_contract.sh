@@ -6,7 +6,7 @@
 # 2. deploy-r92.sh passes bash syntax validation.
 # 3. Strict bash error handling (set -euo pipefail) is enabled.
 # 4. No '|| true' exists in the backup workflow (Phase 4).
-# 5. Rollback taxonomy matches documentation (r60 baseline vs r90 candidate).
+# 5. Rollback taxonomy matches documentation (r60 baseline vs r90/r91 candidate).
 # 6. opennds -v exit code is captured directly and non-zero output is validated.
 # 7. Failure count parsing handles arbitrary non-zero counts (e.g. failures=12).
 # 8. The embedded remote rollback archive command passes POSIX shell syntax.
@@ -16,7 +16,7 @@
 # 12. Local verification passes for the official r92 artifact.
 # 13. Installation is gated behind preflight, diagnose, and checksums.
 # 14. Acceptance status is explicitly output as Pending Hardware Validation.
-# 15-28. Simulations cover transport, preflight, diagnostics, rollback, identity,
+# 15-29. Simulations cover transport, preflight, diagnostics, rollback, identity,
 #        checksum, and successful-path gates without masking failures.
 
 set -euo pipefail
@@ -60,7 +60,7 @@ else
 fi
 
 # 5. Verify rollback taxonomy matches documentation
-if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
+if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
 	pass "Rollback taxonomy cross-verifies openNDS version with installed package"
 else
 	fail "Rollback taxonomy does not cross-verify openNDS version with package"
@@ -219,6 +219,12 @@ case "${SIMULATE_FAIL:-none}" in
 		fi
 		;;
 	unknown-version)
+		if echo "$cmd" | grep -q "open-hotspot\\.version"; then
+			echo "1.2.0-r93"
+			exit 0
+		fi
+		;;
+	r91-candidate)
 		if echo "$cmd" | grep -q "open-hotspot\\.version"; then
 			echo "1.2.0-r91"
 			exit 0
@@ -381,67 +387,76 @@ else
 	fail "Simulation 7: r60 baseline was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 8: unknown package version is rejected ---
+# --- Simulation 8: r91 openNDS 11 candidate is accepted ---
+: > "$AUDIT_LOG"
+sim_out=$(SIMULATE_FAIL="r91-candidate" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
+if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG"; then
+	pass "Simulation 8: r91/openNDS 11 candidate accepted before apk add"
+else
+	fail "Simulation 8: r91 candidate was not accepted (rc=$sim_rc: $sim_out)"
+fi
+
+# --- Simulation 9: unknown package version is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="unknown-version" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 8: unknown installed package version rejected before apk add"
+	pass "Simulation 9: unknown installed package version rejected before apk add"
 else
-	fail "Simulation 8: unknown package version was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 9: unknown package version was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 9: opennds -v failure without a version is rejected ---
+# --- Simulation 10: opennds -v failure without a version is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="opennds-exit" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 9: opennds probe without a parseable version rejected before apk add"
+	pass "Simulation 10: opennds probe without a parseable version rejected before apk add"
 else
-	fail "Simulation 9: invalid opennds probe was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 10: invalid opennds probe was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 10: valid version text with non-zero exit is accepted ---
+# --- Simulation 11: valid version text with non-zero exit is accepted ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="opennds-version-warning" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG" && printf '%s\n' "$sim_out" | grep -q "exit code 1"; then
-	pass "Simulation 10: parseable opennds version with exit code 1 continued safely"
+	pass "Simulation 11: parseable opennds version with exit code 1 continued safely"
 else
-	fail "Simulation 10: valid non-zero opennds version output was not accepted safely (rc=$sim_rc: $sim_out)"
+	fail "Simulation 11: valid non-zero opennds version output was not accepted safely (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 11: package version fallback works without version file ---
+# --- Simulation 12: package version fallback works without version file ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="no-version-file" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 11: offline APK version fallback accepted r90 candidate"
+	pass "Simulation 12: offline APK version fallback accepted r90 candidate"
 else
-	fail "Simulation 11: offline APK version fallback failed (rc=$sim_rc: $sim_out)"
+	fail "Simulation 12: offline APK version fallback failed (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 12: raw installed APK database fallback works ---
+# --- Simulation 13: raw installed APK database fallback works ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="raw-apk-db" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 12: raw installed APK database fallback accepted r90 candidate"
+	pass "Simulation 13: raw installed APK database fallback accepted r90 candidate"
 else
-	fail "Simulation 12: raw installed APK database fallback failed (rc=$sim_rc: $sim_out)"
+	fail "Simulation 13: raw installed APK database fallback failed (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 13: wrong board identity is rejected ---
+# --- Simulation 14: wrong board identity is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-board" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 13: wrong board identity rejected before apk add"
+	pass "Simulation 14: wrong board identity rejected before apk add"
 else
-	fail "Simulation 13: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 14: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 14: wrong boot slot is rejected ---
+# --- Simulation 15: wrong boot slot is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-slot" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 14: wrong boot slot rejected before apk add"
+	pass "Simulation 15: wrong boot slot rejected before apk add"
 else
-	fail "Simulation 14: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 15: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
 printf '\ntest_deploy_contract: %d passed, %d failed\n' "$PASSES" "$FAILURES"

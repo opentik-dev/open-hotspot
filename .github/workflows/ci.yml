@@ -50,10 +50,10 @@ jobs:
           test -n "$sdk_name"
           curl -fL --retry 3 "$index$sdk_name" -o "$RUNNER_TEMP/sdk-download/$sdk_name"
           tar --zstd -xf "$RUNNER_TEMP/sdk-download/$sdk_name" -C "$RUNNER_TEMP/openwrt-sdk" --strip-components=1
-      - name: Build APK
+      - name: Build and verify reproducible APK
         env:
           OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
-        run: sh tools/build-apk.sh
+        run: sh tools/build-apk.sh --verify
       - name: Verify generated artifact
         shell: bash
         run: |

@@ -7,6 +7,15 @@ set -eu
 
 PROJECT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 SDK=${OPEN_HOTSPOT_SDK:-}
+if [ -n "$SDK" ] && [ ! -d "$SDK" ]; then
+	if [ -d "$PROJECT/$SDK" ]; then
+		SDK="$PROJECT/$SDK"
+	elif [ -d "$PROJECT/../$SDK" ]; then
+		SDK="$PROJECT/../$SDK"
+	elif [ -d "$PROJECT/../../$SDK" ]; then
+		SDK="$PROJECT/../../$SDK"
+	fi
+fi
 if [ -z "$SDK" ]; then
 	if [ -d "$PROJECT/.build/sdk-clean" ]; then
 		SDK="$PROJECT/.build/sdk-clean"
@@ -19,26 +28,29 @@ if [ -z "$SDK" ]; then
 	fi
 fi
 
-APK="$SDK/staging_dir/host/bin/apk"
-MKHASH="$SDK/staging_dir/host/bin/mkhash"
 RELEASE=$(sed -n 's/^PKG_RELEASE:=//p' "$PROJECT/starter-kit/Makefile")
 VERSION=$(sed -n 's/^PKG_VERSION:=//p' "$PROJECT/starter-kit/Makefile")
 [ -n "$RELEASE" ] && [ -n "$VERSION" ]
-[ -x "$APK" ] && [ -x "$MKHASH" ]
 
-# Establish deterministic timestamp for reproducible packaging
-if [ -z "${SOURCE_DATE_EPOCH:-}" ]; then
-	SOURCE_DATE_EPOCH=$(git -C "$PROJECT" log -1 --format=%ct 2>/dev/null || true)
+# Establish deterministic timestamp for reproducible packaging.
+# The explicit release epoch defined in starter-kit/Makefile is required.
+MAKEFILE_EPOCH=$(sed -n 's/^PKG_SOURCE_DATE_EPOCH:=//p' "$PROJECT/starter-kit/Makefile" | tr -d ' \r\n')
+if [ -z "$MAKEFILE_EPOCH" ]; then
+	printf 'ERROR: PKG_SOURCE_DATE_EPOCH is missing from starter-kit/Makefile\n' >&2
+	exit 1
 fi
-if [ -z "${SOURCE_DATE_EPOCH:-}" ]; then
-	SOURCE_DATE_EPOCH=$(stat -c %Y "$PROJECT/starter-kit/Makefile" 2>/dev/null || true)
+if [ -n "${SOURCE_DATE_EPOCH:-}" ] && [ "$SOURCE_DATE_EPOCH" != "$MAKEFILE_EPOCH" ]; then
+	printf 'ERROR: Supplied SOURCE_DATE_EPOCH (%s) does not match PKG_SOURCE_DATE_EPOCH (%s) in starter-kit/Makefile\n' "$SOURCE_DATE_EPOCH" "$MAKEFILE_EPOCH" >&2
+	exit 1
 fi
-if [ -z "${SOURCE_DATE_EPOCH:-}" ]; then
-	SOURCE_DATE_EPOCH=1759432000
-fi
+SOURCE_DATE_EPOCH="$MAKEFILE_EPOCH"
 export SOURCE_DATE_EPOCH
 export TZ=UTC
 export LC_ALL=C
+
+APK="$SDK/staging_dir/host/bin/apk"
+MKHASH="$SDK/staging_dir/host/bin/mkhash"
+[ -x "$APK" ] && [ -x "$MKHASH" ]
 
 output="$PROJECT/dist/luci-app-open-hotspot-${VERSION}-r${RELEASE}.apk"
 build_dir="$PROJECT/.build/dist-r${RELEASE}"

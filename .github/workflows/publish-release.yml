@@ -51,7 +51,7 @@ jobs:
       - name: Rebuild APK from source
         env:
           OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
-        run: sh tools/build-apk.sh
+        run: sh tools/build-apk.sh --verify
       - name: Verify tag, package version, and checksum
         id: metadata
         shell: bash

@@ -78,9 +78,11 @@ so the user-facing eviction is not yet reproduced and must not be attributed
 to a timeout or quota without a controlled account-specific test.
 
 The working tree declares r92, which provides candidate implementation for
-session lifecycle stability, reproducible APK packaging, reconciled release
-metadata, read-only DEV diagnostics, and safe reconciliation/policy-refresh event
-reporting. r92 has no field artifact, router installation, or hardware evidence
+session lifecycle stability, reproducible APK packaging (clean git archive build
+verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`),
+reconciled release metadata, read-only DEV diagnostics, and safe reconciliation/policy-refresh event
+reporting. Cycle stability tests in the test suite are simulation/contract tests of algorithm
+logic; r92 has no field artifact, router installation, or hardware evidence
 and remains an unpublished working-tree candidate (hardware validation pending).
 r90 remains the last field-tested acceptance candidate.
 

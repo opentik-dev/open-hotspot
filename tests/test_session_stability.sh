@@ -11,9 +11,15 @@ set -eu
 # 5. Reconcile rogue client deauth success: native_restore_reconciled logging without leak
 # 6. Reconcile rogue client deauth failure: native_restore_reconcile_failed logging with exit code
 # 7. rpcd dev_diagnose pure-shell watchdog without external timeout command
-# 8. cycle.sh runtime guard: retry before reload when openNDS is alive
-# 9. Cycle policy refresh: no redundant opennds_apply_session_policy when window matches
-# 10. Cycle policy refresh failure: safe event details and active session preserved in SQLite
+# 8. cycle.sh runtime guard simulation: retry before reload when openNDS is alive
+# 9. Cycle policy refresh simulation: no redundant opennds_apply_session_policy when window matches
+# 10. Cycle policy refresh failure simulation: safe event details and active session preserved in SQLite
+#
+# NOTE: Tests 8, 9, and 10 are contract and logic simulations of the cycle algorithm
+# under isolated mock conditions. They verify algorithm branching, database state
+# changes, and event logging contracts, but do not execute /usr/lib/open-hotspot/cycle.sh
+# itself (which requires root, /var/run flock, and a live openNDS daemon). Full end-to-end
+# cycle execution remains a physical router acceptance gate.
 
 PROJECT=${PROJECT_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
 TMPDIR=$(mktemp -d /tmp/oh-stability.XXXXXX)
@@ -346,7 +352,7 @@ guard_result=0
 run_guard || guard_result=$?
 
 if [ "$guard_result" -eq 0 ] && [ ! -f "$GUARD_LOG" ]; then
-	pass "cycle runtime guard retried and avoided opennds reload while daemon process was alive"
+	pass "cycle runtime guard simulation: retried and avoided opennds reload while daemon process was alive"
 else
 	fail "cycle runtime guard failed: result=$guard_result reload_log=$(cat "$GUARD_LOG" 2>/dev/null || echo 'none')"
 fi
@@ -389,7 +395,7 @@ sqlite3 -batch "$TEST_DB" "
 done
 
 if [ ! -f "$POLICY_APPLY_LOG" ]; then
-	pass "policy refresh was correctly skipped because policy_period_start matched current period"
+	pass "cycle policy refresh simulation: correctly skipped because policy_period_start matched current period"
 else
 	fail "policy refresh was redundantly triggered: $(cat "$POLICY_APPLY_LOG")"
 fi
@@ -424,7 +430,7 @@ done
 # Check event logged with safe detail
 refresh_event=$(sqlite3 "$TEST_DB" "SELECT detail FROM admin_events WHERE action='policy_refresh_failed' ORDER BY id DESC LIMIT 1;")
 if printf '%s\n' "$refresh_event" | grep -qE '^policy:period=daily:window='; then
-	pass "policy_refresh_failed logged with safe detail format: $refresh_event"
+	pass "cycle policy refresh simulation: policy_refresh_failed logged with safe detail format: $refresh_event"
 else
 	fail "policy_refresh_failed not logged or format invalid: $refresh_event"
 fi
@@ -432,7 +438,7 @@ fi
 # Check that refresh event detail has no sensitive leaks
 refresh_leak=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM admin_events WHERE action='policy_refresh_failed' AND (detail LIKE '%AA:BB%' OR detail LIKE '%dummy%');")
 if [ "$refresh_leak" -eq 0 ]; then
-	pass "policy_refresh_failed event contains no MAC, IP, or credential leaks"
+	pass "cycle policy refresh simulation: event contains no MAC, IP, or credential leaks"
 else
 	fail "policy_refresh_failed event leaked sensitive data"
 fi
@@ -441,7 +447,7 @@ fi
 active_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM active_sessions WHERE account_id=1 AND state='active';")
 total_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM active_sessions WHERE account_id=1;")
 if [ "$active_count" -gt 0 ] && [ "$active_count" -eq "$total_count" ]; then
-	pass "active sessions remain 'active' in SQLite despite policy refresh failure"
+	pass "cycle policy refresh simulation: active sessions remain 'active' in SQLite despite failure"
 else
 	fail "active session was corrupted or closed during policy refresh failure (active=$active_count total=$total_count)"
 fi

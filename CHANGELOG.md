@@ -14,14 +14,14 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
   - Added retry guard in `ensure_opennds_runtime` before restarting the openNDS service if the daemon process is actively running, preventing transient socket checks from resetting live client connections.
   - Captured return code of `opennds_deauth` in `session-restore.sh`, logging `native_restore_reconciled` on success and `native_restore_reconcile_failed` with `reconcile:deauth_rc=$deauth_rc` on failure without leaking MAC/IP/PIN/tokens.
 - Reproducible APK packaging:
-  - Updated `tools/build-apk.sh` with deterministic `SOURCE_DATE_EPOCH`, normalized file permissions, and clamped mtimes.
-  - Added `--verify` flag to run independent builds and verify bit-for-bit identical checksums.
-  - Added regression test `tests/test_apk_reproducibility.sh`.
+  - Updated `tools/build-apk.sh` with deterministic `SOURCE_DATE_EPOCH` enforced from `starter-kit/Makefile` (`PKG_SOURCE_DATE_EPOCH:=1790968682`), rejecting mismatched external values, normalizing file permissions, and clamping mtimes.
+  - Added `--verify` flag to run independent builds and verify bit-for-bit identical checksums; clean archive build verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`.
+  - Added regression test `tests/test_apk_reproducibility.sh` and updated GitHub CI to run `tools/build-apk.sh --verify` and fail if hashes differ (a skipped SDK test does not constitute proof of reproducibility).
 - Hardened DEV diagnostics:
   - Added pure-shell watchdog timer in `rpc_dev_diagnose` for platforms where external `timeout` binary is unavailable.
   - Added on-target package version discovery via `/usr/lib/open-hotspot/open-hotspot.version` and packaging metadata.
 - Reconciled release metadata: r90 remains the last field-tested acceptance candidate; r92 is explicitly marked as unpublished working-tree state in all active documentation.
-- Added comprehensive test coverage: extended regression test `tests/test_session_stability.sh`, release consistency contract `tests/test_release_consistency.sh`, and APK reproducibility test `tests/test_apk_reproducibility.sh` (5 python tests, 27 shell contracts passed).
+- Added comprehensive test coverage: extended regression test `tests/test_session_stability.sh`, release consistency contract `tests/test_release_consistency.sh`, and APK reproducibility test `tests/test_apk_reproducibility.sh` (5 python tests, 27 shell contracts passed). Cycle stability tests are simulation and contract tests of algorithm branching; end-to-end cycle execution remains a physical router acceptance gate.
 - Read-only DEV diagnostics LuCI page (Services → Open-HotSpot → DEV) and RPC methods (`dev_events_list`, `dev_diagnose`).
 - Improved diagnostic detail in `cycle.sh` events with safe exit code capture and non-secret context.
 - No changes to authentication fail-closed semantics or openNDS contracts. All hardware gates remain open.

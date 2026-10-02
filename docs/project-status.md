@@ -47,8 +47,10 @@
   hardware validation pending), which provides candidate implementation and
   automated regression tests for the reported 3-4 minute client eviction
   (case-insensitive MAC queries, authenticated-only client reconciliation,
-  policy_period_start initialization, non-disruptive daemon readiness check),
-  reproducible APK packaging via deterministic SOURCE_DATE_EPOCH, safe
+  policy_period_start initialization, non-disruptive daemon readiness check;
+  cycle stability tests are simulation/contract tests of algorithm logic),
+  reproducible APK packaging via deterministic SOURCE_DATE_EPOCH (clean git archive build
+  verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), safe
   reconciliation error reporting, reconciled release metadata, and a read-only
   DEV diagnostics LuCI page. r90 remains the last field-tested acceptance
   candidate; r92 remains an unpublished working-tree candidate and does not

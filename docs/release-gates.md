@@ -1,11 +1,10 @@
 # Open-HotSpot release-gate register
 
-This register is the operational release decision for `luci-app-open-hotspot
-1.2.0-r90`. r90 is the current source candidate with router-access isolation,
-runtime readiness recovery, and a packaged read-only integration diagnostic;
-it
-is not a production release until every critical
-gate below has evidence from the physical target.
+This register is the operational release decision register. `r90` is the
+last field-tested acceptance candidate with router-access isolation, runtime
+readiness recovery, and a packaged read-only integration diagnostic. `r92` is
+the current unpublished working-tree candidate. Neither is a production release
+until every critical gate below has evidence from the physical target.
 
 | Priority | Risk / failure mode | Likelihood | Impact | Required closure evidence | Owner | Status |
 |---|---|---:|---:|---|---|---|
@@ -30,10 +29,12 @@ gate below has evidence from the physical target.
 
 ## Current decision
 
-`r90` is suitable for controlled pilot validation and rollback testing. It is
-not approved as a production baseline. The next field session must prioritize
-the disposable client flow, counter/quota mapping, and restart behavior; code
-changes must not claim those gates closed without target evidence.
+`r90` remains the last field-tested candidate suitable for controlled pilot
+validation and rollback testing. `r92` is the current unpublished working-tree
+candidate with session stability and reproducible build fixes, pending hardware
+validation. Neither is approved as a production baseline. The next field session
+must prioritize the disposable client flow, counter/quota mapping, and restart
+behavior; code changes must not claim those gates closed without target evidence.
 
 The dual-boot layout reduces recovery risk, but it does not make the two
 partitions a shared data store and does not close T011 by itself. A partition

@@ -27,18 +27,34 @@ The preflight must pass PHP/PDO-SQLite/hash, SQLite, uhttpd, UCI, openNDS,
 topology, and readiness checks. It does not replace dnsmasq or edit an
 existing FAS.
 
-## 2. Install the base package
+## 2. Deploy candidate package via guarded deployment driver
 
-Install the architecture-neutral APK built for the target OpenWrt feed:
+For candidate deployment (such as `1.2.0-r92`), use the official guarded driver
+only on the isolated r90/openNDS 11.0.x candidate slot. The r60/openNDS
+10.3.x baseline is a rollback target and must not be upgraded in place by this
+driver:
 
 ```sh
-apk add --allow-untrusted /tmp/luci-app-open-hotspot-<version>-r<release>.apk
-/usr/lib/open-hotspot/setup.sh base
-/usr/lib/open-hotspot/setup.sh status
+# Verify local artifact integrity only:
+tools/deploy-r92.sh --check-local
+
+# Execute guarded deployment to router:
+ROUTER_IP=192.168.50.1 tools/deploy-r92.sh
 ```
 
-The base stage initializes SQLite and records a retryable state. It must not
-silently replace dnsmasq, overwrite an external FAS, or create credentials.
+The driver executes with `set -euo pipefail` and `umask 077`, enforcing strict fail-closed barriers:
+1. **Local verification**: Validates artifact existence, exact expected SHA-256 (`a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), `apk --allow-untrusted verify`, and `apk adbdump`.
+2. **Router identity inspection**: Interrogates router board model, active boot slot, and responsive `opennds -v`; the expected EA8300/slot-2 identity is fail-closed by default.
+3. **Read-only preflight & diagnostics**: Runs `/usr/lib/open-hotspot/preflight.sh` and `/usr/lib/open-hotspot/diagnose.sh` prior to mutation; aborts immediately on non-zero exit, missing summary, or active failures.
+4. **Complete transactional rollback backup**:
+   - Creates consistent SQLite snapshot via `/usr/lib/open-hotspot/backup.sh export`.
+   - Archives configuration, database, runtime code, both service init files, LuCI views, and installed APK metadata with strict error handling (no `|| true`).
+   - Verifies all required members and archives with mode 0600.
+   - Separates rollback paths: `r60`/openNDS 10.3.1-r3 is the official production baseline; `r90`/openNDS 11.0.0-r1 is the previous field candidate. Unknown or mismatched target state aborts before the archive or package transaction.
+5. **Remote checksum verification**: Validates that the remote file SHA-256 matches the local verified checksum before invoking the package manager.
+6. **Conditional installation**: Executes `apk add --allow-untrusted` only after all prior barriers pass.
+7. **Post-install verification**: Executes `preflight.sh`, `diagnose.sh`, and `ndsctl status`.
+8. **Explicit acceptance state**: Reports `Pending Hardware Validation`; physical client stability testing (10-15 min continuous traffic) remains mandatory before closing T006/T086.
 
 ## 3. Activate local FAS deliberately
 

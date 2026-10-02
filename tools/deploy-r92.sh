@@ -260,6 +260,23 @@ INSTALLED_VERSION=$("${SSH_CMD[@]}" '
 				head -n 1)
 		fi
 	fi
+	if [ -z "$pkg_version" ] && [ -r /lib/apk/db/installed ]; then
+		# Last local-only fallback: read the installed APK database directly.
+		# This avoids repository indexes when apk list has no matching index.
+		in_pkg=0
+		while IFS= read -r line; do
+			case "$line" in
+				P:luci-app-open-hotspot) in_pkg=1 ;;
+				P:*) in_pkg=0 ;;
+				V:*)
+					if [ "$in_pkg" -eq 1 ]; then
+						pkg_version=${line#V:}
+						break
+					fi
+					;;
+			esac
+		done < /lib/apk/db/installed
+	fi
 	if [ -z "$pkg_version" ]; then
 		printf "unknown\n"
 	else

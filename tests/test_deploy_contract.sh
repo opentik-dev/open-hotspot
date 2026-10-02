@@ -16,7 +16,7 @@
 # 12. Local verification passes for the official r92 artifact.
 # 13. Installation is gated behind preflight, diagnose, and checksums.
 # 14. Acceptance status is explicitly output as Pending Hardware Validation.
-# 15-27. Simulations cover transport, preflight, diagnostics, rollback, identity,
+# 15-28. Simulations cover transport, preflight, diagnostics, rollback, identity,
 #        checksum, and successful-path gates without masking failures.
 
 set -euo pipefail
@@ -90,6 +90,7 @@ fi
 
 # 8. Verify offline APK fallback parser and reject .list version extraction
 if ! grep -q -- "apk --network=false list --installed luci-app-open-hotspot" "$DEPLOY_SCRIPT" ||
+	! grep -q "P:luci-app-open-hotspot" "$DEPLOY_SCRIPT" ||
 	! grep -q "s/\^luci-app-open-hotspot-" "$DEPLOY_SCRIPT" ||
 	grep -q 'sed.*version.*\.list' "$DEPLOY_SCRIPT"; then
 	fail "deploy-r92.sh incorrectly relies on .list file for version extraction"
@@ -237,6 +238,12 @@ case "${SIMULATE_FAIL:-none}" in
 		;;
 	no-version-file)
 		if echo "$cmd" | grep -q "apk --network=false list --installed luci-app-open-hotspot"; then
+			echo "1.2.0-r90"
+			exit 0
+		fi
+		;;
+	raw-apk-db)
+		if echo "$cmd" | grep -q "/lib/apk/db/installed"; then
 			echo "1.2.0-r90"
 			exit 0
 		fi
@@ -410,22 +417,31 @@ else
 	fail "Simulation 11: offline APK version fallback failed (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 12: wrong board identity is rejected ---
+# --- Simulation 12: raw installed APK database fallback works ---
+: > "$AUDIT_LOG"
+sim_out=$(SIMULATE_FAIL="raw-apk-db" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
+if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG"; then
+	pass "Simulation 12: raw installed APK database fallback accepted r90 candidate"
+else
+	fail "Simulation 12: raw installed APK database fallback failed (rc=$sim_rc: $sim_out)"
+fi
+
+# --- Simulation 13: wrong board identity is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-board" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 12: wrong board identity rejected before apk add"
+	pass "Simulation 13: wrong board identity rejected before apk add"
 else
-	fail "Simulation 12: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 13: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 13: wrong boot slot is rejected ---
+# --- Simulation 14: wrong boot slot is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-slot" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 13: wrong boot slot rejected before apk add"
+	pass "Simulation 14: wrong boot slot rejected before apk add"
 else
-	fail "Simulation 13: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 14: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
 printf '\ntest_deploy_contract: %d passed, %d failed\n' "$PASSES" "$FAILURES"

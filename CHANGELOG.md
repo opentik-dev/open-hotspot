@@ -5,6 +5,10 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+- Prepared r94 UI hardening: Events and DEV now load the shared stylesheet, and
+  account/device action controls use consistent responsive rows and button
+  sizing.
+
 - Separated the LuCI developer surfaces:
   - `Services → Open-HotSpot → Events` now owns the bounded, read-only and
     redacted manager event log plus the diagnostic snapshot.
@@ -14,6 +18,13 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 - Documented the IoT bypass idea for a later reviewed contract; Tapo/D-Link
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
+
+## 1.2.0-r94 (UI hardening candidate; target installation pending)
+
+- Normalized LuCI action-button sizing, spacing, wrapping, and mobile behavior
+  across account, device, backup, profile, voucher, Events, and DEV surfaces.
+- Kept Events as a standalone read-only page and kept DEV limited to future
+  feature registration.
 
 ## 1.2.0-r93 (installed field candidate; acceptance pending)
 

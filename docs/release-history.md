@@ -10,7 +10,8 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r93` is the current installed field candidate. Its artifact checksum is
+`1.2.0-r94` is the current field candidate; installation is pending. `1.2.0-r93`
+is the last installed field candidate. Its artifact checksum is
 `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`; guarded
 deployment over r92 completed with post-install `failures=0 warnings=0` and
 `ndsctl status` healthy. Physical acceptance gates remain open. r92 is the
@@ -109,7 +110,8 @@ final release freeze.
 | r90 | historical/superseded | Accepts both abbreviated and explicit-direction openNDS 11 quota-deauth callback names after target evidence showed `download_quota_deauth`; adds contract coverage. Superseded by r92. |
 | r91 | superseded | Pre-release iteration: added DEV diagnostics page and consistency test, but lacked session stability fixes and commit was not self-contained. Superseded by r92. |
 | r92 | `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db` | Superseded installed predecessor. Stabilized authenticated session lifecycle, reproducible packaging, DEV diagnostics, and guarded deployment. Installed over r91 on the EA8300; post-install preflight, diagnostics, and `ndsctl status` passed. |
-| r93 | `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a` | Current installed field candidate. Separates the Events and DEV LuCI surfaces, preserves the r92 session-stability changes, and was installed over r92 on the EA8300. Post-install preflight, diagnostics, and `ndsctl status` passed; remaining acceptance gates are open. |
+| r93 | `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a` | Last installed field candidate. Separates the Events and DEV LuCI surfaces, preserves the r92 session-stability changes, and was installed over r92 on the EA8300. Post-install preflight, diagnostics, and `ndsctl status` passed; remaining acceptance gates are open. |
+| r94 | `b801cdccd9e7b06ddf6aa72bf68d404769788f13543ad11c7264834979413eb6` | UI hardening candidate: shared stylesheet loading and consistent responsive action rows/buttons across LuCI surfaces. Built and tested locally; target installation pending. |
 
 ## Existing GitHub history
 

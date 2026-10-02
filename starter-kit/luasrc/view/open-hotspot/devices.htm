@@ -17,6 +17,7 @@
 <td><%=pcdata(device.last_seen or "")%></td>
 <td><%=device.live_sessions%></td>
 <td>
+<div class="oh-action-row">
 <form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="id" value="<%=device.id%>" />
 <% if device.status == "blocked" then %><input type="hidden" name="action" value="unblock" /><input class="cbi-button cbi-button-save" type="submit" value="<%:Unblock%>" /><% else %><input type="hidden" name="action" value="block" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Block%>" onclick="return confirm('<%:Block this device?%>');" /><% end %>
@@ -28,6 +29,7 @@
 <select name="target_account_id"><option value=""><%:Move to account...%></option><% for _, account in ipairs(accounts or {}) do %><% if account.id ~= device.account_id and account.status == "active" then %><option value="<%=account.id%>"><%=pcdata(account.username)%></option><% end %><% end %></select>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Reassign%>" onclick="return confirm('<%:Reassign this MAC after confirming no live session?%>');" />
 </form>
+</div>
 </td>
 </tr>
 <% end %>

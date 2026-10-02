@@ -1,6 +1,6 @@
 <%+header%>
 
-<div class="cbi-section">
+<div class="oh-page cbi-section">
 	<h2 name="content">Open-HotSpot Event Log</h2>
 	<div class="alert-message info">
 		This is a bounded, read-only and redacted manager event stream with the latest diagnostic snapshot. It is separate from the DEV feature lab. Raw system logs remain available through the router's controlled operations path.
@@ -11,7 +11,7 @@
 	<% end %>
 
 	<h3>Recent service events</h3>
-	<div class="table">
+	<div class="oh-table-wrap"><div class="table">
 		<div class="tr table-titles">
 			<div class="th">Time</div>
 			<div class="th">Action</div>
@@ -34,7 +34,7 @@
 				<div class="td" colspan="4"><em>No service events recorded</em></div>
 			</div>
 		<% end %>
-	</div>
+	</div></div>
 
 	<h3>Diagnostic snapshot</h3>
 	<% if diagnose_exit ~= 0 and diagnose_exit ~= -1 then %>
@@ -49,5 +49,7 @@
 	<h3>Package info</h3>
 	<p>Version: <%=pcdata(pkg_version)%></p>
 </div>
+
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
 
 <%+footer%>

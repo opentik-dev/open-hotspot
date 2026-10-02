@@ -8,10 +8,12 @@ for detailed acceptance decisions.
 
 ## Baselines
 
+The next UI hardening candidate is r94; it is not installed on the target yet.
+
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current field candidate | Open-HotSpot r93 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; UI separation present; post-install preflight/diagnostic/`ndsctl status` passed; hardware acceptance pending |
-| Previous candidate | Open-HotSpot r92 / openNDS 11.0.0 | Previous target state | Superseded by r93 |
+| Current field candidate | Open-HotSpot r94 / openNDS 11.0.0 | UI hardening candidate for EA8300 slot 02 | Built and tested; installation pending |
+| Last installed candidate | Open-HotSpot r93 / openNDS 11.0.0 | Previous target state | Installed and verified; superseded by r94 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1
@@ -77,7 +79,7 @@ authenticated beyond the reported 3–4 minute interval during this observation,
 so the user-facing eviction is not yet reproduced and must not be attributed
 to a timeout or quota without a controlled account-specific test.
 
-The installed r93 candidate provides implementation for
+The installed r93 candidate provided implementation for
 session lifecycle stability, reproducible APK packaging (clean git archive build
 verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`),
 reconciled release metadata, separated read-only DEV/Events LuCI surfaces, and

@@ -1,10 +1,15 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r79`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r92`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `d443169ed707f55d6412392ce666f96f9fe44f295731466da1937d05725eb1e2`
+**SHA-256:** `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** Controlled pilot / factory-reset acceptance candidate; not yet a production baseline.
+**Decision:** Installed controlled field candidate; not yet a production baseline.
+
+The r92 package was installed over r91 by the guarded deployment driver. The
+rollback archive and SQLite export were created before mutation; post-install
+preflight, diagnostics, and `ndsctl status` passed. Client stability and the
+remaining hardware gates are still pending.
 
 ## Delivered
 

@@ -1,8 +1,8 @@
 # Open-HotSpot project status
 
-**As of:** 2026-10-02
-**Last documented acceptance candidate:** Open-HotSpot 1.2.0-r90
-**Working-tree candidate (unpublished):** Open-HotSpot 1.2.0-r92
+**As of:** 2026-10-03
+**Current field candidate:** Open-HotSpot 1.2.0-r92 (installed on target)
+**Previous candidate:** Open-HotSpot 1.2.0-r91
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -43,8 +43,8 @@
   the database permission hardening path, and r89 fixes the source-compatible
   reauth bridge that previously bypassed custombinauth on the target; r90
   accepts the explicit native quota-deauth names emitted by the target
-  openNDS 11 dispatcher. The working tree declares r92 (unpublished candidate;
-  hardware validation pending), which provides candidate implementation and
+  openNDS 11 dispatcher. The installed r92 field candidate (hardware
+  validation pending) provides candidate implementation and
   automated regression tests for the reported 3-4 minute client eviction
   (case-insensitive MAC queries, authenticated-only client reconciliation,
   policy_period_start initialization, non-disruptive daemon readiness check;
@@ -52,14 +52,14 @@
   reproducible APK packaging via deterministic SOURCE_DATE_EPOCH (clean git archive build
   verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), safe
   reconciliation error reporting, reconciled release metadata, and a read-only
-  DEV diagnostics LuCI page. r90 remains the last field-tested acceptance
-  candidate; r92 remains an unpublished working-tree candidate and does not
-  close any hardware gate without field proof.
+  DEV diagnostics LuCI page. r92 is now installed on the target and passed
+  guarded post-install preflight/diagnostics, but it does not close any
+  hardware gate without the required client-session evidence.
 
 ## What is not accepted yet
 
-The following are the current release-gate states after the r90 repository and
-candidate-slot verification run; the remaining physical gates are still open:
+The following are the current release-gate states after the r92 guarded
+deployment; the remaining physical gates are still open:
 
 | Gate | Current state | Required proof |
 |---|---|---|
@@ -90,19 +90,17 @@ open.
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the r90 field candidate
+1. Close the remaining physical-router gates against the installed r92 field candidate
    while preserving r60/openNDS 10.3.1 as the documented rollback baseline.
-   The working tree (r92) adds session stability, diagnostics, and metadata
-   reconciliation but remains unpublished until its artifact and gates are reviewed.
+   The r92 artifact is installed and post-install checks passed; publication
+   remains blocked until the physical acceptance gates are recorded.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-  baseline; r90 belongs on the disposable acceptance slot and remains a
-  controlled candidate, not a frozen release. The current read-only probe found
-  the official Advanced Reboot path has returned the target to candidate slot
-  02; the current joint probe confirms the candidate slot and openNDS 11.0.0;
-  r90 still requires a fresh quota callback retest after the target spelling
-  fix.
+  baseline; r92 belongs on the disposable acceptance slot and remains a
+  controlled candidate, not a frozen release. The deployment evidence confirms
+  candidate slot 02, openNDS 11.0.0, and r92 installed successfully; fresh
+  client-session, quota, restart, and failure-containment evidence remain open.
 
 ## Decision rule
 

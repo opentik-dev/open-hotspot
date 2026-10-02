@@ -1,6 +1,6 @@
 # Open-HotSpot current state
 
-**As of:** 2026-10-02
+**As of:** 2026-10-03
 
 This is the short operational truth for agents and release reviewers. The
 specification, release-gate register, and field evidence remain authoritative
@@ -10,8 +10,8 @@ for detailed acceptance decisions.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current acceptance candidate | Open-HotSpot r90 / openNDS 11.0.0 | EA8300 candidate slot 02 field validation | r90 adds target-observed native quota-deauth aliases; r89 source-compatible reauth bridge and r88 native-restore/database fixes remain in the base |
-| Unpublished working-tree candidate | Open-HotSpot r92 / openNDS 11.0.0 | Session lifecycle stability candidate, reproducible APK packaging, release metadata reconciliation, DEV diagnostics, and improved event detail | Candidate implementation and tested locally; hardware validation pending; does not close any hardware gate |
+| Current field candidate | Open-HotSpot r92 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; post-install preflight/diagnostic/`ndsctl status` passed; hardware acceptance pending |
+| Previous candidate | Open-HotSpot r91 / openNDS 11.0.0 | Previous target state | Superseded by r92 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1
@@ -77,14 +77,23 @@ authenticated beyond the reported 3–4 minute interval during this observation,
 so the user-facing eviction is not yet reproduced and must not be attributed
 to a timeout or quota without a controlled account-specific test.
 
-The working tree declares r92, which provides candidate implementation for
+The installed r92 candidate provides implementation for
 session lifecycle stability, reproducible APK packaging (clean git archive build
 verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`),
 reconciled release metadata, read-only DEV diagnostics, and safe reconciliation/policy-refresh event
 reporting. Cycle stability tests in the test suite are simulation/contract tests of algorithm
-logic; r92 has no field artifact, router installation, or hardware evidence
-and remains an unpublished working-tree candidate (hardware validation pending).
-r90 remains the last field-tested acceptance candidate.
+logic. Its artifact was installed on the target through the guarded deployment
+driver and passed post-install diagnostics; hardware validation remains pending
+until client-session evidence is recorded.
+
+## 2026-10-03 deployment checkpoint
+
+The guarded driver upgraded the target from r91 to r92 after creating the
+SQLite export and complete rollback archive. The remote checksum matched the
+local artifact. Post-install diagnostics reported `failures=0 warnings=0`, and
+`ndsctl status` reported a healthy openNDS 11.0.0 service. The 3–4 minute
+client-eviction question remains a physical acceptance test, not a closed
+defect.
 
 ## Backup evidence
 

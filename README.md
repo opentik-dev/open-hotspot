@@ -71,9 +71,10 @@ Router:       Linksys EA8300
 OpenWrt:      25.12.5
 Target:       ipq40xx/generic
 openNDS:      11.0.0
-Open-HotSpot: 1.2.0-r76
+Open-HotSpot: 1.2.0-r92 (installed; hardware acceptance pending)
 ```
 
+The current field candidate is Open-HotSpot 1.2.0-r92 with openNDS 11.0.0.
 The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS
 10.3.1-r3. These are separate compatibility tracks; see
 [`docs/current-state.md`](docs/current-state.md) before operating a target.

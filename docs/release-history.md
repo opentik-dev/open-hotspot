@@ -10,14 +10,13 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r90` is the last documented source/build checkpoint and controlled
-acceptance candidate. Its artifact checksum and field evidence are recorded in
-the delivery manifest; the physical acceptance gates remain open. The working
-tree declares r91, which reconciles release metadata across active documents,
-adds a read-only DEV diagnostics LuCI page, improves cycle event diagnostic
-detail, and adds an automated release consistency test. r91 is unpublished and
-has no field artifact or hardware evidence. Earlier packages
-remain field evidence and rollback checkpoints. r40 removes upstream-address assumptions
+`1.2.0-r92` is the current installed field candidate. Its artifact checksum is
+`a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`; guarded
+deployment over r91 completed with post-install `failures=0 warnings=0` and
+`ndsctl status` healthy. Physical acceptance gates remain open. r91 is the
+previous candidate and is superseded by r92. Earlier packages remain field
+evidence and rollback checkpoints. Historical entries below are retained for
+audit and are not current release instructions. r40 removes upstream-address assumptions
 from local FAS activation, r41 adds a dynamic-address contract guard and
 rejects duplicate/overlapping LAN/WAN topology, r42 makes the preflight
 directly executable, r44 discovers the LAN interface from UCI, and r45 waits
@@ -76,40 +75,40 @@ final release freeze.
 | r56 | `a0ce831c17f2e959aa6f6d2ee75d230cad70587c6aa8c8a9d288d3d3e467deb9` | Adds the target-proven openNDS 10.3.1 procd stdout compatibility patch and recoverable init backup. |
 | r57 | `f1a25782cca49f2a63baca43348394ca4feb0142a4e579988a3f445155b60fab` | Refines live-apk image-root detection for the stdout compatibility post-install path. |
 | r58 | `9b00c3dddcb7ec164260ee1965f326294db9f08d5c09f0078abcee92a03aa34f` | Runs the compatibility patch on both fresh install and upgrade; target post-upgrade applied it and openNDS reached stable `ndsctl` readiness with preauthenticated-client rejection. |
-| r59 | pending | Adds the LuCI enable/disable control and SQLite-backed, quota-aware reboot/session-process restore outside BinAuth; target validation pending. |
+| r59 | historical/superseded | Adds the LuCI enable/disable control and SQLite-backed, quota-aware reboot/session-process restore outside BinAuth. Retained for audit; not current deployment guidance. |
 | r60 | CI-generated | Resolves the target's `ndsctl auth` MAC limitation by discovering the live client IP from `ndsctl status` without hardcoding any router address; enabled and disabled restore paths were validated on the EA8300. The release workflow records the exact commit SHA and artifact SHA-256. |
-| r61 | pending | Forces local FAS mode 0 during activation so openNDS does not let its default ThemeSpec/PreAuth flow override the Open-HotSpot username/PIN portal; adds the explicit IoT-device exception guidance. Target retest pending. |
-| r62 | pending | Explicitly enables openNDS DHCP option 114 during local-FAS activation so Android captive assistants receive the dynamic `status.client` portal URL instead of guessing the gateway address. Target retest pending. |
-| r63 | pending | Corrects the openNDS 11 local-FAS contract by setting `fasremotefqdn=status.client` while leaving `fasremoteip` unset. This prevents the mode-0 `Remote Portal Not Defined`/2050-to-404 failure without storing a LAN or WAN address. Target phone retest pending. |
-| r64 | pending | Connects the stock openNDS BinAuth dispatcher to the manager adapter through the `custombinauth` UCI hook and adds a recoverable UCI fallback for the target openNDS 11 `ndscfg` stdin behavior. Target fresh-login/accounting retest pending. |
-| r65 | pending | Corrects the BusyBox `sed` expression in the dispatcher fallback installer. The r64 package installed but did not apply that fallback. |
-| r66 | pending | Aligns the BinAuth session-duration variable with the verified openNDS contract (`sessiontimeout`), preserving native rate/quota output. Fresh-login/accounting and quota field proof remain pending. |
-| r67 | pending | Packages the read-only integration diagnostic, documents the complete openNDS → uhttpd/FAS → BinAuth → SQLite → LuCI service chain and its known failure modes, and preserves r60 as the rollback baseline. Fresh physical-client proof remains pending. |
-| r68 | pending | Corrects the diagnostic FAS probe to recognize the expected HTTP 400 response from a bare endpoint request, while still failing on transport or endpoint errors. Fresh physical-client proof remains pending. |
-| r69 | pending | Ensures the diagnostic creates its temporary workspace before the uhttpd/FAS probe. The prior r68 field run exposed this diagnostic-only ordering defect; fresh physical-client proof remains pending. |
-| r70 | pending | Preserves BusyBox wget diagnostics output so the expected HTTP 400 response from a bare FAS request is recognized; transport failures remain release failures. Fresh physical-client proof remains pending. |
-| r71 | pending | Adds versioned openNDS adapter contracts for v10.3.1-r3 rollback and v11.0.0 current target; `opennds.sh` rejects unknown daemon versions. Runtime accounting, quota, restart, and failure-containment gates remain open. |
-| r72 | pending | Detects and reports an active SQLite manager session with zero live openNDS clients, preventing a stale restart/close state from appearing healthy. Runtime accounting, quota, restart, and failure-containment gates remain open. |
-| r73 | pending | Makes the packaged diagnostic validate the installed daemon's versioned adapter contract in addition to `ndsctl`, while retaining the explicit stale-session warning. Runtime gates remain open. |
+| r61 | historical/superseded | Forces local FAS mode 0 during activation and adds the explicit IoT-device exception guidance. Retained for audit; not current deployment guidance. |
+| r62 | historical/superseded | Historical DHCP option 114 checkpoint. Retained for audit; not a current release or deployment instruction. |
+| r63 | historical/superseded | Historical local-FAS FQDN checkpoint. Retained for audit; not a current release or deployment instruction. |
+| r64 | historical/superseded | Connects the stock openNDS BinAuth dispatcher to the manager adapter through the `custombinauth` UCI hook and adds a recoverable UCI fallback for the target openNDS 11 `ndscfg` stdin behavior. Retained for audit; not current deployment guidance. |
+| r65 | historical/superseded | Corrects the BusyBox `sed` expression in the dispatcher fallback installer. Retained for audit; not current deployment guidance. |
+| r66 | historical/superseded | Aligns the BinAuth session-duration variable with the verified openNDS contract (`sessiontimeout`), preserving native rate/quota output. Retained for audit; not current deployment guidance. |
+| r67 | historical/superseded | Packages the read-only integration diagnostic and documents the complete openNDS → uhttpd/FAS → BinAuth → SQLite → LuCI service chain. Retained for audit; not current deployment guidance. |
+| r68 | historical/superseded | Corrects the diagnostic FAS probe to recognize the expected HTTP 400 response from a bare endpoint request, while still failing on transport or endpoint errors. Retained for audit; not current deployment guidance. |
+| r69 | historical/superseded | Ensures the diagnostic creates its temporary workspace before the uhttpd/FAS probe. Retained for audit; not current deployment guidance. |
+| r70 | historical/superseded | Preserves BusyBox wget diagnostics output so the expected HTTP 400 response from a bare FAS request is recognized; transport failures remain release failures. Retained for audit; not current deployment guidance. |
+| r71 | historical/superseded | Adds versioned openNDS adapter contracts for v10.3.1-r3 rollback and v11.0.0 current target; `opennds.sh` rejects unknown daemon versions. Retained for audit; not current deployment guidance. |
+| r72 | historical/superseded | Detects and reports an active SQLite manager session with zero live openNDS clients, preventing a stale restart/close state from appearing healthy. Retained for audit; not current deployment guidance. |
+| r73 | historical/superseded | Makes the packaged diagnostic validate the installed daemon's versioned adapter contract in addition to `ndsctl`, while retaining the explicit stale-session warning. Retained for audit; not current deployment guidance. |
 | r74 | `9d318a81aea8038fa36d77a8e137d0635793e290032f790f39935cbb792c2da2` | Unifies the period/renewal source across FAS, BinAuth, cycle, and restore; normalizes ISO timestamps for BusyBox; applies shared SQLite timeout/foreign-key defaults; runtime gates remain open. |
 | r75 | `ec19fd6470c96bd45417e3799f9d1b613f1ba65f07d9f6db0a75137331ab778f` | Adds zero-client stale manager-session reconciliation after restart/reboot; runtime gates remain open pending target evidence. |
 | r76 | `12547af79c3ee5ed4927f90b1853d2e90023cdc38ddaf1f63d4d3801a6444a1e` | Expires abandoned pending FAS transactions during cycle/maintenance; runtime gates remain open pending target evidence. |
-| r77 | pending | Resolves the target-specific live deauthentication path by using the current client IP from `ndsctl status` before falling back to MAC; physical close/accounting proof pending. |
+| r77 | historical/superseded | Resolves the target-specific live deauthentication path by using the current client IP from `ndsctl status` before falling back to MAC. Retained for audit; not current deployment guidance. |
 | r78 | `c12a42df803b8ff50188a0849350510b0d9bb6ee71e684119d0af6a1b38ca57d` | Correlates the target openNDS 11 deauth callback's explicit base64 `empty` marker to the active MAC session so BinAuth can close and account the session without accepting unknown custom data. Physical close/accounting proof recorded; quota/restart/failure gates remain open. |
 | r79 | `d443169ed707f55d6412392ce666f96f9fe44f295731466da1937d05725eb1e2` | Enables and starts the manager init service when local FAS is activated and repairs the service on live upgrade when FAS is already enabled, restoring automatic cycle/restore scheduling without mutating offline image roots. Target service/cron and automatic restore slice verified; remaining gates open. |
 | r80 | `9e059385981221a3a6e03a7f0a7c3dc83ecddf57aad644de4751b88b75cce0452` | Documents manager-state backup scope, validates the supplied archive locally and on-target, and tightens archive permissions/member validation. Target package install and backup export/validate passed; target import/rollback remains open. |
 | r81 | `d4c80955a1350d03f9a996f931a49b3f9af8b33336a98127e1260ef29f0dfac2` | Enforces `0600` permissions on the live manager database and UCI policy, retains secure backup export, and corrects the stale preflight state through bounded base setup. Target preflight, diagnostic, service, and permission checks passed; runtime release gates remain open. |
-| r82 | pending | Adds the conditional dnsmasq-full capability gate, detects malformed Wi-Fi board metadata during preflight, and ships an explicit board-definition recovery helper. Target dnsmasq-full/nftset and router-side Wi-Fi recovery verified; phone and remaining runtime gates stay open. |
+| r82 | historical/superseded | Adds the conditional dnsmasq-full capability gate, detects malformed Wi-Fi board metadata during preflight, and ships an explicit board-definition recovery helper. Retained for audit; not current deployment guidance. |
 | r83 | superseded | Added the reauth helper bridge, but the first package preserved mode `0644`, so the target could not execute it. Replaced by r84 before acceptance. |
-| r84 | pending | Ships the executable address-compatible bridge for the openNDS 11 `check_reauth_interval.sh` packaging/path mismatch and records the latest physical phone accounting evidence. Quota cutoff, restart matrix, failure containment, root-password, and factory acceptance gates remain open. |
+| r84 | historical/superseded | Ships the executable address-compatible bridge for the openNDS 11 `check_reauth_interval.sh` packaging/path mismatch. Retained for audit; not current deployment guidance. |
 | r85 | `2fb81486eb485b03f5452a0a0d15316076f8c899ea86e8820a73a50fbbb566a9` | Preserves bounded Reassign failure reasons across the LuCI/RPC boundary (`same-account`, `live-session`, `target-account-invalid`, and related safe codes). Local source build and repository checks passed; target installation and the fresh phone login/reassign retest are blocked until the recorded administrator SSH key is restored. |
 | r86 | `79904626b424f8dcc6cc6f1dfc485a888522278b6ec013603c7730fd7aa91b38` | Applies the exact openNDS 11.0.0 `check_reauth_interval.sh` shell typo correction during install, preserving the original vendor helper for rollback. Target helper syntax passed after installation; physical authentication retest remained required. |
 | r87 | `bf1d7dd68db0883ba282b695e2513f6cfeb5524161a9d4df9fe334ef7f60ba74` | Contains native openNDS `auth_restore` clients without a manager SQLite session when manager Restore is disabled. Adds adapter-owned live-MAC reconciliation and target verification returned zero clients after stale-session deauth. Fresh phone login and remaining physical gates remain open. |
 | r88 | `16879aa7310729f72f78e8fa9d0a2df23e7047b9d3eb4e66defeee056c923c57` | Corrects the database permission helper to succeed when the optional host UCI path is absent and makes the APK build reproducible. Two consecutive local builds matched; candidate-slot setup/reconciliation/preflight/diagnostic evidence is recorded; physical quota, restart, interruption, containment, and factory gates remain open. |
 | r89 | `d5b911a80c376db19fc516e0c2431ea978644884475ed0d6f39245378f8f18e4` | Fixes the openNDS 11 reauth compatibility bridge so the official sourced helper returns to the dispatcher instead of replacing it with `exec`; the install contract rejects the source-time exec trap. Two consecutive local builds matched; target installation and source-return check passed; a fresh portal login is still required before closing the runtime gates. |
-| r90 | pending | Accepts both abbreviated and explicit-direction openNDS 11 quota-deauth callback names after target evidence showed `download_quota_deauth`; adds contract coverage. Target first download cutoff was reproduced, but manager close/accounting retest and upload cutoff remain open. |
+| r90 | historical/superseded | Accepts both abbreviated and explicit-direction openNDS 11 quota-deauth callback names after target evidence showed `download_quota_deauth`; adds contract coverage. Superseded by r92. |
 | r91 | superseded | Pre-release iteration: added DEV diagnostics page and consistency test, but lacked session stability fixes and commit was not self-contained. Superseded by r92. |
-| r92 | pending | Unpublished working-tree candidate: stabilizes authenticated session lifecycle (case-insensitive MAC queries in SQLite, authenticated-only client reconciliation in session-restore, policy_period_start initialization in auth_consume, non-disruptive daemon check in cycle), adds pure-shell watchdog timeout and version-file discovery to DEV diagnostics, adds tests/test_session_stability.sh, and reconciles release metadata. No hardware gate closed without physical target proof. |
+| r92 | `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db` | Current installed field candidate. Stabilizes authenticated session lifecycle, adds reproducible packaging, DEV diagnostics, and guarded deployment. Installed over r91 on the EA8300; post-install preflight, diagnostics, and `ndsctl status` passed. Client-session, quota, restart, failure-containment, and final acceptance gates remain open. |
 
 ## Existing GitHub history
 

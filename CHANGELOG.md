@@ -5,7 +5,7 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
-## 1.2.0-r92 (unpublished working-tree candidate)
+## 1.2.0-r92 (installed field candidate; acceptance pending)
 
 - Stabilized authenticated session lifecycle (Candidate implementation; Tested locally, Pending Hardware Validation on physical router):
   - Replaced indiscriminate client iteration in `session-restore.sh reconcile_stale` with `opennds_authenticated_macs` parser, preventing Preauthenticated discovery probes from triggering invalid deauthentications or aborting the reconciliation cycle.
@@ -20,11 +20,11 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 - Hardened DEV diagnostics:
   - Added pure-shell watchdog timer in `rpc_dev_diagnose` for platforms where external `timeout` binary is unavailable.
   - Added on-target package version discovery via `/usr/lib/open-hotspot/open-hotspot.version` and packaging metadata.
-- Reconciled release metadata: r90 remains the last field-tested acceptance candidate; r92 is explicitly marked as unpublished working-tree state in all active documentation.
-- Added comprehensive test coverage: extended regression test `tests/test_session_stability.sh`, release consistency contract `tests/test_release_consistency.sh`, and APK reproducibility test `tests/test_apk_reproducibility.sh` (5 python tests, 27 shell contracts passed). Cycle stability tests are simulation and contract tests of algorithm branching; end-to-end cycle execution remains a physical router acceptance gate.
+- Reconciled release metadata: r92 is the current installed field candidate; historical checkpoints remain archived and hardware acceptance is still pending.
+- Added comprehensive test coverage: extended regression test `tests/test_session_stability.sh`, release consistency contract `tests/test_release_consistency.sh`, and APK reproducibility test `tests/test_apk_reproducibility.sh` (5 Python tests, 28 shell contracts passed; deployment contract 29/29). Cycle stability tests are simulation and contract tests of algorithm branching; end-to-end cycle execution remains a physical router acceptance gate.
 - Read-only DEV diagnostics LuCI page (Services → Open-HotSpot → DEV) and RPC methods (`dev_events_list`, `dev_diagnose`).
 - Improved diagnostic detail in `cycle.sh` events with safe exit code capture and non-secret context.
-- No changes to authentication fail-closed semantics or openNDS contracts. All hardware gates remain open.
+- No changes to authentication fail-closed semantics or openNDS contracts. Guarded deployment over r91 completed successfully; all hardware gates remain open pending client-session evidence.
 
 ## 1.2.0-r91 (superseded)
 

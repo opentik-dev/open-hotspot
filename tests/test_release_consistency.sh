@@ -6,11 +6,11 @@ set -eu
 # Rules:
 # 1. starter-kit/Makefile is the single source of truth for PKG_VERSION and PKG_RELEASE.
 # 2. Active status documents (docs/project-status.md, docs/current-state.md,
-#    docs/release-policy.md) must declare the exact working-tree release from Makefile.
-# 3. Exactly one active declaration of the working-tree version is permitted per active doc
+#    docs/release-policy.md) must declare the exact current field candidate from Makefile.
+# 3. Exactly one active declaration of the current field candidate is permitted per active doc
 #    (no duplicate or conflicting active version definitions).
 # 4. Active documents must not declare an older version (e.g. r90, r79) as the current
-#    working-tree candidate.
+#    field candidate.
 # 5. Historical references in docs/release-history.md and docs/field-evidence-* are preserved
 #    and must not trigger failures.
 
@@ -50,17 +50,17 @@ else
 		fail "docs/project-status.md contains legacy ambiguous 'Product candidate:' line; must distinguish last acceptance candidate vs working-tree candidate"
 	fi
 
-	# Must have exactly one "Working-tree candidate" definition
-	wt_matches=$(grep -c 'Working-tree candidate' "$DOC_PS" || true)
+	# Must have exactly one "Current field candidate" definition
+	wt_matches=$(grep -c 'Current field candidate' "$DOC_PS" || true)
 	if [ "$wt_matches" -eq 1 ]; then
-		val=$(grep 'Working-tree candidate' "$DOC_PS" | grep -Eo 'r[0-9]+' | head -1 || true)
+		val=$(grep 'Current field candidate' "$DOC_PS" | grep -Eo 'r[0-9]+' | head -1 || true)
 		if [ "$val" = "$EXPECTED_REL" ]; then
-			pass "docs/project-status.md defines working-tree candidate as $EXPECTED_REL"
+			pass "docs/project-status.md defines current field candidate as $EXPECTED_REL"
 		else
-			fail "docs/project-status.md declares $val as working-tree candidate (expected $EXPECTED_REL)"
+			fail "docs/project-status.md declares $val as current field candidate (expected $EXPECTED_REL)"
 		fi
 	else
-		fail "docs/project-status.md has $wt_matches definitions for Working-tree candidate (expected exactly 1)"
+		fail "docs/project-status.md has $wt_matches definitions for Current field candidate (expected exactly 1)"
 	fi
 fi
 
@@ -69,17 +69,17 @@ DOC_CS="$PROJECT/docs/current-state.md"
 if [ ! -f "$DOC_CS" ]; then
 	fail "missing docs/current-state.md"
 else
-	# Baselines table must have exactly one row for Unpublished working-tree candidate
-	cs_matches=$(grep -c 'Unpublished working-tree candidate' "$DOC_CS" || true)
+	# Baselines table must have exactly one row for Current field candidate
+	cs_matches=$(grep -c 'Current field candidate' "$DOC_CS" || true)
 	if [ "$cs_matches" -eq 1 ]; then
-		val=$(grep 'Unpublished working-tree candidate' "$DOC_CS" | grep -Eo 'r[0-9]+' | head -1 || true)
+		val=$(grep 'Current field candidate' "$DOC_CS" | grep -Eo 'r[0-9]+' | head -1 || true)
 		if [ "$val" = "$EXPECTED_REL" ]; then
-			pass "docs/current-state.md baselines table declares working-tree candidate as $EXPECTED_REL"
+			pass "docs/current-state.md baselines table declares current field candidate as $EXPECTED_REL"
 		else
-			fail "docs/current-state.md baselines table declares $val as working-tree candidate (expected $EXPECTED_REL)"
+			fail "docs/current-state.md baselines table declares $val as current field candidate (expected $EXPECTED_REL)"
 		fi
 	else
-		fail "docs/current-state.md has $cs_matches baselines table rows for Unpublished working-tree candidate (expected exactly 1)"
+		fail "docs/current-state.md has $cs_matches baselines table rows for Current field candidate (expected exactly 1)"
 	fi
 fi
 
@@ -88,16 +88,16 @@ DOC_RP="$PROJECT/docs/release-policy.md"
 if [ ! -f "$DOC_RP" ]; then
 	fail "missing docs/release-policy.md"
 else
-	rp_matches=$(grep -c 'working tree currently declares' "$DOC_RP" || true)
+	rp_matches=$(grep -c 'current field candidate is r' "$DOC_RP" || true)
 	if [ "$rp_matches" -eq 1 ]; then
-		val=$(grep 'working tree currently declares' "$DOC_RP" | grep -Eo 'r[0-9]+' | head -1 || true)
+		val=$(grep 'current field candidate is r' "$DOC_RP" | grep -Eo 'r[0-9]+' | head -1 || true)
 		if [ "$val" = "$EXPECTED_REL" ]; then
-			pass "docs/release-policy.md declares working-tree version as $EXPECTED_REL"
+			pass "docs/release-policy.md declares current field version as $EXPECTED_REL"
 		else
-			fail "docs/release-policy.md declares $val as working-tree version (expected $EXPECTED_REL)"
+			fail "docs/release-policy.md declares $val as current field version (expected $EXPECTED_REL)"
 		fi
 	else
-		fail "docs/release-policy.md has $rp_matches occurrences of 'working tree currently declares' (expected exactly 1)"
+		fail "docs/release-policy.md has $rp_matches occurrences of 'current field candidate is r' (expected exactly 1)"
 	fi
 fi
 
@@ -105,12 +105,12 @@ fi
 for doc in docs/project-status.md docs/current-state.md docs/release-policy.md; do
 	full="$PROJECT/$doc"
 	[ -f "$full" ] || continue
-	# Ensure lines that declare working-tree status do not reference historical r79 or r90 as current working-tree candidate
-	if grep -E 'Working-tree candidate.*r(79|90)\b' "$full" >/dev/null 2>&1; then
-		fail "$doc declares obsolete release as current working-tree candidate"
+	# Ensure active status lines do not reference historical r79 or r90.
+	if grep -E 'Current field candidate.*r(79|90)\b' "$full" >/dev/null 2>&1; then
+		fail "$doc declares obsolete release as current field candidate"
 	fi
-	if grep -E 'Unpublished working-tree candidate.*r(79|90)\b' "$full" >/dev/null 2>&1; then
-		fail "$doc baselines declare obsolete release as current working-tree candidate"
+	if grep -E 'Current field candidate.*r(79|90)\b' "$full" >/dev/null 2>&1; then
+		fail "$doc baselines declare obsolete release as current field candidate"
 	fi
 done
 

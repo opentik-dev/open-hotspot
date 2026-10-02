@@ -11,7 +11,7 @@ for detailed acceptance decisions.
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
 | Current acceptance candidate | Open-HotSpot r90 / openNDS 11.0.0 | EA8300 candidate slot 02 field validation | r90 adds target-observed native quota-deauth aliases; r89 source-compatible reauth bridge and r88 native-restore/database fixes remain in the base |
-| Unpublished working-tree candidate | Open-HotSpot r92 / openNDS 11.0.0 | Session lifecycle stability, release metadata reconciliation, DEV diagnostics, and improved event detail | r92 is not field-tested or published; does not close any hardware gate |
+| Unpublished working-tree candidate | Open-HotSpot r92 / openNDS 11.0.0 | Session lifecycle stability candidate, reproducible APK packaging, release metadata reconciliation, DEV diagnostics, and improved event detail | Candidate implementation and tested locally; hardware validation pending; does not close any hardware gate |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1
@@ -77,11 +77,12 @@ authenticated beyond the reported 3–4 minute interval during this observation,
 so the user-facing eviction is not yet reproduced and must not be attributed
 to a timeout or quota without a controlled account-specific test.
 
-The working tree declares r92, which stabilizes the session lifecycle,
-reconciles release metadata, adds a read-only DEV diagnostics page, and improves
-cycle event detail. r92 has no field artifact, build checksum, or hardware evidence
-and remains an unpublished working-tree candidate. r90 remains the last field-tested
-acceptance candidate.
+The working tree declares r92, which provides candidate implementation for
+session lifecycle stability, reproducible APK packaging, reconciled release
+metadata, read-only DEV diagnostics, and safe reconciliation/policy-refresh event
+reporting. r92 has no field artifact, router installation, or hardware evidence
+and remains an unpublished working-tree candidate (hardware validation pending).
+r90 remains the last field-tested acceptance candidate.
 
 ## Backup evidence
 

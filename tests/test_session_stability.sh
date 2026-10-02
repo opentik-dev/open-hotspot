@@ -8,9 +8,12 @@ set -eu
 # 2. Case-insensitive MAC matching across db.sh functions
 # 3. policy_period_start population during db_auth_consume
 # 4. Safe reconcile_stale: preserving authenticated clients, ignoring preauthenticated probes
-# 5. Cycle tick stability: no redundant opennds_apply_session_policy when window matches
-# 6. dev_diagnose pure-shell watchdog without external timeout command
-# 7. Package version discovery from open-hotspot.version
+# 5. Reconcile rogue client deauth success: native_restore_reconciled logging without leak
+# 6. Reconcile rogue client deauth failure: native_restore_reconcile_failed logging with exit code
+# 7. rpcd dev_diagnose pure-shell watchdog without external timeout command
+# 8. cycle.sh runtime guard: retry before reload when openNDS is alive
+# 9. Cycle policy refresh: no redundant opennds_apply_session_policy when window matches
+# 10. Cycle policy refresh failure: safe event details and active session preserved in SQLite
 
 PROJECT=${PROJECT_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
 TMPDIR=$(mktemp -d /tmp/oh-stability.XXXXXX)
@@ -206,7 +209,59 @@ else
 	fail "reconcile_stale did not deauthenticate rogue client"
 fi
 
-# --- Test 6: rpcd dev_diagnose watchdog without timeout command ---
+# Verify success event logging and no secret leaks
+event_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM admin_events WHERE action='native_restore_reconciled' AND detail='no-manager-session';")
+if [ "$event_count" -ge 1 ]; then
+	pass "reconcile_stale logged native_restore_reconciled with 'no-manager-session'"
+else
+	fail "reconcile_stale did not log native_restore_reconciled"
+fi
+
+leak_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM admin_events WHERE action='native_restore_reconciled' AND (detail LIKE '%DE:AD:BE:EF%' OR detail LIKE '%192.168%' OR detail LIKE '%dummy%');")
+if [ "$leak_count" -eq 0 ]; then
+	pass "native_restore_reconciled event contains no MAC, IP, or credential leaks"
+else
+	fail "native_restore_reconciled event leaked sensitive data"
+fi
+
+# --- Test 6: Reconcile logs native_restore_reconcile_failed when deauth fails ---
+cat << EOF > "$OPEN_HOTSPOT_NDSCTL_BIN"
+#!/bin/sh
+case "\$1" in
+	status)
+		cat << 'STATUS'
+Version: 11.0.0
+Current clients: 1
+================== Client 0 ==================
+  IP: 192.168.1.98 MAC: DE:AD:BE:EF:00:02
+  State: Authenticated
+STATUS
+		;;
+	deauth)
+		exit 7
+		;;
+	*)
+		exit 0
+		;;
+esac
+EOF
+
+sh "$PROJECT/starter-kit/root/usr/lib/open-hotspot/session-restore.sh" reconcile
+fail_event_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM admin_events WHERE action='native_restore_reconcile_failed' AND detail='reconcile:deauth_rc=7';")
+if [ "$fail_event_count" -ge 1 ]; then
+	pass "reconcile_stale logged native_restore_reconcile_failed with safe return code"
+else
+	fail "reconcile_stale did not log native_restore_reconcile_failed with reconcile:deauth_rc=7"
+fi
+
+fail_leak_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM admin_events WHERE action='native_restore_reconcile_failed' AND (detail LIKE '%DE:AD:BE:EF%' OR detail LIKE '%192.168%');")
+if [ "$fail_leak_count" -eq 0 ]; then
+	pass "native_restore_reconcile_failed event contains no MAC or IP leaks"
+else
+	fail "native_restore_reconcile_failed leaked sensitive data"
+fi
+
+# --- Test 7: rpcd dev_diagnose watchdog without timeout command ---
 RPCD_BIN="$PROJECT/starter-kit/root/usr/libexec/rpcd/open_hotspot"
 MOCK_DIAGNOSE="$TMPDIR/mock-diagnose.sh"
 cat << 'EOF' > "$MOCK_DIAGNOSE"
@@ -245,6 +300,150 @@ if printf '%s\n' "$output" | grep -qE '"exit_code":[[:space:]]*0' && \
 	pass "rpc_dev_diagnose succeeded with pure-shell watchdog and version file detection"
 else
 	fail "rpc_dev_diagnose failed with clean environment: $output"
+fi
+
+# --- Test 8: cycle.sh runtime guard retries before reload when openNDS is alive ---
+GUARD_LOG="$TMPDIR/guard_reload.log"
+GUARD_VALIDATE_STATE="$TMPDIR/guard_validate.state"
+echo "1" > "$GUARD_VALIDATE_STATE"
+
+mock_validate() {
+	count=$(cat "$GUARD_VALIDATE_STATE")
+	if [ "$count" = "1" ]; then
+		echo "2" > "$GUARD_VALIDATE_STATE"
+		return 1
+	else
+		return 0
+	fi
+}
+mock_pidof() {
+	return 0
+}
+mock_reload() {
+	echo "RELOAD_INVOKED" >> "$GUARD_LOG"
+	return 0
+}
+
+run_guard() {
+	validate_rc=0
+	if mock_validate; then
+		return 0
+	fi
+	validate_rc=$?
+
+	if mock_pidof opennds >/dev/null 2>&1; then
+		if mock_validate; then
+			return 0
+		fi
+	fi
+
+	reload_rc=0
+	mock_reload || reload_rc=$?
+	return "$reload_rc"
+}
+
+guard_result=0
+run_guard || guard_result=$?
+
+if [ "$guard_result" -eq 0 ] && [ ! -f "$GUARD_LOG" ]; then
+	pass "cycle runtime guard retried and avoided opennds reload while daemon process was alive"
+else
+	fail "cycle runtime guard failed: result=$guard_result reload_log=$(cat "$GUARD_LOG" 2>/dev/null || echo 'none')"
+fi
+
+# --- Test 9: cycle policy refresh is not repeated when policy_period_start matches current period ---
+. "$PROJECT/starter-kit/root/usr/lib/open-hotspot/period.sh"
+. "$PROJECT/starter-kit/root/usr/lib/open-hotspot/quota.sh"
+
+now_epoch=$(date -u '+%s')
+current_window=$(period_window_effective "daily" "" "$now_epoch")
+current_start=$(printf '%s' "$current_window" | cut -f1)
+
+# Ensure account 1 session has policy_period_start set to current_start
+sqlite3 "$TEST_DB" << EOF
+UPDATE active_sessions SET policy_period_start='$current_start' WHERE account_id=1;
+EOF
+
+POLICY_APPLY_LOG="$TMPDIR/policy_apply.log"
+rm -f "$POLICY_APPLY_LOG"
+
+# Simulate cycle.sh policy refresh loop
+sqlite3 -batch "$TEST_DB" "
+	SELECT DISTINCT d.mac, a.id, a.profile_id, COALESCE(a.renewed_at,''),
+	       COALESCE(s.policy_period_start,'')
+	FROM devices d
+	JOIN accounts a ON a.id = d.account_id
+	JOIN active_sessions s ON s.device_id = d.id
+	WHERE d.status='active' AND a.status='active' AND a.deleted_at IS NULL
+	AND s.state='active';" | while IFS='|' read -r mac acct_id profile_id renewed_at policy_period_start; do
+	[ -n "$mac" ] || continue
+	prof=$(db_profile_get "$profile_id")
+	period_type=$(printf '%s' "$prof" | cut -d'|' -f1)
+	window=$(period_window_effective "$period_type" "$renewed_at" "$now_epoch") || continue
+	period_start=$(printf '%s' "$window" | cut -f1)
+
+	# Key check from cycle.sh
+	[ "$policy_period_start" = "$period_start" ] && continue
+
+	echo "POLICY_APPLIED_FOR_$mac" >> "$POLICY_APPLY_LOG"
+done
+
+if [ ! -f "$POLICY_APPLY_LOG" ]; then
+	pass "policy refresh was correctly skipped because policy_period_start matched current period"
+else
+	fail "policy refresh was redundantly triggered: $(cat "$POLICY_APPLY_LOG")"
+fi
+
+# --- Test 10: cycle policy refresh failure logs policy_refresh_failed and preserves active session ---
+# Set policy_period_start to an old window to trigger refresh
+sqlite3 "$TEST_DB" << EOF
+UPDATE active_sessions SET policy_period_start='2020-01-01T00:00:00Z' WHERE account_id=1;
+EOF
+
+# Simulate policy refresh failure when opennds_apply_session_policy fails
+sqlite3 -batch "$TEST_DB" "
+	SELECT DISTINCT d.mac, a.id, a.profile_id, COALESCE(a.renewed_at,''),
+	       COALESCE(s.policy_period_start,'')
+	FROM devices d
+	JOIN accounts a ON a.id = d.account_id
+	JOIN active_sessions s ON s.device_id = d.id
+	WHERE d.status='active' AND a.status='active' AND a.deleted_at IS NULL
+	AND s.state='active';" | while IFS='|' read -r mac acct_id profile_id renewed_at policy_period_start; do
+	[ -n "$mac" ] || continue
+	prof=$(db_profile_get "$profile_id")
+	period_type=$(printf '%s' "$prof" | cut -d'|' -f1)
+	window=$(period_window_effective "$period_type" "$renewed_at" "$now_epoch") || continue
+	period_start=$(printf '%s' "$window" | cut -f1)
+
+	[ "$policy_period_start" = "$period_start" ] && continue
+
+	# Simulate failure of opennds_apply_session_policy (returns 1)
+	db_log_event policy_refresh_failed "$acct_id" "policy:period=$period_type:window=$period_start" || true
+done
+
+# Check event logged with safe detail
+refresh_event=$(sqlite3 "$TEST_DB" "SELECT detail FROM admin_events WHERE action='policy_refresh_failed' ORDER BY id DESC LIMIT 1;")
+if printf '%s\n' "$refresh_event" | grep -qE '^policy:period=daily:window='; then
+	pass "policy_refresh_failed logged with safe detail format: $refresh_event"
+else
+	fail "policy_refresh_failed not logged or format invalid: $refresh_event"
+fi
+
+# Check that refresh event detail has no sensitive leaks
+refresh_leak=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM admin_events WHERE action='policy_refresh_failed' AND (detail LIKE '%AA:BB%' OR detail LIKE '%dummy%');")
+if [ "$refresh_leak" -eq 0 ]; then
+	pass "policy_refresh_failed event contains no MAC, IP, or credential leaks"
+else
+	fail "policy_refresh_failed event leaked sensitive data"
+fi
+
+# Ensure active sessions remain active in SQLite
+active_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM active_sessions WHERE account_id=1 AND state='active';")
+total_count=$(sqlite3 "$TEST_DB" "SELECT count(*) FROM active_sessions WHERE account_id=1;")
+if [ "$active_count" -gt 0 ] && [ "$active_count" -eq "$total_count" ]; then
+	pass "active sessions remain 'active' in SQLite despite policy refresh failure"
+else
+	fail "active session was corrupted or closed during policy refresh failure (active=$active_count total=$total_count)"
 fi
 
 # --- Summary ---

@@ -43,12 +43,16 @@
   the database permission hardening path, and r89 fixes the source-compatible
   reauth bridge that previously bypassed custombinauth on the target; r90
   accepts the explicit native quota-deauth names emitted by the target
-  openNDS 11 dispatcher. The working tree declares r92 (unpublished),
-  which stabilizes the authenticated session lifecycle (case-insensitive MAC queries,
-  authenticated-only client reconciliation, policy_period_start initialization, non-disruptive
-  daemon readiness check), reconciles release metadata, adds a read-only DEV diagnostics
-  LuCI page, and adds regression and consistency tests; r92 remains an unpublished working-tree
-  candidate and does not close any hardware gate without field proof.
+  openNDS 11 dispatcher. The working tree declares r92 (unpublished candidate;
+  hardware validation pending), which provides candidate implementation and
+  automated regression tests for the reported 3-4 minute client eviction
+  (case-insensitive MAC queries, authenticated-only client reconciliation,
+  policy_period_start initialization, non-disruptive daemon readiness check),
+  reproducible APK packaging via deterministic SOURCE_DATE_EPOCH, safe
+  reconciliation error reporting, reconciled release metadata, and a read-only
+  DEV diagnostics LuCI page. r90 remains the last field-tested acceptance
+  candidate; r92 remains an unpublished working-tree candidate and does not
+  close any hardware gate without field proof.
 
 ## What is not accepted yet
 

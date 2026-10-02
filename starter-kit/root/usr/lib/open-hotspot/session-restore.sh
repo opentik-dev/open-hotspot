@@ -140,8 +140,13 @@ reconcile_stale() {
 			_valid_mac "$mac" || return 1
 			active=$(db_active_session_count_by_mac "$mac") || return 1
 			[ "$active" = 1 ] && continue
-			opennds_deauth "$mac" >/dev/null 2>&1 || true
-			db_log_event native_restore_reconciled '' 'no-manager-session' || true
+			deauth_rc=0
+			opennds_deauth "$mac" >/dev/null 2>&1 || deauth_rc=$?
+			if [ "$deauth_rc" -eq 0 ]; then
+				db_log_event native_restore_reconciled '' 'no-manager-session' || true
+			else
+				db_log_event native_restore_reconcile_failed '' "reconcile:deauth_rc=$deauth_rc" || true
+			fi
 		done <<EOF
 $auth_macs
 EOF

@@ -23,7 +23,7 @@
 # 6. Strict fail-closed rollback taxonomy:
 #    - Cross-verifies installed Open-HotSpot package version with openNDS daemon version:
 #      r60 + openNDS 10.3.x -> r60-opennds10.3-production-baseline
-#      r90/r91/r92 + openNDS 11.0.x -> r90-r91-r92-opennds11.0-field-candidate
+#      r90/r91/r92/r93 + openNDS 11.0.x -> r90-r91-r92-r93-opennds11.0-field-candidate
 #    - Rejects and aborts on unknown package version or mismatched openNDS version.
 # 7. Exact local and remote SHA-256 validation against documented hash.
 # 8. Conditional installation: executed only after every single barrier passes.
@@ -302,11 +302,11 @@ if echo "$INSTALLED_VERSION" | grep -qE "r60($|[^0-9])"; then
 		echo "FAIL: Rollback classification rejected: r60 installed but openNDS is not 10.3.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
-elif echo "$INSTALLED_VERSION" | grep -qE "r9[0-2]($|[^0-9])"; then
+elif echo "$INSTALLED_VERSION" | grep -qE "r9[0-3]($|[^0-9])"; then
 	if echo "$OPENNDS_VER" | grep -qE "11\.0(\.[0-9]+)?"; then
-		ROLLBACK_CLASSIFICATION="r90-r91-r92-opennds11.0-field-candidate"
+		ROLLBACK_CLASSIFICATION="r90-r91-r92-r93-opennds11.0-field-candidate"
 	else
-		echo "FAIL: Rollback classification rejected: r90/r91/r92 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
+		echo "FAIL: Rollback classification rejected: r90/r91/r92/r93 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
 else
@@ -316,10 +316,10 @@ fi
 echo "  Rollback Classification:  $ROLLBACK_CLASSIFICATION"
 
 # r60 is the preserved rollback baseline and must never be upgraded in place.
-# Candidates may only be deployed over the isolated r90/r91/r92/openNDS 11.0.x
+# Candidates may only be deployed over the isolated r90/r91/r92/r93/openNDS 11.0.x
 # candidate slot.
-if [ "$ROLLBACK_CLASSIFICATION" != "r90-r91-r92-opennds11.0-field-candidate" ]; then
-	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90/r91/r92/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
+if [ "$ROLLBACK_CLASSIFICATION" != "r90-r91-r92-r93-opennds11.0-field-candidate" ]; then
+	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90/r91/r92/r93/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
 	exit 1
 fi
 

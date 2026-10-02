@@ -60,7 +60,7 @@ else
 fi
 
 # 5. Verify rollback taxonomy matches documentation
-if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-r92-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
+if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-r92-r93-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
 	pass "Rollback taxonomy cross-verifies openNDS version with installed package"
 else
 	fail "Rollback taxonomy does not cross-verify openNDS version with package"
@@ -220,7 +220,7 @@ case "${SIMULATE_FAIL:-none}" in
 		;;
 	unknown-version)
 		if echo "$cmd" | grep -q "open-hotspot\\.version"; then
-			echo "1.2.0-r93"
+			echo "1.2.0-r999"
 			exit 0
 		fi
 		;;

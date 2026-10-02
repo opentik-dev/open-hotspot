@@ -10,10 +10,14 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r78` is the current source/build checkpoint. r78 is the candidate for
-the next CI-built release; its exact commit SHA, APK SHA-256, and acceptance
-evidence must be recorded by the release workflow. Earlier packages remain
-field evidence and rollback checkpoints. r40 removes upstream-address assumptions
+`1.2.0-r90` is the last documented source/build checkpoint and controlled
+acceptance candidate. Its artifact checksum and field evidence are recorded in
+the delivery manifest; the physical acceptance gates remain open. The working
+tree declares r91, which reconciles release metadata across active documents,
+adds a read-only DEV diagnostics LuCI page, improves cycle event diagnostic
+detail, and adds an automated release consistency test. r91 is unpublished and
+has no field artifact or hardware evidence. Earlier packages
+remain field evidence and rollback checkpoints. r40 removes upstream-address assumptions
 from local FAS activation, r41 adds a dynamic-address contract guard and
 rejects duplicate/overlapping LAN/WAN topology, r42 makes the preflight
 directly executable, r44 discovers the LAN interface from UCI, and r45 waits
@@ -93,6 +97,18 @@ final release freeze.
 | r77 | pending | Resolves the target-specific live deauthentication path by using the current client IP from `ndsctl status` before falling back to MAC; physical close/accounting proof pending. |
 | r78 | `c12a42df803b8ff50188a0849350510b0d9bb6ee71e684119d0af6a1b38ca57d` | Correlates the target openNDS 11 deauth callback's explicit base64 `empty` marker to the active MAC session so BinAuth can close and account the session without accepting unknown custom data. Physical close/accounting proof recorded; quota/restart/failure gates remain open. |
 | r79 | `d443169ed707f55d6412392ce666f96f9fe44f295731466da1937d05725eb1e2` | Enables and starts the manager init service when local FAS is activated and repairs the service on live upgrade when FAS is already enabled, restoring automatic cycle/restore scheduling without mutating offline image roots. Target service/cron and automatic restore slice verified; remaining gates open. |
+| r80 | `9e059385981221a3a6e03a7f0a7c3dc83ecddf57aad644de4751b88b75cce0452` | Documents manager-state backup scope, validates the supplied archive locally and on-target, and tightens archive permissions/member validation. Target package install and backup export/validate passed; target import/rollback remains open. |
+| r81 | `d4c80955a1350d03f9a996f931a49b3f9af8b33336a98127e1260ef29f0dfac2` | Enforces `0600` permissions on the live manager database and UCI policy, retains secure backup export, and corrects the stale preflight state through bounded base setup. Target preflight, diagnostic, service, and permission checks passed; runtime release gates remain open. |
+| r82 | pending | Adds the conditional dnsmasq-full capability gate, detects malformed Wi-Fi board metadata during preflight, and ships an explicit board-definition recovery helper. Target dnsmasq-full/nftset and router-side Wi-Fi recovery verified; phone and remaining runtime gates stay open. |
+| r83 | superseded | Added the reauth helper bridge, but the first package preserved mode `0644`, so the target could not execute it. Replaced by r84 before acceptance. |
+| r84 | pending | Ships the executable address-compatible bridge for the openNDS 11 `check_reauth_interval.sh` packaging/path mismatch and records the latest physical phone accounting evidence. Quota cutoff, restart matrix, failure containment, root-password, and factory acceptance gates remain open. |
+| r85 | `2fb81486eb485b03f5452a0a0d15316076f8c899ea86e8820a73a50fbbb566a9` | Preserves bounded Reassign failure reasons across the LuCI/RPC boundary (`same-account`, `live-session`, `target-account-invalid`, and related safe codes). Local source build and repository checks passed; target installation and the fresh phone login/reassign retest are blocked until the recorded administrator SSH key is restored. |
+| r86 | `79904626b424f8dcc6cc6f1dfc485a888522278b6ec013603c7730fd7aa91b38` | Applies the exact openNDS 11.0.0 `check_reauth_interval.sh` shell typo correction during install, preserving the original vendor helper for rollback. Target helper syntax passed after installation; physical authentication retest remained required. |
+| r87 | `bf1d7dd68db0883ba282b695e2513f6cfeb5524161a9d4df9fe334ef7f60ba74` | Contains native openNDS `auth_restore` clients without a manager SQLite session when manager Restore is disabled. Adds adapter-owned live-MAC reconciliation and target verification returned zero clients after stale-session deauth. Fresh phone login and remaining physical gates remain open. |
+| r88 | `16879aa7310729f72f78e8fa9d0a2df23e7047b9d3eb4e66defeee056c923c57` | Corrects the database permission helper to succeed when the optional host UCI path is absent and makes the APK build reproducible. Two consecutive local builds matched; candidate-slot setup/reconciliation/preflight/diagnostic evidence is recorded; physical quota, restart, interruption, containment, and factory gates remain open. |
+| r89 | `d5b911a80c376db19fc516e0c2431ea978644884475ed0d6f39245378f8f18e4` | Fixes the openNDS 11 reauth compatibility bridge so the official sourced helper returns to the dispatcher instead of replacing it with `exec`; the install contract rejects the source-time exec trap. Two consecutive local builds matched; target installation and source-return check passed; a fresh portal login is still required before closing the runtime gates. |
+| r90 | pending | Accepts both abbreviated and explicit-direction openNDS 11 quota-deauth callback names after target evidence showed `download_quota_deauth`; adds contract coverage. Target first download cutoff was reproduced, but manager close/accounting retest and upload cutoff remain open. |
+| r91 | pending | Unpublished working-tree candidate: reconciles release metadata across active docs, adds read-only DEV diagnostics LuCI page and RPC, improves cycle.sh event diagnostic detail (safe exit-code capture), adds `tests/test_release_consistency.sh` contract test. No authentication, BinAuth, quota, or openNDS behavior changes. No hardware gate closed. |
 
 ## Existing GitHub history
 

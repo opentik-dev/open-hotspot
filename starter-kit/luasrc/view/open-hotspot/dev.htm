@@ -1,0 +1,50 @@
+<%+header%>
+
+<div class="cbi-section">
+	<h2 name="content">DEV Diagnostics</h2>
+	<div class="alert-message warning">
+		⚠ EXPERIMENTAL — This page is for development diagnostics only. It does not close any acceptance gate or validate any release.
+	</div>
+
+	<h3>Recent Admin Events</h3>
+	<div class="table">
+		<div class="tr table-titles">
+			<div class="th">Time</div>
+			<div class="th">Action</div>
+			<div class="th">Account</div>
+			<div class="th">Detail</div>
+		</div>
+		<% if #events > 0 then %>
+			<% for i, e in ipairs(events) do
+				if i > 50 then break end
+			%>
+			<div class="tr">
+				<div class="td"><%=pcdata(e.ts)%></div>
+				<div class="td"><%=pcdata(e.action)%></div>
+				<div class="td"><%=pcdata(e.account_id)%></div>
+				<div class="td"><%=pcdata(e.detail)%></div>
+			</div>
+			<% end %>
+		<% else %>
+			<div class="tr">
+				<div class="td" colspan="4"><em>No events recorded</em></div>
+			</div>
+		<% end %>
+	</div>
+
+	<h3>Diagnostic Report</h3>
+	<% if diagnose_exit ~= 0 and diagnose_exit ~= -1 then %>
+		<div class="alert-message warning">Diagnostic exited with code <%=pcdata(diagnose_exit)%></div>
+	<% end %>
+	
+	<% if diagnose_output and diagnose_output ~= "" then %>
+		<pre style="max-height: 400px; overflow: auto;"><%=pcdata(diagnose_output)%></pre>
+	<% else %>
+		<p><em>Diagnostic report unavailable</em></p>
+	<% end %>
+
+	<h3>Package Info</h3>
+	<p>Version: <%=pcdata(pkg_version)%></p>
+</div>
+
+<%+footer%>

@@ -70,3 +70,6 @@ grep -F 'client_router_access' "$setup" >/dev/null
 grep -F 'router_access_set' "$setup" >/dev/null
 grep -F 'session_restore' "$setup" >/dev/null
 grep -F 'session_restore_set' "$setup" >/dev/null
+grep -F 'call("dev_events")' "$controller" >/dev/null
+[ -f "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" ]
+grep -F 'EXPERIMENTAL' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null

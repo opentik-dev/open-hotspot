@@ -3,7 +3,7 @@
 		"description": "Grant access to Open-HotSpot",
 		"read": {
 			"uci": [ "open-hotspot", "opennds" ],
-			"ubus": { "open_hotspot": [ "profile_list", "account_list", "device_list", "voucher_list", "overview", "account_status_list", "history_list", "template_list" ] },
+			"ubus": { "open_hotspot": [ "profile_list", "account_list", "device_list", "voucher_list", "overview", "account_status_list", "history_list", "template_list", "dev_events_list", "dev_diagnose" ] },
 			"file": { "/etc/open-hotspot/hotspot.db": [ "read" ] }
 		},
 		"write": {

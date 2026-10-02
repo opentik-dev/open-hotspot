@@ -231,7 +231,7 @@ fi
 echo "=== [Phase 4/7] Target package inspection and complete rollback backup ==="
 
 # Documented query: use the installed version file, the packaged Makefile, or
-# an offline APK package-info query. Never allow package description/size-only
+# an offline APK installed-package query. Never allow package description/size-only
 # output to stand in for a version; unknown identity is unsafe because it makes
 # the rollback archive unclassifiable.
 INSTALLED_VERSION=$("${SSH_CMD[@]}" '
@@ -253,14 +253,15 @@ INSTALLED_VERSION=$("${SSH_CMD[@]}" '
 				pkg_version="${version}-r${release}"
 			fi
 		elif command -v apk >/dev/null 2>&1; then
-			pkg_version=$(apk --network=false info luci-app-open-hotspot 2>/dev/null |
-				sed -n "s/^luci-app-open-hotspot-\([0-9].*\) description:.*/\1/p" |
+			# Use the installed database only; never refresh repositories or
+			# consume WAN bandwidth during a deployment preflight.
+			pkg_version=$(apk --network=false list --installed luci-app-open-hotspot 2>/dev/null |
+				sed -n "s/^luci-app-open-hotspot-\([0-9][^[:space:]]*\).*/\1/p" |
 				head -n 1)
 		fi
 	fi
 	if [ -z "$pkg_version" ]; then
-		echo "unknown" >&2
-		exit 1
+		printf "unknown\n"
 	else
 		printf "%s\n" "$pkg_version"
 	fi

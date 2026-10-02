@@ -10,7 +10,7 @@
 # 6. opennds -v exit code is captured directly and non-zero output is validated.
 # 7. Failure count parsing handles arbitrary non-zero counts (e.g. failures=12).
 # 8. The embedded remote rollback archive command passes POSIX shell syntax.
-# 9. The offline APK fallback parser is used; package tracking files are not parsed as versions.
+# 9. The offline APK installed-package parser is used; package tracking files are not parsed as versions.
 # 10. A non-existent APK path is rejected immediately.
 # 11. A checksum mismatch is rejected immediately.
 # 12. Local verification passes for the official r92 artifact.
@@ -89,12 +89,12 @@ else
 fi
 
 # 8. Verify offline APK fallback parser and reject .list version extraction
-if ! grep -q -- "apk --network=false info luci-app-open-hotspot" "$DEPLOY_SCRIPT" ||
+if ! grep -q -- "apk --network=false list --installed luci-app-open-hotspot" "$DEPLOY_SCRIPT" ||
 	! grep -q "s/\^luci-app-open-hotspot-" "$DEPLOY_SCRIPT" ||
 	grep -q 'sed.*version.*\.list' "$DEPLOY_SCRIPT"; then
 	fail "deploy-r92.sh incorrectly relies on .list file for version extraction"
 else
-	pass "deploy-r92.sh uses offline APK version parser and does not use .list file"
+	pass "deploy-r92.sh uses offline installed-package parser and does not use .list file"
 fi
 
 # 9. Rejection of non-existent APK
@@ -236,7 +236,7 @@ case "${SIMULATE_FAIL:-none}" in
 		fi
 		;;
 	no-version-file)
-		if echo "$cmd" | grep -q "apk --network=false info luci-app-open-hotspot"; then
+		if echo "$cmd" | grep -q "apk --network=false list --installed luci-app-open-hotspot"; then
 			echo "1.2.0-r90"
 			exit 0
 		fi
@@ -273,7 +273,7 @@ elif echo "$cmd" | grep -q "preflight\.sh"; then
 elif echo "$cmd" | grep -q "diagnose\.sh"; then
 	echo "status=ok failures=0 warnings=0"
 	exit 0
-elif echo "$cmd" | grep -q "apk --network=false info luci-app-open-hotspot"; then
+elif echo "$cmd" | grep -q "apk --network=false list --installed luci-app-open-hotspot"; then
 	echo "1.2.0-r90"
 	exit 0
 elif echo "$cmd" | grep -q "open-hotspot\.version"; then

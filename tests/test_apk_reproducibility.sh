@@ -52,6 +52,26 @@ if [ -z "$SDK" ] || [ ! -x "$APK" ]; then
 	exit 0
 fi
 
+# build-apk.sh writes to dist/. Preserve the existing release artifact so a
+# reproducibility check for an unreleased working tree cannot replace the
+# canonical artifact used by deployment checks.
+OUTPUT="$PROJECT/dist/luci-app-open-hotspot-1.2.0-r$(sed -n 's/^PKG_RELEASE:=//p' "$PROJECT/starter-kit/Makefile").apk"
+SAVED_OUTPUT=$(mktemp /tmp/oh-apk-output.XXXXXX)
+HAD_OUTPUT=0
+if [ -f "$OUTPUT" ]; then
+	cp -f "$OUTPUT" "$SAVED_OUTPUT"
+	HAD_OUTPUT=1
+fi
+restore_output() {
+	if [ "$HAD_OUTPUT" -eq 1 ]; then
+		cp -f "$SAVED_OUTPUT" "$OUTPUT"
+	else
+		rm -f "$OUTPUT"
+	fi
+	rm -f "$SAVED_OUTPUT"
+}
+trap restore_output EXIT INT TERM
+
 output=$(OPEN_HOTSPOT_SDK="$SDK" sh "$PROJECT/tools/build-apk.sh" --verify)
 if printf '%s\n' "$output" | grep -q "Deterministic APK verified:"; then
 	printf '%s\n' "apk-reproducibility-ok"

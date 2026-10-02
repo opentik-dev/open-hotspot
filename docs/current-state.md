@@ -10,8 +10,8 @@ for detailed acceptance decisions.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current field candidate | Open-HotSpot r92 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; post-install preflight/diagnostic/`ndsctl status` passed; hardware acceptance pending |
-| Previous candidate | Open-HotSpot r91 / openNDS 11.0.0 | Previous target state | Superseded by r92 |
+| Current field candidate | Open-HotSpot r93 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; UI separation present; post-install preflight/diagnostic/`ndsctl status` passed; hardware acceptance pending |
+| Previous candidate | Open-HotSpot r92 / openNDS 11.0.0 | Previous target state | Superseded by r93 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1
@@ -77,23 +77,26 @@ authenticated beyond the reported 3–4 minute interval during this observation,
 so the user-facing eviction is not yet reproduced and must not be attributed
 to a timeout or quota without a controlled account-specific test.
 
-The installed r92 candidate provides implementation for
+The installed r93 candidate provides implementation for
 session lifecycle stability, reproducible APK packaging (clean git archive build
 verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`),
-reconciled release metadata, read-only DEV diagnostics, and safe reconciliation/policy-refresh event
-reporting. Cycle stability tests in the test suite are simulation/contract tests of algorithm
-logic. Its artifact was installed on the target through the guarded deployment
-driver and passed post-install diagnostics; hardware validation remains pending
-until client-session evidence is recorded.
+reconciled release metadata, separated read-only DEV/Events LuCI surfaces, and
+safe reconciliation/policy-refresh event reporting. Cycle stability tests in
+the test suite are simulation/contract tests of algorithm logic. Its artifact
+was installed on the target through the guarded deployment driver and passed
+post-install diagnostics. A real client remained authenticated beyond the
+reported 3–4 minute window; quota, restart, and failure-containment evidence
+remain pending.
 
 ## 2026-10-03 deployment checkpoint
 
-The guarded driver upgraded the target from r91 to r92 after creating the
+The guarded driver upgraded the target from r92 to r93 after creating the
 SQLite export and complete rollback archive. The remote checksum matched the
-local artifact. Post-install diagnostics reported `failures=0 warnings=0`, and
+local artifact `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`.
+Post-install diagnostics reported `failures=0 warnings=0`, and
 `ndsctl status` reported a healthy openNDS 11.0.0 service. The 3–4 minute
-client-eviction question remains a physical acceptance test, not a closed
-defect.
+client-eviction observation remained stable beyond 35 minutes, so the specific
+reported eviction was not reproduced; remaining release gates are still open.
 
 ## Backup evidence
 

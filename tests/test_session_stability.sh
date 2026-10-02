@@ -278,7 +278,7 @@ EOF
 chmod +x "$MOCK_DIAGNOSE"
 
 VERSION_FILE="$TMPDIR/open-hotspot.version"
-printf '1.2.0-r92\n' > "$VERSION_FILE"
+printf '1.2.0-r93\n' > "$VERSION_FILE"
 
 # Create a PATH environment that hides the external timeout command
 CLEAN_BIN="$TMPDIR/clean_bin"
@@ -302,7 +302,7 @@ output=$(
 
 if printf '%s\n' "$output" | grep -qE '"exit_code":[[:space:]]*0' && \
    printf '%s\n' "$output" | grep -q 'diagnostic health check ok' && \
-   printf '%s\n' "$output" | grep -qE '"pkg_version":[[:space:]]*"1\.2\.0-r92"'; then
+   printf '%s\n' "$output" | grep -qE '"pkg_version":[[:space:]]*"1\.2\.0-r93"'; then
 	pass "rpc_dev_diagnose succeeded with pure-shell watchdog and version file detection"
 else
 	fail "rpc_dev_diagnose failed with clean environment: $output"

@@ -88,9 +88,9 @@ DOC_RP="$PROJECT/docs/release-policy.md"
 if [ ! -f "$DOC_RP" ]; then
 	fail "missing docs/release-policy.md"
 else
-	rp_matches=$(grep -c 'current field candidate is r' "$DOC_RP" || true)
+	rp_matches=$(grep -Ec 'current (working-tree )?field candidate is r' "$DOC_RP" || true)
 	if [ "$rp_matches" -eq 1 ]; then
-		val=$(grep 'current field candidate is r' "$DOC_RP" | grep -Eo 'r[0-9]+' | head -1 || true)
+		val=$(grep -E 'current (working-tree )?field candidate is r' "$DOC_RP" | grep -Eo 'r[0-9]+' | head -1 || true)
 		if [ "$val" = "$EXPECTED_REL" ]; then
 			pass "docs/release-policy.md declares current field version as $EXPECTED_REL"
 		else

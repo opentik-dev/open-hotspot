@@ -1,9 +1,14 @@
 #!/bin/bash
-# tools/deploy-r92.sh — Guarded deployment and field acceptance driver for Open-HotSpot r92.
+# tools/deploy-r92.sh — Reusable guarded deployment and field acceptance driver.
+#
+# The historical filename is retained for compatibility. Set
+# CANDIDATE_RELEASE and CANDIDATE_SHA256 for a newer candidate; defaults remain
+# r92 so the installed field candidate can still be checked without ambiguity.
 #
 # Operational requirements:
 # 1. Strict bash error handling (set -euo pipefail).
-# 2. Local validation of r92 APK: existence, exact expected SHA-256, apk verify, apk adbdump.
+# 2. Local validation of the selected candidate APK: existence, exact expected
+#    SHA-256, apk verify, and apk adbdump.
 #    Mandatory OpenWrt SDK apk tool validation during deployment mode.
 # 3. Read-only pre-mutation inspection of router identity (model, boot slot, openNDS version).
 #    opennds -v exit code is captured directly; a non-zero code is tolerated only
@@ -18,7 +23,7 @@
 # 6. Strict fail-closed rollback taxonomy:
 #    - Cross-verifies installed Open-HotSpot package version with openNDS daemon version:
 #      r60 + openNDS 10.3.x -> r60-opennds10.3-production-baseline
-#      r90/r91 + openNDS 11.0.x -> r90-r91-opennds11.0-field-candidate
+#      r90/r91/r92 + openNDS 11.0.x -> r90-r91-r92-opennds11.0-field-candidate
 #    - Rejects and aborts on unknown package version or mismatched openNDS version.
 # 7. Exact local and remote SHA-256 validation against documented hash.
 # 8. Conditional installation: executed only after every single barrier passes.
@@ -28,8 +33,11 @@
 set -euo pipefail
 
 PROJECT=$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-EXPECTED_SHA="a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db"
-DEFAULT_APK="$PROJECT/dist/luci-app-open-hotspot-1.2.0-r92.apk"
+CANDIDATE_VERSION="${CANDIDATE_VERSION:-1.2.0}"
+CANDIDATE_RELEASE="${CANDIDATE_RELEASE:-92}"
+EXPECTED_SHA="${CANDIDATE_SHA256:-a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db}"
+CANDIDATE_LABEL="${CANDIDATE_VERSION}-r${CANDIDATE_RELEASE}"
+DEFAULT_APK="$PROJECT/dist/luci-app-open-hotspot-${CANDIDATE_LABEL}.apk"
 APK_PATH="${APK_PATH:-}"
 CHECK_LOCAL_FLAG=0
 ALLOW_UNVERIFIED_TARGET="${ALLOW_UNVERIFIED_TARGET:-0}"
@@ -88,7 +96,7 @@ fi
 
 LOCAL_SHA=$(sha256sum "$APK_PATH" | awk '{print $1}')
 if [ "$LOCAL_SHA" != "$EXPECTED_SHA" ]; then
-	echo "FAIL: Local APK checksum does not match expected r92 SHA-256!" >&2
+	echo "FAIL: Local APK checksum does not match expected ${CANDIDATE_LABEL} SHA-256!" >&2
 	echo "  Found:    $LOCAL_SHA" >&2
 	echo "  Expected: $EXPECTED_SHA" >&2
 	exit 1
@@ -294,11 +302,11 @@ if echo "$INSTALLED_VERSION" | grep -qE "r60($|[^0-9])"; then
 		echo "FAIL: Rollback classification rejected: r60 installed but openNDS is not 10.3.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
-elif echo "$INSTALLED_VERSION" | grep -qE "r9[01]($|[^0-9])"; then
+elif echo "$INSTALLED_VERSION" | grep -qE "r9[0-2]($|[^0-9])"; then
 	if echo "$OPENNDS_VER" | grep -qE "11\.0(\.[0-9]+)?"; then
-		ROLLBACK_CLASSIFICATION="r90-r91-opennds11.0-field-candidate"
+		ROLLBACK_CLASSIFICATION="r90-r91-r92-opennds11.0-field-candidate"
 	else
-		echo "FAIL: Rollback classification rejected: r90/r91 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
+		echo "FAIL: Rollback classification rejected: r90/r91/r92 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
 else
@@ -308,9 +316,10 @@ fi
 echo "  Rollback Classification:  $ROLLBACK_CLASSIFICATION"
 
 # r60 is the preserved rollback baseline and must never be upgraded in place.
-# r92 may only be deployed over the isolated r90/r91/openNDS 11.0.x candidate slot.
-if [ "$ROLLBACK_CLASSIFICATION" != "r90-r91-opennds11.0-field-candidate" ]; then
-	echo "FAIL: r92 deployment is restricted to the r90/r91/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
+# Candidates may only be deployed over the isolated r90/r91/r92/openNDS 11.0.x
+# candidate slot.
+if [ "$ROLLBACK_CLASSIFICATION" != "r90-r91-r92-opennds11.0-field-candidate" ]; then
+	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90/r91/r92/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
 	exit 1
 fi
 
@@ -397,9 +406,9 @@ echo "PASS: Complete rollback archive verified and secured at $ROLLBACK_ARCHIVE"
 # ==============================================================================
 # Phase 5: Remote Artifact Transfer and Checksum Validation
 # ==============================================================================
-echo "=== [Phase 5/7] Transferring r92 APK and verifying remote checksum ==="
+echo "=== [Phase 5/7] Transferring ${CANDIDATE_LABEL} APK and verifying remote checksum ==="
 
-REMOTE_APK="/tmp/luci-app-open-hotspot-1.2.0-r92.apk"
+REMOTE_APK="/tmp/luci-app-open-hotspot-${CANDIDATE_LABEL}.apk"
 cat "$APK_PATH" | "${SSH_CMD[@]}" "cat > '$REMOTE_APK'"
 
 REMOTE_SHA=$("${SSH_CMD[@]}" "sha256sum '$REMOTE_APK'" | awk '{print $1}')
@@ -415,7 +424,7 @@ echo "PASS: Remote checksum verified: $REMOTE_SHA"
 # ==============================================================================
 # Phase 6: Package Installation
 # ==============================================================================
-echo "=== [Phase 6/7] Installing luci-app-open-hotspot 1.2.0-r92 ==="
+echo "=== [Phase 6/7] Installing luci-app-open-hotspot ${CANDIDATE_LABEL} ==="
 
 "${SSH_CMD[@]}" "apk add --allow-untrusted '$REMOTE_APK'"
 "${SSH_CMD[@]}" "rm -f '$REMOTE_APK'"
@@ -430,10 +439,10 @@ echo "=== [Phase 7/7] Post-install verification and diagnostics ==="
 "${SSH_CMD[@]}" "/usr/lib/open-hotspot/diagnose.sh"
 "${SSH_CMD[@]}" "ndsctl status"
 
-cat <<'EOF'
+cat <<EOF
 ================================================================================
 DEPLOYMENT COMPLETED SUCCESSFULLY
-Package: luci-app-open-hotspot 1.2.0-r92
+Package: luci-app-open-hotspot ${CANDIDATE_LABEL}
 Target:  Router at current management address
 
 ACCEPTANCE STATUS: Pending Hardware Validation

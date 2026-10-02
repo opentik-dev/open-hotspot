@@ -12,6 +12,7 @@ status="$root/starter-kit/luasrc/view/open-hotspot/status.htm"
 history="$root/starter-kit/luasrc/view/open-hotspot/history.htm"
 templates="$root/starter-kit/luasrc/view/open-hotspot/templates.htm"
 backup="$root/starter-kit/luasrc/view/open-hotspot/backup.htm"
+events="$root/starter-kit/luasrc/view/open-hotspot/events.htm"
 
 [ -f "$controller" ]
 [ -f "$setup" ]
@@ -23,6 +24,7 @@ backup="$root/starter-kit/luasrc/view/open-hotspot/backup.htm"
 [ -f "$history" ]
 [ -f "$templates" ]
 [ -f "$backup" ]
+[ -f "$events" ]
 grep -F 'cbi("open-hotspot/setup")' "$controller" >/dev/null
 grep -F 'call("profiles")' "$controller" >/dev/null
 grep -F 'call("accounts")' "$controller" >/dev/null
@@ -70,6 +72,9 @@ grep -F 'client_router_access' "$setup" >/dev/null
 grep -F 'router_access_set' "$setup" >/dev/null
 grep -F 'session_restore' "$setup" >/dev/null
 grep -F 'session_restore_set' "$setup" >/dev/null
-grep -F 'call("dev_events")' "$controller" >/dev/null
+grep -F 'call("events_log")' "$controller" >/dev/null
+grep -F 'call("dev_lab")' "$controller" >/dev/null
 [ -f "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" ]
 grep -F 'EXPERIMENTAL' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null
+grep -F 'IoT Internet bypass' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null
+grep -F 'Open-HotSpot Event Log' "$events" >/dev/null

@@ -1,50 +1,43 @@
 <%+header%>
 
 <div class="cbi-section">
-	<h2 name="content">DEV Diagnostics</h2>
+	<h2 name="content">DEV Feature Lab</h2>
 	<div class="alert-message warning">
-		⚠ EXPERIMENTAL — This page is for development diagnostics only. It does not close any acceptance gate or validate any release.
+		⚠ EXPERIMENTAL — This page is a workbench for future features. Nothing here changes router policy, firewall rules, client authorization, or release acceptance.
 	</div>
 
-	<h3>Recent Admin Events</h3>
+	<p>Use the <a href="<%=events_url%>">Events</a> tab for the bounded, read-only Open-HotSpot event log and diagnostic snapshot.</p>
+
+	<h3>Future feature registry</h3>
 	<div class="table">
 		<div class="tr table-titles">
-			<div class="th">Time</div>
-			<div class="th">Action</div>
-			<div class="th">Account</div>
-			<div class="th">Detail</div>
+			<div class="th">Feature</div>
+			<div class="th">Purpose</div>
+			<div class="th">Status</div>
+			<div class="th">Safety boundary</div>
 		</div>
-		<% if #events > 0 then %>
-			<% for i, e in ipairs(events) do
-				if i > 50 then break end
-			%>
-			<div class="tr">
-				<div class="td"><%=pcdata(e.ts)%></div>
-				<div class="td"><%=pcdata(e.action)%></div>
-				<div class="td"><%=pcdata(e.account_id)%></div>
-				<div class="td"><%=pcdata(e.detail)%></div>
-			</div>
-			<% end %>
-		<% else %>
-			<div class="tr">
-				<div class="td" colspan="4"><em>No events recorded</em></div>
-			</div>
-		<% end %>
+		<div class="tr">
+			<div class="td">IoT Internet bypass</div>
+			<div class="td">Allow approved plugs, lamps, and other headless IoT devices to reach the Internet without an interactive portal login.</div>
+			<div class="td"><strong>Design only — disabled</strong></div>
+			<div class="td">No MAC/IP is accepted and no firewall or openNDS rule is changed from this page.</div>
+		</div>
+		<div class="tr">
+			<div class="td">IoT device profiles</div>
+			<div class="td">Testable policies for Tapo, D-Link, and similar devices that have no reliable browser-based login flow.</div>
+			<div class="td"><strong>Design only — disabled</strong></div>
+			<div class="td">Requires a reviewed admission contract, audit trail, expiry, and rollback before activation.</div>
+		</div>
+		<div class="tr">
+			<div class="td">Developer experiment hooks</div>
+			<div class="td">A place for future isolated prototypes and contract tests.</div>
+			<div class="td"><strong>Read-only registry</strong></div>
+			<div class="td">This page has no POST handler, UCI write, RPC mutation, or shell execution.</div>
+		</div>
 	</div>
 
-	<h3>Diagnostic Report</h3>
-	<% if diagnose_exit ~= 0 and diagnose_exit ~= -1 then %>
-		<div class="alert-message warning">Diagnostic exited with code <%=pcdata(diagnose_exit)%></div>
-	<% end %>
-	
-	<% if diagnose_output and diagnose_output ~= "" then %>
-		<pre style="max-height: 400px; overflow: auto;"><%=pcdata(diagnose_output)%></pre>
-	<% else %>
-		<p><em>Diagnostic report unavailable</em></p>
-	<% end %>
-
-	<h3>Package Info</h3>
-	<p>Version: <%=pcdata(pkg_version)%></p>
+	<h3>Activation policy</h3>
+	<p>Future features must first receive a specification, an explicit enable/disable contract, automated tests, redaction rules, and a rollback path. They will not be enabled by adding a visual control to this page.</p>
 </div>
 
 <%+footer%>

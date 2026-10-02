@@ -1,12 +1,12 @@
 # Release and version policy
 
 The package version is the pair declared in `starter-kit/Makefile`. The
-current field candidate is r92, installed on the target with hardware
-acceptance still pending:
+current field candidate is r93, installed on the target with
+hardware acceptance still pending:
 
 ```text
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=92
+PKG_RELEASE:=93
 ```
 
 The installable artifact is named:
@@ -20,7 +20,7 @@ luci-app-open-hotspot-${PKG_VERSION}-r${PKG_RELEASE}.apk
 1. Every release change updates `PKG_RELEASE` monotonically. A change to the
    product line or incompatible schema changes `PKG_VERSION`.
 2. A release tag is exactly `v${PKG_VERSION}-r${PKG_RELEASE}`; for example,
-`v1.2.0-r92`.
+`v1.2.0-r93`.
 3. Tags are created only from a commit that passed CI. The release workflow
    rebuilds the APK from source and never publishes a committed APK as the
    build input.

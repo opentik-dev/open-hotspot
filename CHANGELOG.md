@@ -5,7 +5,26 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
-## 1.2.0-r92 (installed field candidate; acceptance pending)
+- Separated the LuCI developer surfaces:
+  - `Services → Open-HotSpot → Events` now owns the bounded, read-only and
+    redacted manager event log plus the diagnostic snapshot.
+  - `Services → Open-HotSpot → DEV` is now a future-feature registry and does
+    not expose event data, diagnostics, UCI writes, firewall changes, or
+    client-bypass controls.
+- Documented the IoT bypass idea for a later reviewed contract; Tapo/D-Link
+  devices remain disabled until admission, expiry, audit, and rollback rules
+  are implemented and tested.
+
+## 1.2.0-r93 (installed field candidate; acceptance pending)
+
+- Carries the separated Events/DEV LuCI surfaces and the release-artifact
+  isolation guard. Reproducible APK SHA-256:
+  `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`.
+- Guarded deployment upgraded the target from r92 to r93; post-install
+  preflight, diagnostics, and `ndsctl status` passed. Physical acceptance
+  gates remain open.
+
+## 1.2.0-r92 (superseded; installed predecessor)
 
 - Stabilized authenticated session lifecycle (Candidate implementation; Tested locally, Pending Hardware Validation on physical router):
   - Replaced indiscriminate client iteration in `session-restore.sh reconcile_stale` with `opennds_authenticated_macs` parser, preventing Preauthenticated discovery probes from triggering invalid deauthentications or aborting the reconciliation cycle.

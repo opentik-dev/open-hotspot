@@ -2,8 +2,9 @@
 
 This register is the operational release decision register. `r90` is the
 last field-tested acceptance candidate with router-access isolation, runtime
-readiness recovery, and a packaged read-only integration diagnostic. `r92` is
-the current unpublished working-tree candidate. Neither is a production release
+readiness recovery, and a packaged read-only integration diagnostic. `r93` is
+the current installed field candidate; r92 is superseded.
+Neither is a production release
 until every critical gate below has evidence from the physical target.
 
 | Priority | Risk / failure mode | Likelihood | Impact | Required closure evidence | Owner | Status |
@@ -30,9 +31,10 @@ until every critical gate below has evidence from the physical target.
 ## Current decision
 
 `r90` remains the last field-tested candidate suitable for controlled pilot
-validation and rollback testing. `r92` is the current unpublished working-tree
-candidate with session stability and reproducible build fixes, pending hardware
-validation. Neither is approved as a production baseline. The next field session
+validation and rollback testing. `r93` is the current installed candidate with
+the separated Events/DEV UI; it also contains the r92 session stability and
+reproducible build fixes. Hardware validation remains pending.
+Neither is approved as a production baseline. The next field session
 must prioritize the disposable client flow, counter/quota mapping, and restart
 behavior; code changes must not claim those gates closed without target evidence.
 

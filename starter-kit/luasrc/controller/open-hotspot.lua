@@ -363,16 +363,23 @@ function templates()
 	})
 end
 
-function dev_events()
+function events_log()
 	local events_result, events_err = ubus_call("dev_events_list", {})
 	local diagnose_result, diagnose_err = ubus_call("dev_diagnose", {})
-	template.render("open-hotspot/dev", {
+	template.render("open-hotspot/events", {
 		events = events_result and events_result.events or {},
 		diagnose_output = diagnose_result and diagnose_result.output or "",
 		diagnose_exit = diagnose_result and diagnose_result.exit_code or -1,
 		pkg_version = diagnose_result and diagnose_result.pkg_version or "unknown",
 		page_error = events_err or diagnose_err or "",
-		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "dev")
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "events")
+	})
+end
+
+function dev_lab()
+	template.render("open-hotspot/dev", {
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "dev"),
+		events_url = dispatcher.build_url("admin", "services", "open-hotspot", "events")
 	})
 end
 
@@ -431,8 +438,13 @@ function index()
 	templates.leaf = true
 	templates.acl_depends = { "luci-app-open-hotspot" }
 
+	local events = entry({"admin", "services", "open-hotspot", "events"},
+		call("events_log"), translate("Events"), 85)
+	events.leaf = true
+	events.acl_depends = { "luci-app-open-hotspot" }
+
 	local dev = entry({"admin", "services", "open-hotspot", "dev"},
-		call("dev_events"), translate("DEV"), 90)
+		call("dev_lab"), translate("DEV"), 90)
 	dev.leaf = true
 	dev.acl_depends = { "luci-app-open-hotspot" }
 end

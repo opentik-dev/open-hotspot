@@ -10,11 +10,11 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r92` is the current installed field candidate. Its artifact checksum is
-`a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`; guarded
-deployment over r91 completed with post-install `failures=0 warnings=0` and
-`ndsctl status` healthy. Physical acceptance gates remain open. r91 is the
-previous candidate and is superseded by r92. Earlier packages remain field
+`1.2.0-r93` is the current installed field candidate. Its artifact checksum is
+`bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`; guarded
+deployment over r92 completed with post-install `failures=0 warnings=0` and
+`ndsctl status` healthy. Physical acceptance gates remain open. r92 is the
+previous candidate and is superseded by r93. Earlier packages remain field
 evidence and rollback checkpoints. Historical entries below are retained for
 audit and are not current release instructions. r40 removes upstream-address assumptions
 from local FAS activation, r41 adds a dynamic-address contract guard and
@@ -108,7 +108,8 @@ final release freeze.
 | r89 | `d5b911a80c376db19fc516e0c2431ea978644884475ed0d6f39245378f8f18e4` | Fixes the openNDS 11 reauth compatibility bridge so the official sourced helper returns to the dispatcher instead of replacing it with `exec`; the install contract rejects the source-time exec trap. Two consecutive local builds matched; target installation and source-return check passed; a fresh portal login is still required before closing the runtime gates. |
 | r90 | historical/superseded | Accepts both abbreviated and explicit-direction openNDS 11 quota-deauth callback names after target evidence showed `download_quota_deauth`; adds contract coverage. Superseded by r92. |
 | r91 | superseded | Pre-release iteration: added DEV diagnostics page and consistency test, but lacked session stability fixes and commit was not self-contained. Superseded by r92. |
-| r92 | `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db` | Current installed field candidate. Stabilizes authenticated session lifecycle, adds reproducible packaging, DEV diagnostics, and guarded deployment. Installed over r91 on the EA8300; post-install preflight, diagnostics, and `ndsctl status` passed. Client-session, quota, restart, failure-containment, and final acceptance gates remain open. |
+| r92 | `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db` | Superseded installed predecessor. Stabilized authenticated session lifecycle, reproducible packaging, DEV diagnostics, and guarded deployment. Installed over r91 on the EA8300; post-install preflight, diagnostics, and `ndsctl status` passed. |
+| r93 | `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a` | Current installed field candidate. Separates the Events and DEV LuCI surfaces, preserves the r92 session-stability changes, and was installed over r92 on the EA8300. Post-install preflight, diagnostics, and `ndsctl status` passed; remaining acceptance gates are open. |
 
 ## Existing GitHub history
 

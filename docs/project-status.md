@@ -1,8 +1,8 @@
 # Open-HotSpot project status
 
 **As of:** 2026-10-03
-**Current field candidate:** Open-HotSpot 1.2.0-r92 (installed on target)
-**Previous candidate:** Open-HotSpot 1.2.0-r91
+**Current field candidate:** Open-HotSpot 1.2.0-r93 (installed on target)
+**Previous candidate:** Open-HotSpot 1.2.0-r92
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -90,16 +90,17 @@ open.
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the installed r92 field candidate
+1. Close the remaining physical-router gates against the installed r93 field candidate
    while preserving r60/openNDS 10.3.1 as the documented rollback baseline.
-   The r92 artifact is installed and post-install checks passed; publication
-   remains blocked until the physical acceptance gates are recorded.
+   The r93 artifact is installed, post-install checks passed, and the
+   separated Events/DEV UI is present; publication remains blocked until the
+   remaining physical acceptance gates are recorded.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-  baseline; r92 belongs on the disposable acceptance slot and remains a
+  baseline; r93 belongs on the disposable acceptance slot and remains a
   controlled candidate, not a frozen release. The deployment evidence confirms
-  candidate slot 02, openNDS 11.0.0, and r92 installed successfully; fresh
+  candidate slot 02, openNDS 11.0.0, and r93 installed successfully; fresh
   client-session, quota, restart, and failure-containment evidence remain open.
 
 ## Decision rule

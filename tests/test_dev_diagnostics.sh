@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-# test_dev_diagnostics.sh — Contract and functional tests for the DEV diagnostics page:
-# 1. LuCI route/menu and read-only view contract
+# test_dev_diagnostics.sh — Contract and functional tests for the separated DEV and Events pages:
+# 1. LuCI routes/menu and read-only view contracts
 # 2. RPC methods and ACL permissions
 # 3. Maximum row limit (50 events) and output size limit (8192 bytes)
 # 4. Full MAC and IP redaction
@@ -16,6 +16,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
 
 CONTROLLER="$PROJECT/starter-kit/luasrc/controller/open-hotspot.lua"
 VIEW="$PROJECT/starter-kit/luasrc/view/open-hotspot/dev.htm"
+EVENTS_VIEW="$PROJECT/starter-kit/luasrc/view/open-hotspot/events.htm"
 RPC="$PROJECT/starter-kit/root/usr/libexec/rpcd/open_hotspot"
 ACL="$PROJECT/starter-kit/root/usr/share/rpcd/acl.d/luci-app-open-hotspot.json"
 
@@ -34,13 +35,16 @@ fail() { FAILURES=$((FAILURES + 1)); printf 'FAIL: %s\n' "$1" >&2; }
 # ==============================================================================
 [ -f "$CONTROLLER" ] || { fail "controller missing"; exit 1; }
 [ -f "$VIEW" ] || { fail "dev.htm view missing"; exit 1; }
+[ -f "$EVENTS_VIEW" ] || { fail "events.htm view missing"; exit 1; }
 
-# Entry exists with translate("DEV") and order 90
+# DEV is the future feature lab; Events owns the diagnostics and event log.
 if grep -F 'entry({"admin", "services", "open-hotspot", "dev"},' "$CONTROLLER" >/dev/null && \
-   grep -F 'call("dev_events"), translate("DEV"), 90)' "$CONTROLLER" >/dev/null; then
-	pass "LuCI controller registers DEV route with order 90"
+   grep -F 'call("dev_lab"), translate("DEV"), 90)' "$CONTROLLER" >/dev/null && \
+   grep -F 'entry({"admin", "services", "open-hotspot", "events"},' "$CONTROLLER" >/dev/null && \
+   grep -F 'call("events_log"), translate("Events"), 85)' "$CONTROLLER" >/dev/null; then
+	pass "LuCI controller separates DEV and Events routes"
 else
-	fail "LuCI controller missing DEV route entry"
+	fail "LuCI controller missing separated DEV/Events route entries"
 fi
 
 # Route is protected by ACL dependency
@@ -50,11 +54,26 @@ else
 	fail "DEV route missing acl_depends"
 fi
 
+if grep -A 3 'open-hotspot", "events"}' "$CONTROLLER" | grep -F 'acl_depends = { "luci-app-open-hotspot" }' >/dev/null; then
+	pass "Events route enforces luci-app-open-hotspot ACL"
+else
+	fail "Events route missing acl_depends"
+fi
+
 # View contains experimental warning banner
-if grep -F 'EXPERIMENTAL' "$VIEW" >/dev/null && grep -F 'does not close any acceptance gate' "$VIEW" >/dev/null; then
+if grep -F 'EXPERIMENTAL' "$VIEW" >/dev/null && grep -F 'Nothing here changes router policy' "$VIEW" >/dev/null; then
 	pass "dev.htm contains experimental non-acceptance warning banner"
 else
 	fail "dev.htm missing required experimental warning banner"
+fi
+
+if grep -F 'IoT Internet bypass' "$VIEW" >/dev/null && \
+   grep -F 'Design only — disabled' "$VIEW" >/dev/null && \
+   ! grep -F 'Recent Admin Events' "$VIEW" >/dev/null && \
+   ! grep -F 'Diagnostic Report' "$VIEW" >/dev/null; then
+	pass "DEV contains future IoT features without the Events/diagnostic stream"
+else
+	fail "DEV still mixes diagnostics or lacks the future IoT feature registry"
 fi
 
 # View is read-only (no form submission, no action handler)
@@ -62,6 +81,22 @@ if grep -Eq '<form|method="post"|action=' "$VIEW"; then
 	fail "dev.htm must be read-only but contains form/POST elements"
 else
 	pass "dev.htm is strictly read-only"
+fi
+
+if grep -F 'Open-HotSpot Event Log' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'Recent service events' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'Diagnostic snapshot' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'dev_events_list' "$CONTROLLER" >/dev/null && \
+   grep -F 'dev_diagnose' "$CONTROLLER" >/dev/null; then
+	pass "Events page owns the bounded event log and diagnostic snapshot"
+else
+	fail "Events page is missing event-log or diagnostic wiring"
+fi
+
+if grep -Eq '<form|method="post"|action=' "$EVENTS_VIEW"; then
+	fail "events.htm must be read-only but contains form/POST elements"
+else
+	pass "events.htm is strictly read-only"
 fi
 
 # ==============================================================================

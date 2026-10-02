@@ -230,17 +230,39 @@ fi
 # ==============================================================================
 echo "=== [Phase 4/7] Target package inspection and complete rollback backup ==="
 
-# Documented query: use version file or official 'apk info -v'. Unknown
-# package identity is unsafe because it makes the rollback archive unclassifiable.
+# Documented query: use the installed version file, the packaged Makefile, or
+# an offline APK package-info query. Never allow package description/size-only
+# output to stand in for a version; unknown identity is unsafe because it makes
+# the rollback archive unclassifiable.
 INSTALLED_VERSION=$("${SSH_CMD[@]}" '
 	set -eu
+	pkg_version=""
 	if [ -r /usr/lib/open-hotspot/open-hotspot.version ]; then
-		tr -d "\r\n" < /usr/lib/open-hotspot/open-hotspot.version
-	elif command -v apk >/dev/null 2>&1; then
-		apk info -v luci-app-open-hotspot
+		pkg_version=$(tr -d "\r\n" < /usr/lib/open-hotspot/open-hotspot.version)
 	else
+		makefile=""
+		if [ -r /usr/lib/open-hotspot/Makefile ]; then
+			makefile=/usr/lib/open-hotspot/Makefile
+		elif [ -r /etc/open-hotspot/Makefile ]; then
+			makefile=/etc/open-hotspot/Makefile
+		fi
+		if [ -n "$makefile" ]; then
+			version=$(sed -n "s/^PKG_VERSION:=//p" "$makefile" | head -n 1)
+			release=$(sed -n "s/^PKG_RELEASE:=//p" "$makefile" | head -n 1)
+			if [ -n "$version" ] && [ -n "$release" ]; then
+				pkg_version="${version}-r${release}"
+			fi
+		elif command -v apk >/dev/null 2>&1; then
+			pkg_version=$(apk --network=false info luci-app-open-hotspot 2>/dev/null |
+				sed -n "s/^luci-app-open-hotspot-\([0-9].*\) description:.*/\1/p" |
+				head -n 1)
+		fi
+	fi
+	if [ -z "$pkg_version" ]; then
 		echo "unknown" >&2
 		exit 1
+	else
+		printf "%s\n" "$pkg_version"
 	fi
 ')
 echo "  Installed Package Version: $INSTALLED_VERSION"

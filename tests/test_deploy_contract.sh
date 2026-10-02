@@ -10,13 +10,13 @@
 # 6. opennds -v exit code is captured directly and non-zero output is validated.
 # 7. Failure count parsing handles arbitrary non-zero counts (e.g. failures=12).
 # 8. The embedded remote rollback archive command passes POSIX shell syntax.
-# 9. The documented APK query is used; package tracking files are not parsed as versions.
+# 9. The offline APK fallback parser is used; package tracking files are not parsed as versions.
 # 10. A non-existent APK path is rejected immediately.
 # 11. A checksum mismatch is rejected immediately.
 # 12. Local verification passes for the official r92 artifact.
 # 13. Installation is gated behind preflight, diagnose, and checksums.
 # 14. Acceptance status is explicitly output as Pending Hardware Validation.
-# 15-26. Simulations cover transport, preflight, diagnostics, rollback, identity,
+# 15-27. Simulations cover transport, preflight, diagnostics, rollback, identity,
 #        checksum, and successful-path gates without masking failures.
 
 set -euo pipefail
@@ -88,11 +88,13 @@ else
 	fail "Embedded remote rollback archive command has shell syntax errors"
 fi
 
-# 8. Verify luci-app-open-hotspot.list is NOT used for version extraction
-if grep -q 'sed.*version.*\.list' "$DEPLOY_SCRIPT"; then
+# 8. Verify offline APK fallback parser and reject .list version extraction
+if ! grep -q -- "apk --network=false info luci-app-open-hotspot" "$DEPLOY_SCRIPT" ||
+	! grep -q "s/\^luci-app-open-hotspot-" "$DEPLOY_SCRIPT" ||
+	grep -q 'sed.*version.*\.list' "$DEPLOY_SCRIPT"; then
 	fail "deploy-r92.sh incorrectly relies on .list file for version extraction"
 else
-	pass "deploy-r92.sh uses documented APK query and does not use .list file"
+	pass "deploy-r92.sh uses offline APK version parser and does not use .list file"
 fi
 
 # 9. Rejection of non-existent APK
@@ -173,7 +175,7 @@ cat <<'EOF' > "$MOCK_SSH"
 #!/bin/bash
 set -eu
 
-cmd="${*:$#}"
+cmd="${!#}"
 echo "$cmd" >> "$SIM_AUDIT_LOG"
 
 case "${SIMULATE_FAIL:-none}" in
@@ -233,6 +235,12 @@ case "${SIMULATE_FAIL:-none}" in
 			exit 1
 		fi
 		;;
+	no-version-file)
+		if echo "$cmd" | grep -q "apk --network=false info luci-app-open-hotspot"; then
+			echo "1.2.0-r90"
+			exit 0
+		fi
+		;;
 	wrong-board)
 		if echo "$cmd" | grep -q "board\\.json"; then
 			echo "Other Router"
@@ -264,6 +272,9 @@ elif echo "$cmd" | grep -q "preflight\.sh"; then
 	exit 0
 elif echo "$cmd" | grep -q "diagnose\.sh"; then
 	echo "status=ok failures=0 warnings=0"
+	exit 0
+elif echo "$cmd" | grep -q "apk --network=false info luci-app-open-hotspot"; then
+	echo "1.2.0-r90"
 	exit 0
 elif echo "$cmd" | grep -q "open-hotspot\.version"; then
 	echo "1.2.0-r90"
@@ -390,22 +401,31 @@ else
 	fail "Simulation 10: valid non-zero opennds version output was not accepted safely (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 11: wrong board identity is rejected ---
+# --- Simulation 11: package version fallback works without version file ---
+: > "$AUDIT_LOG"
+sim_out=$(SIMULATE_FAIL="no-version-file" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
+if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG"; then
+	pass "Simulation 11: offline APK version fallback accepted r90 candidate"
+else
+	fail "Simulation 11: offline APK version fallback failed (rc=$sim_rc: $sim_out)"
+fi
+
+# --- Simulation 12: wrong board identity is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-board" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 11: wrong board identity rejected before apk add"
+	pass "Simulation 12: wrong board identity rejected before apk add"
 else
-	fail "Simulation 11: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 12: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 12: wrong boot slot is rejected ---
+# --- Simulation 13: wrong boot slot is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-slot" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 12: wrong boot slot rejected before apk add"
+	pass "Simulation 13: wrong boot slot rejected before apk add"
 else
-	fail "Simulation 12: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 13: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
 printf '\ntest_deploy_contract: %d passed, %d failed\n' "$PASSES" "$FAILURES"

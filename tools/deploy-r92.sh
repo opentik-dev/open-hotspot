@@ -6,7 +6,8 @@
 # 2. Local validation of r92 APK: existence, exact expected SHA-256, apk verify, apk adbdump.
 #    Mandatory OpenWrt SDK apk tool validation during deployment mode.
 # 3. Read-only pre-mutation inspection of router identity (model, boot slot, openNDS version).
-#    opennds -v exit code is checked directly without suppression.
+#    opennds -v exit code is captured directly; a non-zero code is tolerated only
+#    when the command still reports a parseable OpenNDS version.
 #    Target board (EA8300) and boot slot (slot 2) are enforced fail-closed by default.
 # 4. Strict fail-closed gate: abort immediately on any preflight or diagnostic failure.
 #    Failure parser handles arbitrary failure counts (failures > 0, not just 1-9).
@@ -150,12 +151,18 @@ fi
 BOARD_NAME=$("${SSH_CMD[@]}" "jsonfilter -i /etc/board.json -e '@.model.name' 2>/dev/null || uname -m")
 ACTIVE_SLOT=$("${SSH_CMD[@]}" "fw_printenv boot_part 2>/dev/null || grep -o 'boot_part=[0-9]' /proc/cmdline 2>/dev/null || echo 'unknown'")
 
-# Validate opennds -v capturing actual exit code without negation bug
+# Validate opennds -v while preserving both the actual exit code and output.
 OPENNDS_RC=0
 OPENNDS_VER=$("${SSH_CMD[@]}" "opennds -v 2>&1") || OPENNDS_RC=$?
 if [ "$OPENNDS_RC" -ne 0 ]; then
-	echo "FAIL: opennds -v command failed on $ROUTER_IP (exit code $OPENNDS_RC): $OPENNDS_VER" >&2
-	exit 1
+	# openNDS 11.0.0 on the acceptance router prints a valid version string but
+	# returns exit code 1. Do not turn that observed compatibility quirk into a
+	# blind success: require a parseable version before continuing.
+	if ! printf '%s\n' "$OPENNDS_VER" | grep -qiE 'openNDS([[:space:]]+version)?[[:space:]]+[0-9]+\.[0-9]+'; then
+		echo "FAIL: opennds -v command failed on $ROUTER_IP (exit code $OPENNDS_RC) and did not report a parseable version: $OPENNDS_VER" >&2
+		exit 1
+	fi
+	echo "WARN: opennds -v returned exit code $OPENNDS_RC but reported a parseable version; continuing with version compatibility checks." >&2
 fi
 
 echo "  Target Board:   $BOARD_NAME"

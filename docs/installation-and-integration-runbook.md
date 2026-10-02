@@ -44,7 +44,7 @@ ROUTER_IP=192.168.50.1 tools/deploy-r92.sh
 
 The driver executes with `set -euo pipefail` and `umask 077`, enforcing strict fail-closed barriers:
 1. **Local verification**: Validates artifact existence, exact expected SHA-256 (`a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), `apk --allow-untrusted verify`, and `apk adbdump`.
-2. **Router identity inspection**: Interrogates router board model, active boot slot, and responsive `opennds -v`; the expected EA8300/slot-2 identity is fail-closed by default.
+2. **Router identity inspection**: Interrogates router board model, active boot slot, and `opennds -v`; the expected EA8300/slot-2 identity is fail-closed by default. The probe captures the actual exit code, but accepts a non-zero code only when the output contains a parseable OpenNDS version; this covers the observed OpenNDS 11.0.0 behavior where `opennds -v` prints a valid version and exits 1.
 3. **Read-only preflight & diagnostics**: Runs `/usr/lib/open-hotspot/preflight.sh` and `/usr/lib/open-hotspot/diagnose.sh` prior to mutation; aborts immediately on non-zero exit, missing summary, or active failures.
 4. **Complete transactional rollback backup**:
    - Creates consistent SQLite snapshot via `/usr/lib/open-hotspot/backup.sh export`.

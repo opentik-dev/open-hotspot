@@ -7,7 +7,7 @@
 # 3. Strict bash error handling (set -euo pipefail) is enabled.
 # 4. No '|| true' exists in the backup workflow (Phase 4).
 # 5. Rollback taxonomy matches documentation (r60 baseline vs r90 candidate).
-# 6. opennds -v exit code is checked directly.
+# 6. opennds -v exit code is captured directly and non-zero output is validated.
 # 7. Failure count parsing handles arbitrary non-zero counts (e.g. failures=12).
 # 8. The embedded remote rollback archive command passes POSIX shell syntax.
 # 9. The documented APK query is used; package tracking files are not parsed as versions.
@@ -16,7 +16,7 @@
 # 12. Local verification passes for the official r92 artifact.
 # 13. Installation is gated behind preflight, diagnose, and checksums.
 # 14. Acceptance status is explicitly output as Pending Hardware Validation.
-# 15-25. Simulations cover transport, preflight, diagnostics, rollback, identity,
+# 15-26. Simulations cover transport, preflight, diagnostics, rollback, identity,
 #        checksum, and successful-path gates without masking failures.
 
 set -euo pipefail
@@ -227,6 +227,12 @@ case "${SIMULATE_FAIL:-none}" in
 			exit 7
 		fi
 		;;
+	opennds-version-warning)
+		if echo "$cmd" | grep -q "opennds -v"; then
+			echo "This is openNDS version 11.0.0"
+			exit 1
+		fi
+		;;
 	wrong-board)
 		if echo "$cmd" | grep -q "board\\.json"; then
 			echo "Other Router"
@@ -366,31 +372,40 @@ else
 	fail "Simulation 8: unknown package version was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 9: opennds -v non-zero exit is rejected ---
+# --- Simulation 9: opennds -v failure without a version is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="opennds-exit" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 9: opennds version probe failure rejected before apk add"
+	pass "Simulation 9: opennds probe without a parseable version rejected before apk add"
 else
-	fail "Simulation 9: opennds probe failure was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 9: invalid opennds probe was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 10: wrong board identity is rejected ---
+# --- Simulation 10: valid version text with non-zero exit is accepted ---
+: > "$AUDIT_LOG"
+sim_out=$(SIMULATE_FAIL="opennds-version-warning" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
+if [ "$sim_rc" -eq 0 ] && grep -q "apk add" "$AUDIT_LOG" && printf '%s\n' "$sim_out" | grep -q "exit code 1"; then
+	pass "Simulation 10: parseable opennds version with exit code 1 continued safely"
+else
+	fail "Simulation 10: valid non-zero opennds version output was not accepted safely (rc=$sim_rc: $sim_out)"
+fi
+
+# --- Simulation 11: wrong board identity is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-board" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 10: wrong board identity rejected before apk add"
+	pass "Simulation 11: wrong board identity rejected before apk add"
 else
-	fail "Simulation 10: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 11: wrong board identity was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
-# --- Simulation 11: wrong boot slot is rejected ---
+# --- Simulation 12: wrong boot slot is rejected ---
 : > "$AUDIT_LOG"
 sim_out=$(SIMULATE_FAIL="wrong-slot" SSH_BIN="$MOCK_SSH" bash "$DEPLOY_SCRIPT" 2>&1) && sim_rc=0 || sim_rc=$?
 if [ "$sim_rc" -ne 0 ] && ! grep -q "apk add" "$AUDIT_LOG"; then
-	pass "Simulation 11: wrong boot slot rejected before apk add"
+	pass "Simulation 12: wrong boot slot rejected before apk add"
 else
-	fail "Simulation 11: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
+	fail "Simulation 12: wrong boot slot was not rejected (rc=$sim_rc: $sim_out)"
 fi
 
 printf '\ntest_deploy_contract: %d passed, %d failed\n' "$PASSES" "$FAILURES"

@@ -177,9 +177,54 @@ opennds_live_clients() {
 	"$OPEN_HOTSPOT_NDSCTL_BIN" status
 }
 
+opennds_live_macs() {
+	"$OPEN_HOTSPOT_NDSCTL_BIN" status 2>/dev/null |
+		sed -n 's/.*MAC:[[:space:]]*//p' |
+		awk '{print toupper($1)}' |
+		grep -E '^([0-9A-F]{2}:){5}[0-9A-F]{2}$' || true
+}
+
+opennds_authenticated_macs() {
+	"$OPEN_HOTSPOT_NDSCTL_BIN" status 2>/dev/null | awk '
+function emit() {
+	if (state == "Authenticated" && mac ~ /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/) {
+		print toupper(mac)
+	}
+	state = ""
+	mac = ""
+}
+/^[[:space:]]*Client[[:space:]]/ || /^={3,}/ || /^Client / {
+	emit()
+}
+/MAC:[[:space:]]*/ {
+	for (i = 1; i <= NF; i++) {
+		if ($i == "MAC:" && (i + 1) <= NF) {
+			mac = $(i + 1)
+		} else if ($i ~ /^MAC:[0-9A-Fa-f:]+$/) {
+			m = $i
+			sub(/^MAC:/, "", m)
+			mac = m
+		}
+	}
+}
+/State:[[:space:]]*/ {
+	for (i = 1; i <= NF; i++) {
+		if ($i == "State:" && (i + 1) <= NF) {
+			state = $(i + 1)
+		}
+	}
+}
+END {
+	emit()
+}
+'
+}
+
 case "${1:-}" in
 	status) opennds_validate_config ;;
 	adapter-contract) opennds_adapter_contract "${2:-$(opennds_detect_version)}" ;;
 	live-clients) opennds_live_clients ;;
+	live-macs) opennds_live_macs ;;
+	authenticated-macs) opennds_authenticated_macs ;;
 	deauth) shift; opennds_deauth "$@" ;;
 esac

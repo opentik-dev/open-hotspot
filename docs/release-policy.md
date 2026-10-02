@@ -1,10 +1,13 @@
 # Release and version policy
 
-The package version is the pair declared in `starter-kit/Makefile`:
+The package version is the pair declared in `starter-kit/Makefile`. The
+unpublished working tree currently declares r92; r90 remains the last
+documented acceptance candidate until the new source changes and gates are
+reviewed:
 
 ```text
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=79
+PKG_RELEASE:=92
 ```
 
 The installable artifact is named:

@@ -2,7 +2,7 @@
 
 **As of:** 2026-10-02
 **Last documented acceptance candidate:** Open-HotSpot 1.2.0-r90
-**Working-tree candidate (unpublished):** Open-HotSpot 1.2.0-r91
+**Working-tree candidate (unpublished):** Open-HotSpot 1.2.0-r92
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -43,11 +43,12 @@
   the database permission hardening path, and r89 fixes the source-compatible
   reauth bridge that previously bypassed custombinauth on the target; r90
   accepts the explicit native quota-deauth names emitted by the target
-  openNDS 11 dispatcher. The working tree declares r91 (unpublished),
-  which reconciles release metadata, adds a read-only DEV diagnostics LuCI
-  page, improves cycle event detail, and adds an automated release consistency
-  test; r91 does not change authentication, BinAuth, quota, or openNDS behavior
-  and does not close any hardware gate.
+  openNDS 11 dispatcher. The working tree declares r92 (unpublished),
+  which stabilizes the authenticated session lifecycle (case-insensitive MAC queries,
+  authenticated-only client reconciliation, policy_period_start initialization, non-disruptive
+  daemon readiness check), reconciles release metadata, adds a read-only DEV diagnostics
+  LuCI page, and adds regression and consistency tests; r92 remains an unpublished working-tree
+  candidate and does not close any hardware gate without field proof.
 
 ## What is not accepted yet
 
@@ -85,8 +86,8 @@ open.
 
 1. Close the remaining physical-router gates against the r90 field candidate
    while preserving r60/openNDS 10.3.1 as the documented rollback baseline.
-   The working tree (r91) adds diagnostics and metadata reconciliation but
-   remains unpublished until its artifact and gates are reviewed.
+   The working tree (r92) adds session stability, diagnostics, and metadata
+   reconciliation but remains unpublished until its artifact and gates are reviewed.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback

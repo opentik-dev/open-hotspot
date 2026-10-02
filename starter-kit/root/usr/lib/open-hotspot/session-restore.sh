@@ -30,6 +30,7 @@ set_mode() {
 	valid_mode "$1" || return 1
 	"$UCI_BIN" set "open-hotspot.global.session_restore=$1" || return 1
 	"$UCI_BIN" commit open-hotspot || return 1
+	chmod 600 /etc/config/open-hotspot || return 1
 	if [ "$1" = enabled ]; then
 		rm -f "$MARKER"
 	else
@@ -123,17 +124,32 @@ status() {
 }
 
 reconcile_stale() {
-	# Disabled restore means a previous boot's manager rows are not entitled to
-	# remain live forever. Only reconcile when the daemon is healthy and reports
-	# zero clients; an unreadable status or any live client fails closed.
+	# Disabled restore means a previous boot's native openNDS auth_restore rows
+	# are not entitled to remain live without a manager-owned SQLite session.
+	# Reconcile those clients first, then close manager-only rows once the daemon
+	# reports zero clients. An unreadable status fails closed.
 	[ "$(mode)" = disabled ] || return 0
 	. "$DB_HELPER"
 	. "$NDS_HELPER"
 	opennds_validate_config || return 1
 	clients=$(opennds_current_clients) || return 1
+	if [ "$clients" -gt 0 ]; then
+		auth_macs=$(opennds_authenticated_macs 2>/dev/null || true)
+		while IFS= read -r mac; do
+			[ -n "$mac" ] || continue
+			_valid_mac "$mac" || return 1
+			active=$(db_active_session_count_by_mac "$mac") || return 1
+			[ "$active" = 1 ] && continue
+			opennds_deauth "$mac" >/dev/null 2>&1 || true
+			db_log_event native_restore_reconciled '' 'no-manager-session' || true
+		done <<EOF
+$auth_macs
+EOF
+		clients=$(opennds_current_clients) || return 1
+	fi
 	[ "$clients" -eq 0 ] || return 0
 	closed=$(sqlite3 -batch -noheader "$DB_PATH" "BEGIN IMMEDIATE;
-	UPDATE active_sessions
+UPDATE active_sessions
 	   SET state='closed', closed_at=COALESCE(closed_at,datetime('now')),
 	       last_seen_at=datetime('now')
 	 WHERE state='active';

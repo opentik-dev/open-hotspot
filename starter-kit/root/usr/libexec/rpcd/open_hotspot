@@ -340,15 +340,25 @@ EOF
 
 rpc_dev_diagnose() {
 	DIAGNOSE_SCRIPT="${OPEN_HOTSPOT_DIAGNOSE:-/usr/lib/open-hotspot/diagnose.sh}"
-	makefile="${OPEN_HOTSPOT_MAKEFILE:-/usr/lib/open-hotspot/Makefile}"
-	[ -r "$makefile" ] || makefile="/etc/open-hotspot/Makefile"
-	[ -r "$makefile" ] || makefile=""
+	version_file="${OPEN_HOTSPOT_VERSION_FILE:-/usr/lib/open-hotspot/open-hotspot.version}"
 	pkg_version="unknown"
-	if [ -n "$makefile" ] && [ -r "$makefile" ]; then
-		v=$(sed -n 's/^PKG_VERSION:=//p' "$makefile" 2>/dev/null || true)
-		r=$(sed -n 's/^PKG_RELEASE:=//p' "$makefile" 2>/dev/null || true)
-		[ -n "$v" ] && [ -n "$r" ] && pkg_version="${v}-r${r}"
+	if [ -r "$version_file" ]; then
+		pkg_version=$(cat "$version_file" 2>/dev/null | tr -d '\r\n')
 	fi
+	if [ -z "$pkg_version" ] || [ "$pkg_version" = "unknown" ]; then
+		makefile="${OPEN_HOTSPOT_MAKEFILE:-/usr/lib/open-hotspot/Makefile}"
+		[ -r "$makefile" ] || makefile="/etc/open-hotspot/Makefile"
+		if [ -r "$makefile" ]; then
+			v=$(sed -n 's/^PKG_VERSION:=//p' "$makefile" 2>/dev/null || true)
+			r=$(sed -n 's/^PKG_RELEASE:=//p' "$makefile" 2>/dev/null || true)
+			[ -n "$v" ] && [ -n "$r" ] && pkg_version="${v}-r${r}"
+		elif command -v opkg >/dev/null 2>&1; then
+			pkg_version=$(opkg status luci-app-open-hotspot 2>/dev/null | sed -n 's/^Version:[[:space:]]*//p' | head -n 1)
+		elif command -v apk >/dev/null 2>&1; then
+			pkg_version=$(apk info luci-app-open-hotspot 2>/dev/null | sed -n 's/^luci-app-open-hotspot-\([0-9].*\) description:/\1/p' | head -n 1)
+		fi
+	fi
+	[ -n "$pkg_version" ] || pkg_version="unknown"
 	diag_output=""
 	diag_exit=0
 	if [ -x "$DIAGNOSE_SCRIPT" ]; then
@@ -357,7 +367,24 @@ rpc_dev_diagnose() {
 		if command -v timeout >/dev/null 2>&1; then
 			timeout 30 "$DIAGNOSE_SCRIPT" >"$diag_tmp" 2>&1 || diag_exit=$?
 		else
-			"$DIAGNOSE_SCRIPT" >"$diag_tmp" 2>&1 || diag_exit=$?
+			"$DIAGNOSE_SCRIPT" >"$diag_tmp" 2>&1 &
+			diag_pid=$!
+			diag_waited=0
+			while [ "$diag_waited" -lt 30 ]; do
+				if ! kill -0 "$diag_pid" 2>/dev/null; then
+					break
+				fi
+				sleep 1
+				diag_waited=$((diag_waited + 1))
+			done
+			if kill -0 "$diag_pid" 2>/dev/null; then
+				kill -TERM "$diag_pid" 2>/dev/null || true
+				sleep 1
+				kill -KILL "$diag_pid" 2>/dev/null || true
+				diag_exit=124
+			else
+				wait "$diag_pid" 2>/dev/null || diag_exit=$?
+			fi
 		fi
 		diag_output=$(head -c 8192 "$diag_tmp" 2>/dev/null || true)
 		rm -f "$diag_tmp"

@@ -10,12 +10,11 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r94` is the current field candidate; installation is pending. `1.2.0-r93`
-is the last installed field candidate. Its artifact checksum is
-`bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`; guarded
-deployment over r92 completed with post-install `failures=0 warnings=0` and
-`ndsctl status` healthy. Physical acceptance gates remain open. r92 is the
-previous candidate and is superseded by r93. Earlier packages remain field
+`1.2.0-r94` is the current installed field candidate. Its artifact checksum is
+`b801cdccd9e7b06ddf6aa72bf68d404769788f13543ad11c7264834979413eb6`; guarded
+deployment over r93 completed with post-install `failures=0 warnings=0` and
+`ndsctl status` healthy. Physical acceptance gates remain open. r93 is the
+previous candidate and is superseded by r94. Earlier packages remain field
 evidence and rollback checkpoints. Historical entries below are retained for
 audit and are not current release instructions. r40 removes upstream-address assumptions
 from local FAS activation, r41 adds a dynamic-address contract guard and

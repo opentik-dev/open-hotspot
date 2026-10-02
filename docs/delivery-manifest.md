@@ -2,12 +2,12 @@
 
 **Candidate:** `luci-app-open-hotspot 1.2.0-r94`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`
+**SHA-256:** `b801cdccd9e7b06ddf6aa72bf68d404769788f13543ad11c7264834979413eb6`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** Installed controlled field candidate; not yet a production baseline.
 
-The r94 package is the current UI hardening candidate. The last installed r93
-package was installed over r92 by the guarded deployment driver. The
+The r94 package is the current installed UI hardening candidate. It was
+installed over r93 by the guarded deployment driver. The
 rollback archive and SQLite export were created before mutation; post-install
 preflight, diagnostics, and `ndsctl status` passed. The observed client stayed
 authenticated beyond 35 minutes; quota, restart, failure-containment, and the

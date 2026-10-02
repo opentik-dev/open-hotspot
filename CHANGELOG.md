@@ -19,12 +19,14 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
 
-## 1.2.0-r94 (UI hardening candidate; target installation pending)
+## 1.2.0-r94 (installed field candidate; acceptance pending)
 
 - Normalized LuCI action-button sizing, spacing, wrapping, and mobile behavior
   across account, device, backup, profile, voucher, Events, and DEV surfaces.
 - Kept Events as a standalone read-only page and kept DEV limited to future
   feature registration.
+- Installed over r93 on the EA8300; post-install preflight, diagnostics, and
+  `ndsctl status` passed. Hardware acceptance gates remain open.
 
 ## 1.2.0-r93 (installed field candidate; acceptance pending)
 

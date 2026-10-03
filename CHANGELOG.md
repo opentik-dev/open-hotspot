@@ -5,6 +5,11 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+- Prepared r95 UI/units hardening: compact responsive create forms, consistent
+  action rows, and direct unit selectors for time, data limits, and rates.
+  Multi-day first-login validity presets are intentionally not enabled yet;
+  they require a separate rolling-validity database and accounting contract.
+
 - Prepared r94 UI hardening: Events and DEV now load the shared stylesheet, and
   account/device action controls use consistent responsive rows and button
   sizing.
@@ -18,6 +23,14 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 - Documented the IoT bypass idea for a later reviewed contract; Tapo/D-Link
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
+
+## 1.2.0-r95 (UI/units candidate; installation pending)
+
+- Added seconds/minutes/hours/days selectors for time limits, B/KiB/MiB/GiB
+  selectors for data limits, and kbit/s/Mbit/s/Gbit/s selectors for rates.
+- Tightened account/profile creation layouts and action-button alignment for
+  long lists and narrow screens.
+- Kept the existing r94 runtime and session behavior unchanged.
 
 ## 1.2.0-r94 (installed field candidate; acceptance pending)
 

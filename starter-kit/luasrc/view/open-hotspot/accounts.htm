@@ -6,7 +6,7 @@
 
 <fieldset class="cbi-section">
 <legend><%:Create account%></legend>
-<form class="oh-form" method="post" action="<%=page_url%>">
+<form class="oh-form oh-create-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="create" />
 <div class="cbi-value"><label><%:Username%></label><input name="username" required maxlength="64" /></div>
 <div class="cbi-value"><label><%:PIN%></label><input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" /></div>

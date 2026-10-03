@@ -38,6 +38,11 @@ grep -F 'local_fas_enabled' "$setup" >/dev/null
 grep -F 'dnsmasq' "$setup" >/dev/null
 ! grep -Eq 'os\.execute|io\.popen|luci\.sys\.exec' "$setup"
 grep -F 'name="token"' "$profiles" >/dev/null
+grep -F 'name="time_unit"' "$profiles" >/dev/null
+grep -F 'name="upload_unit"' "$profiles" >/dev/null
+grep -F 'name="download_unit"' "$profiles" >/dev/null
+grep -F 'name="upload_rate_unit"' "$profiles" >/dev/null
+grep -F 'name="download_rate_unit"' "$profiles" >/dev/null
 grep -F 'name="token"' "$accounts" >/dev/null
 grep -F 'name="token"' "$devices" >/dev/null
 grep -F 'device_list' "$controller" >/dev/null

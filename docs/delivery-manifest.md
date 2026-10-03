@@ -1,13 +1,15 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r94`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r95`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `b801cdccd9e7b06ddf6aa72bf68d404769788f13543ad11c7264834979413eb6`
+**SHA-256:** `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** Installed controlled field candidate; not yet a production baseline.
+**Decision:** UI/units candidate; installation pending; not yet a production baseline.
 
-The r94 package is the current installed UI hardening candidate. It was
-installed over r93 by the guarded deployment driver. The
+The r95 package is the current UI/units candidate. The installed r94 package
+remains the rollback point until r95 passes the guarded deployment. The
+multi-day first-login validity presets are intentionally not included until
+the rolling-validity accounting contract is implemented and tested. The
 rollback archive and SQLite export were created before mutation; post-install
 preflight, diagnostics, and `ndsctl status` passed. The observed client stayed
 authenticated beyond 35 minutes; quota, restart, failure-containment, and the

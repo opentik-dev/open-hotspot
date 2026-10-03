@@ -8,12 +8,12 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current UI hardening candidate is r94; it is installed on the target.
+The current UI/units hardening candidate is r95; installation is pending.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current field candidate | Open-HotSpot r94 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; UI hardening present; hardware acceptance pending |
-| Previous candidate | Open-HotSpot r93 / openNDS 11.0.0 | Previous target state | Superseded by r94 |
+| Current field candidate | Open-HotSpot r95 / openNDS 11.0.0 | UI/units hardening candidate for EA8300 slot 02 | Built and tested; installation pending |
+| Last installed candidate | Open-HotSpot r94 / openNDS 11.0.0 | Previous target state | Installed and verified; superseded by r95 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1

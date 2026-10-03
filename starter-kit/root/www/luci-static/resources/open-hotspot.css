@@ -4,6 +4,12 @@
 .oh-page fieldset.cbi-section { padding: 1rem 1.25rem 1.25rem; border-radius: .35rem; }
 .oh-page fieldset form { max-width: 860px; }
 .oh-page form { margin: 0; }
+.oh-page .oh-form-help { max-width: 70rem; margin: .25rem 0 1rem; opacity: .78; }
+.oh-page .oh-create-form { max-width: 100% !important; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem 1rem; }
+.oh-page .oh-create-form .cbi-value { grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: .5rem .75rem; margin: 0; }
+.oh-page .oh-create-form > input[type="submit"] { grid-column: 1 / -1; margin: 0 !important; justify-self: start; width: auto; min-width: 8rem; }
+.oh-page .oh-unit-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7rem, auto); gap: .4rem; align-items: center; }
+.oh-page .oh-unit-field input, .oh-page .oh-unit-field select { min-width: 0; }
 .oh-page .cbi-value {
 	display: grid;
 	grid-template-columns: minmax(13rem, 31%) minmax(14rem, 1fr);
@@ -20,6 +26,7 @@
 .oh-page .cbi-button-save, .oh-page button[name="action"] { background: #2f80ed; color: #fff; border-color: #2f80ed; }
 .oh-page .cbi-button-reset { background: transparent; color: inherit; }
 .oh-page .oh-record-form > input[type="submit"] { min-height: 2.25rem; align-self: end; }
+.oh-page .oh-record-form > input[type="submit"] { justify-self: start; width: auto; min-width: 6rem; }
 .oh-page .oh-action-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: end; margin-top: .6rem; }
 .oh-page .oh-action-row > form { flex: 0 1 auto; }
 .oh-page .oh-inline-form { display: inline-flex; flex-wrap: wrap; gap: .6rem; align-items: end; }
@@ -41,6 +48,9 @@
 	.oh-page fieldset form > input[type="submit"] { margin-inline-start: 0; }
 	.oh-page fieldset.cbi-section { padding-inline: .8rem; }
 	.oh-page .oh-record-form { grid-template-columns: 1fr; }
+	.oh-page .oh-create-form { grid-template-columns: 1fr; }
+	.oh-page .oh-create-form .cbi-value { grid-template-columns: 1fr; }
+	.oh-page .oh-create-form > input[type="submit"] { grid-column: auto; width: 100%; }
 	.oh-page .oh-action-row { align-items: stretch; }
 	.oh-page .oh-action-row > form, .oh-page .oh-inline-form { width: 100%; }
 	.oh-page .oh-inline-form { display: grid; grid-template-columns: 1fr; }

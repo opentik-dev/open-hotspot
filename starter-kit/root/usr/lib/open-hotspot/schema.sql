@@ -1,4 +1,4 @@
--- Open-HotSpot schema v5.
+-- Open-HotSpot schema v6.
 -- Persistent state is local SQLite data; openNDS remains the enforcement engine.
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
@@ -141,15 +141,25 @@ CREATE TABLE IF NOT EXISTS admin_events (
     ts         TEXT NOT NULL DEFAULT (datetime('now')),
     account_id INTEGER REFERENCES accounts(id),
     action     TEXT NOT NULL,
-    detail     TEXT
+    detail     TEXT,
+    category   TEXT NOT NULL DEFAULT 'system'
+               CHECK (category IN ('devices','accounts','sessions','quota','system','security','backup')),
+    severity   TEXT NOT NULL DEFAULT 'info'
+               CHECK (severity IN ('info','success','warning','error')),
+    source     TEXT NOT NULL DEFAULT 'system'
+               CHECK (source IN ('luci','rpc','fas','binauth','cycle','restore','system')),
+    result     TEXT NOT NULL DEFAULT 'success'
+               CHECK (result IN ('success','denied','failed','reconciled'))
 );
 CREATE INDEX IF NOT EXISTS idx_admin_events_ts ON admin_events(ts);
+CREATE INDEX IF NOT EXISTS idx_admin_events_filter ON admin_events(category, severity, source, result);
 
 INSERT OR IGNORE INTO schema_meta(version) VALUES (1);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (2);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (3);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (4);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (5);
+INSERT OR IGNORE INTO schema_meta(version) VALUES (6);
 INSERT OR IGNORE INTO profiles
     (id, name, period_type, time_limit_s, upload_limit_b, download_limit_b,
      upload_rate_kbps, download_rate_kbps, max_devices)

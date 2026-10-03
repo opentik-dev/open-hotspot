@@ -1,14 +1,14 @@
 # Open-HotSpot delivery manifest
 
 **Candidate:** `luci-app-open-hotspot 1.2.0-r99`
-**Artifact:** Locally reproducible APK; CI must rebuild and publish the
-authoritative asset for r99
-**SHA-256:** `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6`
+**Artifact:** CI-built reproducible APK (`open-hotspot-apk-9315a43`),
+verified in GitHub Actions CI (runs 37149630870, 37150756510, 37151288751)
+**SHA-256:** `cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** r99 is the controlled-account-switching source candidate; target
-remains on installed r97. r98 remains the prior device-lifecycle artifact and
-is not reused for this source change. The r99 candidate requires CI
-verification before publication or field installation.
+**Decision:** r99 is the canonical candidate combining controlled account
+switching (schema v5) and bounded event taxonomy with storage-boundary redaction
+(schema v6); intermediate local build hash `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6`
+was superseded by canonical commit `9315a43`; target remains on installed r97.
 
 The r97 package remains the last installed field candidate and its historical
 artifact checksum is recorded in the release ledger. The prior r98 package contains
@@ -23,17 +23,20 @@ gates are still pending.
 
 ## Delivered
 
-- SQLite schema and migrations through schema v5 in the r99 source candidate;
+- SQLite schema and migrations through schema v6 in the r99 candidate;
   the prior r98 artifact remains schema v4.
 - Local FAS credential verification with fail-closed handling.
 - Verified target-specific BinAuth parsing with no `ndsctl` call in BinAuth.
 - Native openNDS policy adapter, periods, quota accounting, vouchers, and recovery helpers.
 - LuCI profiles, accounts, devices, vouchers, history, dashboard, backup/import, Renew, and explicit MAC Reassign.
 - Arabic and English portal templates.
-- Controlled account switching is transactionally bounded in the r99 source
-  candidate: it preserves the old device/history identity, rejects live/pending
-  sessions and stale policy, and records redacted switch/denial events. It is
-  source-tested but not yet included in a CI APK or installed on the target.
+- Controlled account switching is transactionally bounded in the r99 candidate:
+  it preserves the old device/history identity, rejects live/pending
+  sessions and stale policy, and records redacted switch/denial events.
+- Bounded event taxonomy and storage-boundary redaction in the r99 candidate:
+  admin_events taxonomy columns (category, severity, source, result), idempotent
+  migration 006, MAC/IP/secret redaction before SQLite writes, and read-only
+  LuCI Events filters.
 - Package checks, schema checks, shell checks, quota checks, and target installation checks.
 - r78 target proof: FAS 200, handoff 307, Authenticated session, IP-based deauth,
   automatic BinAuth close, and SQLite usage event.

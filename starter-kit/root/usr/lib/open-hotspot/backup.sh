@@ -57,25 +57,36 @@ backup_export() {
 	tmp=$(mktemp -d "${BACKUP_DIR%/}/open-hotspot-export.XXXXXX")
 	trap 'rm -rf "$tmp"' EXIT
 	db_init
-	sqlite3 -batch "$DB_PATH" ".backup '$tmp/hotspot.db'"
-	cp "$BACKUP_CONFIG" "$tmp/open-hotspot"
-	tar -czf "$archive" -C "$tmp" hotspot.db open-hotspot
+	if ! sqlite3 -batch "$DB_PATH" ".backup '$tmp/hotspot.db'" || \
+	   ! cp "$BACKUP_CONFIG" "$tmp/open-hotspot" || \
+	   ! tar -czf "$archive" -C "$tmp" hotspot.db open-hotspot; then
+		db_log_event backup_failed '' 'backup-export-failed' backup error system failed || true
+		return 1
+	fi
+	db_log_event backup_export '' 'database-and-config' backup info system success || true
 	printf '%s\n' "$archive"
 }
 
 backup_import() {
 	archive="$1"
-	backup_validate "$archive" >/dev/null
+	if ! backup_validate "$archive" >/dev/null; then
+		db_log_event backup_failed '' 'backup-validation-failed' backup error system failed || true
+		return 1
+	fi
 	rollback="${BACKUP_DIR%/}/open-hotspot-before-import-$(date -u +%Y%m%dT%H%M%SZ).tar.gz"
 	backup_export "$rollback" >/dev/null
 	tmp=$(mktemp -d "${BACKUP_DIR%/}/open-hotspot-import.XXXXXX")
 	trap 'rm -rf "$tmp"' EXIT
-	tar -xzf "$archive" -C "$tmp"
-	mkdir -p "$(dirname "$DB_PATH")" "$(dirname "$BACKUP_CONFIG")"
-	cp "$tmp/hotspot.db" "${DB_PATH}.import"
-	cp "$tmp/open-hotspot" "${BACKUP_CONFIG}.import"
-	mv "${DB_PATH}.import" "$DB_PATH"
-	mv "${BACKUP_CONFIG}.import" "$BACKUP_CONFIG"
+	if ! tar -xzf "$archive" -C "$tmp" || \
+	   ! mkdir -p "$(dirname "$DB_PATH")" "$(dirname "$BACKUP_CONFIG")" || \
+	   ! cp "$tmp/hotspot.db" "${DB_PATH}.import" || \
+	   ! cp "$tmp/open-hotspot" "${BACKUP_CONFIG}.import" || \
+	   ! mv "${DB_PATH}.import" "$DB_PATH" || \
+	   ! mv "${BACKUP_CONFIG}.import" "$BACKUP_CONFIG"; then
+		db_log_event backup_failed '' 'backup-import-failed' backup error system failed || true
+		return 1
+	fi
+	db_log_event backup_import '' 'database-and-config' backup info system success || true
 	printf 'imported rollback=%s\n' "$rollback"
 }
 

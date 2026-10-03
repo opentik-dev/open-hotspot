@@ -143,9 +143,9 @@ reconcile_stale() {
 			deauth_rc=0
 			opennds_deauth "$mac" >/dev/null 2>&1 || deauth_rc=$?
 			if [ "$deauth_rc" -eq 0 ]; then
-				db_log_event native_restore_reconciled '' 'no-manager-session' || true
+				db_log_event native_restore_reconciled '' 'no-manager-session' sessions info restore reconciled || true
 			else
-				db_log_event native_restore_reconcile_failed '' "reconcile:deauth_rc=$deauth_rc" || true
+				db_log_event native_restore_reconcile_failed '' "reconcile:deauth_rc=$deauth_rc" sessions error restore failed || true
 			fi
 		done <<EOF
 $auth_macs
@@ -162,7 +162,7 @@ UPDATE active_sessions
 	case "$closed" in
 		0) ;;
 		*[!0-9]*) return 1 ;;
-		*) db_log_event stale_session_reconciled '' 'opennds-reported-zero-clients' || true ;;
+		*) db_log_event stale_session_reconciled '' 'opennds-reported-zero-clients' sessions info restore reconciled || true ;;
 	esac
 }
 

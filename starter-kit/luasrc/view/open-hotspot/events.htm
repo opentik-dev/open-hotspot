@@ -11,9 +11,59 @@
 	<% end %>
 
 	<h3>Recent service events</h3>
+
+	<form method="get" action="<%=page_url%>" style="margin-bottom: 1em;">
+		<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+			<div>
+				<label for="filter_category" style="display: block; font-weight: bold; font-size: 0.9em;">Category</label>
+				<select id="filter_category" name="category" class="cbi-input-select">
+					<option value="">All categories</option>
+					<% for _, c in ipairs({"devices", "accounts", "sessions", "quota", "system", "security", "backup"}) do %>
+						<option value="<%=c%>"<%=selected_category == c and ' selected="selected"' or ''%>><%=c%></option>
+					<% end %>
+				</select>
+			</div>
+			<div>
+				<label for="filter_severity" style="display: block; font-weight: bold; font-size: 0.9em;">Severity</label>
+				<select id="filter_severity" name="severity" class="cbi-input-select">
+					<option value="">All severities</option>
+					<% for _, s in ipairs({"info", "success", "warning", "error"}) do %>
+						<option value="<%=s%>"<%=selected_severity == s and ' selected="selected"' or ''%>><%=s%></option>
+					<% end %>
+				</select>
+			</div>
+			<div>
+				<label for="filter_source" style="display: block; font-weight: bold; font-size: 0.9em;">Source</label>
+				<select id="filter_source" name="source" class="cbi-input-select">
+					<option value="">All sources</option>
+					<% for _, s in ipairs({"luci", "rpc", "fas", "binauth", "cycle", "restore", "system"}) do %>
+						<option value="<%=s%>"<%=selected_source == s and ' selected="selected"' or ''%>><%=s%></option>
+					<% end %>
+				</select>
+			</div>
+			<div>
+				<label for="filter_result" style="display: block; font-weight: bold; font-size: 0.9em;">Result</label>
+				<select id="filter_result" name="result" class="cbi-input-select">
+					<option value="">All results</option>
+					<% for _, r in ipairs({"success", "denied", "failed", "reconciled"}) do %>
+						<option value="<%=r%>"<%=selected_result == r and ' selected="selected"' or ''%>><%=r%></option>
+					<% end %>
+				</select>
+			</div>
+			<div>
+				<input type="submit" value="Filter" class="cbi-button cbi-button-action" />
+				<a href="<%=page_url%>" class="cbi-button cbi-button-reset">Reset</a>
+			</div>
+		</div>
+	</form>
+
 	<div class="oh-table-wrap"><div class="table">
 		<div class="tr table-titles">
 			<div class="th">Time</div>
+			<div class="th">Category</div>
+			<div class="th">Severity</div>
+			<div class="th">Source</div>
+			<div class="th">Result</div>
 			<div class="th">Action</div>
 			<div class="th">Account</div>
 			<div class="th">Detail</div>
@@ -24,6 +74,10 @@
 			%>
 			<div class="tr">
 				<div class="td"><%=pcdata(e.ts)%></div>
+				<div class="td"><%=pcdata(e.category or "system")%></div>
+				<div class="td"><%=pcdata(e.severity or "info")%></div>
+				<div class="td"><%=pcdata(e.source or "system")%></div>
+				<div class="td"><%=pcdata(e.result or "success")%></div>
 				<div class="td"><%=pcdata(e.action)%></div>
 				<div class="td"><%=pcdata(e.account_id)%></div>
 				<div class="td"><%=pcdata(e.detail)%></div>
@@ -31,7 +85,7 @@
 			<% end %>
 		<% else %>
 			<div class="tr">
-				<div class="td" colspan="4"><em>No service events recorded</em></div>
+				<div class="td" colspan="8"><em>No service events recorded</em></div>
 			</div>
 		<% end %>
 	</div></div>

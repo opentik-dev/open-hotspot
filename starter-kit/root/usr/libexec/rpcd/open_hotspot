@@ -327,15 +327,50 @@ _rpc_sanitize_detail() {
 }
 
 rpc_dev_events_list() {
+	cat_filter="${1:-}"; sev_filter="${2:-}"; src_filter="${3:-}"; res_filter="${4:-}"
+
+	[ -z "$cat_filter" ] || case "$cat_filter" in
+		devices|accounts|sessions|quota|system|security|backup) ;;
+		*) rpc_error validation ;;
+	esac
+	[ -z "$sev_filter" ] || case "$sev_filter" in
+		info|success|warning|error) ;;
+		*) rpc_error validation ;;
+	esac
+	[ -z "$src_filter" ] || case "$src_filter" in
+		luci|rpc|fas|binauth|cycle|restore|system) ;;
+		*) rpc_error validation ;;
+	esac
+	[ -z "$res_filter" ] || case "$res_filter" in
+		success|denied|failed|reconciled) ;;
+		*) rpc_error validation ;;
+	esac
+
+	where_clause=""
+	_add_where() {
+		if [ -z "$where_clause" ]; then
+			where_clause="WHERE $1"
+		else
+			where_clause="$where_clause AND $1"
+		fi
+	}
+
+	[ -z "$cat_filter" ] || _add_where "category = '$cat_filter'"
+	[ -z "$sev_filter" ] || _add_where "severity = '$sev_filter'"
+	[ -z "$src_filter" ] || _add_where "source = '$src_filter'"
+	[ -z "$res_filter" ] || _add_where "result = '$res_filter'"
+
 	rows=$(sqlite3 -batch -noheader -separator '|' \
 		"${OPEN_HOTSPOT_DB_PATH:-/etc/open-hotspot/hotspot.db}" \
-		'SELECT id, ts, action, COALESCE(account_id,""), COALESCE(detail,"")
-		   FROM admin_events ORDER BY id DESC LIMIT 50;' 2>/dev/null) || rpc_error database
+		"SELECT id, ts, action, COALESCE(account_id,''), COALESCE(detail,''),
+		        COALESCE(category,'system'), COALESCE(severity,'info'),
+		        COALESCE(source,'system'), COALESCE(result,'success')
+		   FROM admin_events $where_clause ORDER BY id DESC LIMIT 50;" 2>/dev/null) || rpc_error database
 	json_init
 	json_add_array events
 	old_ifs="$IFS"
 	IFS='|'
-	while read -r id ts action account_id detail; do
+	while read -r id ts action account_id detail category severity source result; do
 		[ -n "$id" ] || continue
 		safe_detail=$(_rpc_sanitize_detail "$detail")
 		json_add_object
@@ -344,6 +379,10 @@ rpc_dev_events_list() {
 		json_add_string action "$action"
 		json_add_string account_id "${account_id:-}"
 		json_add_string detail "$safe_detail"
+		json_add_string category "$category"
+		json_add_string severity "$severity"
+		json_add_string source "$source"
+		json_add_string result "$result"
 		json_close_object
 	done <<EOF
 $rows
@@ -419,7 +458,7 @@ rpc_dev_diagnose() {
 
 case "${1:-}" in
 	list)
-		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_renew":{"id":0},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"device_force_deauth":{"id":0},"device_reassign":{"id":0,"target_account_id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"account_status_list":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{},"router_access_set":{"mode":"deny","network":""},"session_restore_set":{"mode":"disabled"},"dev_events_list":{},"dev_diagnose":{}}'
+		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_renew":{"id":0},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"device_force_deauth":{"id":0},"device_reassign":{"id":0,"target_account_id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"account_status_list":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{},"router_access_set":{"mode":"deny","network":""},"session_restore_set":{"mode":"disabled"},"dev_events_list":{"category":"","severity":"","source":"","result":""},"dev_diagnose":{}}'
 		;;
 	call)
 		method="${2:-}"
@@ -521,7 +560,13 @@ case "${1:-}" in
 				json_get_var pin pin
 				if printf '%s\n' "$pin" | "$ADMIN" account-set-pin "$id" >/dev/null 2>&1; then rpc_ok; else rpc_error validation; fi
 				;;
-			dev_events_list) rpc_dev_events_list ;;
+			dev_events_list)
+				json_get_var filter_category category
+				json_get_var filter_severity severity
+				json_get_var filter_source source
+				json_get_var filter_result result
+				rpc_dev_events_list "$filter_category" "$filter_severity" "$filter_source" "$filter_result"
+				;;
 			dev_diagnose) rpc_dev_diagnose ;;
 			*) rpc_error unknown-method ;;
 		esac

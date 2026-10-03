@@ -34,10 +34,10 @@ ensure_opennds_runtime() {
 	reload_rc=0
 	opennds_reload || reload_rc=$?
 	if [ "$reload_rc" -eq 0 ]; then
-		db_log_event opennds_recovered '' 'runtime-readiness-recovered' || true
+		db_log_event opennds_recovered '' 'runtime-readiness-recovered' system info cycle reconciled || true
 		return 0
 	fi
-	db_log_event opennds_not_ready '' "nds:validate=$validate_rc:reload=$reload_rc" || true
+	db_log_event opennds_not_ready '' "nds:validate=$validate_rc:reload=$reload_rc" system warning cycle failed || true
 	return 1
 }
 
@@ -46,7 +46,7 @@ ensure_opennds_runtime() {
 ensure_opennds_runtime || exit 0
 
 db_expire_pending_auth ||
-	db_log_event auth_expiry_failed '' 'pending-auth-expiry-failed' || true
+	db_log_event auth_expiry_failed '' 'pending-auth-expiry-failed' security error cycle failed || true
 
 # Retry the one-per-boot manager-owned restore if openNDS was not ready during
 # init ordering. The helper uses SQLite identity/policy and the verified
@@ -55,11 +55,11 @@ if [ -x /usr/lib/open-hotspot/session-restore.sh ]; then
 	restore_rc=0
 	/usr/lib/open-hotspot/session-restore.sh restore >/dev/null 2>&1 || restore_rc=$?
 	[ "$restore_rc" -eq 0 ] ||
-		db_log_event session_restore_failed '' "restore:rc=$restore_rc" || true
+		db_log_event session_restore_failed '' "restore:rc=$restore_rc" sessions error restore failed || true
 	reconcile_rc=0
 	/usr/lib/open-hotspot/session-restore.sh reconcile >/dev/null 2>&1 || reconcile_rc=$?
 	[ "$reconcile_rc" -eq 0 ] ||
-		db_log_event session_reconcile_failed '' "reconcile:rc=$reconcile_rc" || true
+		db_log_event session_reconcile_failed '' "reconcile:rc=$reconcile_rc" sessions error restore failed || true
 fi
 
 now_epoch=$(date -u '+%s')
@@ -71,7 +71,7 @@ now_epoch=$(date -u '+%s')
 #    (FR-006 — no forced disconnect purely for a period boundary).
 sqlite3 -batch "$DB_PATH" "UPDATE usage_periods SET closed=1, closed_at=datetime('now')
 	WHERE closed=0 AND julianday(period_end) <= julianday('now');" ||
-	db_log_event cycle_database_error '' 'period-close-failed' || true
+	db_log_event cycle_database_error '' 'period-close-failed' system error cycle failed || true
 
 sqlite3 -batch "$DB_PATH" "
 	SELECT DISTINCT d.mac, a.id, a.profile_id, COALESCE(a.renewed_at,''),
@@ -93,7 +93,7 @@ sqlite3 -batch "$DB_PATH" "
 	down_rate=$(printf '%s' "$prof"   | cut -d'|' -f6)
 
 	window=$(period_window_effective "$period_type" "$renewed_at" "$now_epoch") || {
-		db_log_event period_window_error "$acct_id" "$mac" || true
+		db_log_event period_window_error "$acct_id" "period-window-error" quota error cycle failed || true
 		continue
 	}
 	period_start=$(printf '%s' "$window" | cut -f1)
@@ -103,7 +103,7 @@ sqlite3 -batch "$DB_PATH" "
 	used_down=$(printf '%s' "$used" | cut -d'|' -f3); used_down=${used_down:-0}
 
 	remaining=$(quota_remaining "$time_limit" "$used_s" "$up_vol" "$used_up" "$down_vol" "$used_down") || {
-		db_log_event cycle_quota_error "$acct_id" "$mac" || true
+		db_log_event cycle_quota_error "$acct_id" "quota-calculation-error" quota error cycle failed || true
 		continue
 	}
 	remaining_time=$(printf '%s' "$remaining" | cut -d'|' -f1)
@@ -114,7 +114,7 @@ sqlite3 -batch "$DB_PATH" "
 		deauth_rc=0
 		opennds_deauth "$mac" 2>/dev/null || deauth_rc=$?
 		if [ "$deauth_rc" -ne 0 ]; then
-			db_log_event quota_deauth_failed "$acct_id" "quota:exhausted:deauth_rc=$deauth_rc" || true
+			db_log_event quota_deauth_failed "$acct_id" "quota:exhausted:deauth_rc=$deauth_rc" quota error cycle failed || true
 		fi
 		continue
 	fi
@@ -123,12 +123,14 @@ sqlite3 -batch "$DB_PATH" "
 
 	if opennds_apply_session_policy "$mac" "$remaining_time" "$up_rate" "$down_rate" "$remaining_up" "$remaining_down" 2>/dev/null; then
 		if ! sqlite3 -batch "$DB_PATH" "UPDATE active_sessions SET policy_period_start='$(_sql_escape "$period_start")' WHERE state='active' AND device_id IN (SELECT id FROM devices WHERE mac='$mac' COLLATE NOCASE);"; then
-			db_log_event policy_marker_failed "$acct_id" "$mac" || true
+			db_log_event policy_marker_failed "$acct_id" "policy-marker-update-failed" quota error cycle failed || true
+		else
+			db_log_event policy_refresh "$acct_id" "policy:period=$period_type:window=$period_start" quota info cycle success || true
 		fi
 	else
 		# Preserve the live openNDS session, but make a bounded, non-secret
 		# diagnostic visible to the status/history layer.
-		db_log_event policy_refresh_failed "$acct_id" "policy:period=$period_type:window=$period_start" || true
+		db_log_event policy_refresh_failed "$acct_id" "policy:period=$period_type:window=$period_start" quota error cycle failed || true
 	fi
 done
 
@@ -143,7 +145,7 @@ sqlite3 -batch "$DB_PATH" "
 		expiry_deauth_rc=0
 		opennds_deauth "$mac" 2>/dev/null || expiry_deauth_rc=$?
 		[ "$expiry_deauth_rc" -eq 0 ] ||
-			db_log_event expiry_deauth_failed '' "expiry:deauth_rc=$expiry_deauth_rc" || true
+			db_log_event expiry_deauth_failed '' "expiry:deauth_rc=$expiry_deauth_rc" accounts error cycle failed || true
 	fi
 done
 

@@ -10,7 +10,7 @@ flock -n 9 || exit 0
 . /usr/lib/open-hotspot/db.sh
 
 db_expire_pending_auth ||
-	db_log_event auth_expiry_failed '' 'pending-auth-expiry-failed' || true
+	db_log_event auth_expiry_failed '' 'pending-auth-expiry-failed' security error system failed || true
 
 RETENTION_DAYS=$(uci -q get open-hotspot.global.history_retention || echo 90)
 LOG_CAP_KB=$(uci -q get open-hotspot.global.log_retention_kb || echo 256)
@@ -26,7 +26,7 @@ if [ -n "$cutoff" ]; then
 fi
 
 sqlite3 -batch "$DB_PATH" "PRAGMA wal_checkpoint(TRUNCATE);" ||
-	db_log_event maintenance_checkpoint_failed '' 'wal-checkpoint-failed' || true
+	db_log_event maintenance_checkpoint_failed '' 'wal-checkpoint-failed' system error system failed || true
 
 # VACUUM rewrites the whole database. Run it only when free pages indicate
 # meaningful fragmentation; a daily checkpoint remains cheap and predictable.
@@ -39,7 +39,7 @@ if _valid_int "$page_count" && _valid_int "$freelist_count" \
 	&& [ "$page_count" -gt 0 ] \
 	&& [ $((freelist_count * 100)) -ge $((page_count * 20)) ]; then
 	sqlite3 -batch "$DB_PATH" "VACUUM;" ||
-		db_log_event maintenance_vacuum_failed '' 'vacuum-failed' || true
+		db_log_event maintenance_vacuum_failed '' 'vacuum-failed' system error system failed || true
 fi
 
 LOG=/var/log/open-hotspot.log

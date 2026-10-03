@@ -16,7 +16,7 @@ export OPEN_HOTSPOT_MIGRATIONS_PATH="$root/starter-kit/root/usr/lib/open-hotspot
 . "$root/starter-kit/root/usr/lib/open-hotspot/db.sh"
 
 db_init
-[ "$(db_schema_version)" = '5' ]
+[ "$(db_schema_version)" = '6' ]
 db_init
 [ "$(sqlite3 "$OPEN_HOTSPOT_DB_PATH" 'SELECT count(*) FROM profiles;')" = '1' ]
 
@@ -65,9 +65,16 @@ CREATE TABLE auth_transactions (
     consumed_at TEXT,
     state TEXT NOT NULL
 );
+CREATE TABLE admin_events (
+    id         INTEGER PRIMARY KEY,
+    ts         TEXT NOT NULL,
+    account_id INTEGER,
+    action     TEXT NOT NULL,
+    detail     TEXT
+);
 SQL
 DB_PATH="$tmp/v1.db" db_init
-[ "$(DB_PATH="$tmp/v1.db" db_schema_version)" = '5' ]
+[ "$(DB_PATH="$tmp/v1.db" db_schema_version)" = '6' ]
 [ "$(sqlite3 "$tmp/v1.db" "SELECT count(*) FROM pragma_table_info('accounts') WHERE name IN ('failed_attempts','last_failed_at','lock_until');")" = '3' ]
 [ "$(sqlite3 "$tmp/v1.db" "SELECT count(*) FROM pragma_table_info('active_sessions') WHERE name='policy_period_start';")" = '1' ]
 
@@ -87,6 +94,13 @@ CREATE TABLE auth_transactions (
     consumed_at TEXT,
     state TEXT NOT NULL
 );
+CREATE TABLE admin_events (
+    id         INTEGER PRIMARY KEY,
+    ts         TEXT NOT NULL,
+    account_id INTEGER,
+    action     TEXT NOT NULL,
+    detail     TEXT
+);
 INSERT INTO auth_transactions
     (id,auth_key,account_id,device_mac,profile_id,policy_snapshot,created_at,expires_at,state)
 VALUES
@@ -94,6 +108,57 @@ VALUES
      '2026-10-03T00:00:00Z','2026-10-03T00:15:00Z','pending');
 SQL
 DB_PATH="$tmp/v4.db" db_init
-[ "$(DB_PATH="$tmp/v4.db" db_schema_version)" = '5' ]
+[ "$(DB_PATH="$tmp/v4.db" db_schema_version)" = '6' ]
 [ "$(sqlite3 "$tmp/v4.db" "SELECT count(*) FROM pragma_table_info('auth_transactions') WHERE name IN ('rejection_reason','rejected_at');")" = '2' ]
 [ "$(sqlite3 "$tmp/v4.db" "SELECT auth_key || ':' || state FROM auth_transactions WHERE id=7;")" = 'v4-auth-key:pending' ]
+
+# A real v5 database must upgrade through migration 006, preserve admin_events, and populate default taxonomy.
+sqlite3 "$tmp/v5.db" <<'SQL'
+CREATE TABLE schema_meta (version INTEGER PRIMARY KEY);
+INSERT INTO schema_meta(version) VALUES (5);
+CREATE TABLE accounts (id INTEGER PRIMARY KEY);
+INSERT INTO accounts(id) VALUES (1);
+CREATE TABLE admin_events (
+    id         INTEGER PRIMARY KEY,
+    ts         TEXT NOT NULL,
+    account_id INTEGER REFERENCES accounts(id),
+    action     TEXT NOT NULL,
+    detail     TEXT
+);
+INSERT INTO admin_events
+    (id, ts, account_id, action, detail)
+VALUES
+    (1, '2026-10-03T12:00:00Z', 1, 'account_create', 'account-created');
+SQL
+DB_PATH="$tmp/v5.db" db_init
+[ "$(DB_PATH="$tmp/v5.db" db_schema_version)" = '6' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT count(*) FROM pragma_table_info('admin_events') WHERE name IN ('category','severity','source','result');")" = '4' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT category || ':' || severity || ':' || source || ':' || result FROM admin_events WHERE id=1;")" = 'system:info:system:success' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT count(*) FROM sqlite_master WHERE type='index' AND name='idx_admin_events_filter';")" = '1' ]
+
+# Insert an event with custom taxonomy (devices / error / rpc / failed) into the v6 database
+sqlite3 "$tmp/v5.db" <<'SQL'
+INSERT INTO admin_events (id, ts, account_id, action, detail, category, severity, source, result)
+VALUES (2, '2026-10-03T13:00:00Z', 1, 'device_rpc_call', 'rpc_error_detail', 'devices', 'error', 'rpc', 'failed');
+SQL
+
+# Re-running db_init on v5.db is idempotent and preserves version 6, legacy event, and custom taxonomy
+DB_PATH="$tmp/v5.db" db_init
+[ "$(DB_PATH="$tmp/v5.db" db_schema_version)" = '6' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT count(*) FROM admin_events WHERE id=1;")" = '1' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT category || ':' || severity || ':' || source || ':' || result FROM admin_events WHERE id=1;")" = 'system:info:system:success' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT category || ':' || severity || ':' || source || ':' || result FROM admin_events WHERE id=2;")" = 'devices:error:rpc:failed' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT id || '|' || ts || '|' || account_id || '|' || action || '|' || detail FROM admin_events WHERE id=2;")" = '2|2026-10-03T13:00:00Z|1|device_rpc_call|rpc_error_detail' ]
+
+# Re-running migration 006.sql directly on v5.db preserves existing taxonomy without resetting to defaults
+sqlite3 "$tmp/v5.db" < "$OPEN_HOTSPOT_MIGRATIONS_PATH/006.sql"
+[ "$(DB_PATH="$tmp/v5.db" db_schema_version)" = '6' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT count(*) FROM admin_events WHERE id=1;")" = '1' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT category || ':' || severity || ':' || source || ':' || result FROM admin_events WHERE id=1;")" = 'system:info:system:success' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT category || ':' || severity || ':' || source || ':' || result FROM admin_events WHERE id=2;")" = 'devices:error:rpc:failed' ]
+[ "$(sqlite3 "$tmp/v5.db" "SELECT id || '|' || ts || '|' || account_id || '|' || action || '|' || detail FROM admin_events WHERE id=2;")" = '2|2026-10-03T13:00:00Z|1|device_rpc_call|rpc_error_detail' ]
+
+# Applying migration 006.sql on a fresh schema v6 database succeeds without duplicate column conflict
+sqlite3 "$tmp/fresh_v6.db" < "$OPEN_HOTSPOT_SCHEMA_PATH"
+sqlite3 "$tmp/fresh_v6.db" < "$OPEN_HOTSPOT_MIGRATIONS_PATH/006.sql"
+[ "$(DB_PATH="$tmp/fresh_v6.db" db_schema_version)" = '6' ]

@@ -11,6 +11,22 @@ SCHEMA_PATH="${OPEN_HOTSPOT_SCHEMA_PATH:-/usr/lib/open-hotspot/schema.sql}"
 DB_SCHEMA_VERSION=4
 DB_MIGRATIONS_PATH="${OPEN_HOTSPOT_MIGRATIONS_PATH:-/usr/lib/open-hotspot/migrations}"
 
+db_secure_files() {
+	[ -f "$DB_PATH" ] && chmod 600 "$DB_PATH"
+	config_path="${OPEN_HOTSPOT_CONFIG_PATH:-/etc/config/open-hotspot}"
+	[ -f "$config_path" ] && chmod 600 "$config_path"
+	return 0
+}
+
+# All manager-side sqlite3 calls use the same bounded lock wait and enforce
+# foreign keys for every connection.  The shell entry points source this file
+# before doing reads or writes; wrapping the command here prevents a new
+# maintenance/admin path from silently reintroducing unbounded or orphaning
+# behavior.
+sqlite3() {
+	command sqlite3 -cmd '.timeout 5000' -cmd 'PRAGMA foreign_keys=ON;' "$@"
+}
+
 _db_is_empty() {
 	[ "$(sqlite3 -cmd '.timeout 5000' -batch "$DB_PATH" \
 		"SELECT count(*) FROM sqlite_master WHERE type IN ('table','index','trigger','view') AND name NOT LIKE 'sqlite_%';" 2>/dev/null || echo 1)" = "0" ]
@@ -67,7 +83,8 @@ db_init() {
 		db_migrate "$version" || return 1
 	fi
 
-	[ "$(db_schema_version)" = "$DB_SCHEMA_VERSION" ]
+	[ "$(db_schema_version)" = "$DB_SCHEMA_VERSION" ] || return 1
+	db_secure_files
 }
 
 _valid_ident() {
@@ -94,6 +111,11 @@ db_schema_version() {
 	_sql "SELECT version FROM schema_meta ORDER BY version DESC LIMIT 1;"
 }
 
+db_expire_pending_auth() {
+	_sql "UPDATE auth_transactions SET state='expired'
+	       WHERE state='pending' AND julianday(expires_at) <= julianday('now');"
+}
+
 db_account_get_by_username() {
 	u="$1"; _valid_ident "$u" || return 1
 	_sql "SELECT id, pin_hash, pin_salt, pin_iter, profile_id, status, expires_at
@@ -107,7 +129,7 @@ db_account_get_profile_id() {
 
 db_device_get_by_mac() {
 	mac="$1"; _valid_mac "$mac" || return 1
-	_sql "SELECT id, account_id, status FROM devices WHERE mac = '$mac' LIMIT 1;"
+	_sql "SELECT id, account_id, status FROM devices WHERE mac = '$mac' COLLATE NOCASE LIMIT 1;"
 }
 
 db_device_count_active() {
@@ -199,9 +221,14 @@ UPDATE active_sessions
        SELECT d.id FROM devices d JOIN oh_auth_context c ON c.device_mac = d.mac
    );
 INSERT INTO active_sessions(account_id, device_id, session_key,
-                            started_at, last_seen_at, state)
+                            started_at, last_seen_at, state, policy_period_start)
 SELECT c.account_id, d.id, c.auth_key,
-       datetime($session_start, 'unixepoch'), datetime('now'), 'active'
+       datetime($session_start, 'unixepoch'), datetime('now'), 'active',
+       CASE
+           WHEN instr(c.policy_snapshot, '|') > 0 THEN
+               json_extract('["' || replace(c.policy_snapshot, '|', '","') || '"]', '$[6]')
+           ELSE NULL
+       END
   FROM oh_auth_context c
   JOIN devices d ON d.mac = c.device_mac AND d.account_id = c.account_id;
 SELECT c.account_id || char(9) || d.id || char(9) || c.policy_snapshot || char(9) || c.auth_key
@@ -219,12 +246,31 @@ db_session_period_type() {
 	_valid_hex32 "$session_key" || return 1
 	_valid_mac "$mac" || return 1
 	_sql "SELECT p.period_type || '|' || COALESCE(a.renewed_at,'')
-		         FROM active_sessions s
+	         FROM active_sessions s
          JOIN devices d ON d.id = s.device_id
          JOIN accounts a ON a.id = s.account_id
          JOIN profiles p ON p.id = a.profile_id
         WHERE s.session_key = '$(_sql_escape "$session_key")'
-          AND s.state = 'active' AND d.mac = '$mac' LIMIT 1;"
+          AND s.state = 'active' AND d.mac = '$mac' COLLATE NOCASE LIMIT 1;"
+}
+
+db_session_key_by_mac() {
+	mac="$1"
+	_valid_mac "$mac" || return 1
+	_sql "SELECT s.session_key
+         FROM active_sessions s
+         JOIN devices d ON d.id = s.device_id
+        WHERE s.state = 'active' AND d.mac = '$mac' COLLATE NOCASE
+        ORDER BY s.id DESC LIMIT 1;"
+}
+
+db_active_session_count_by_mac() {
+	mac="$1"
+	_valid_mac "$mac" || return 1
+	_sql "SELECT count(*)
+	         FROM active_sessions s
+	         JOIN devices d ON d.id = s.device_id
+	        WHERE s.state = 'active' AND d.mac = '$mac' COLLATE NOCASE;"
 }
 
 # db_session_close <method> <mac> <session_key> <incoming> <outgoing>
@@ -256,7 +302,7 @@ BEGIN IMMEDIATE;
 SELECT s.id, s.account_id, s.device_id
   FROM active_sessions s JOIN devices d ON d.id = s.device_id
  WHERE s.session_key = '$(_sql_escape "$session_key")'
-   AND s.state = 'active' AND d.mac = '$mac';
+   AND s.state = 'active' AND d.mac = '$mac' COLLATE NOCASE;
 INSERT OR IGNORE INTO usage_events
     (event_key, account_id, device_id, method, mac, bytes_incoming,
      bytes_outgoing, session_start, session_end)

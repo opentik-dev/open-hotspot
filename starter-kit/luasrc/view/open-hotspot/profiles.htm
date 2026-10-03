@@ -4,41 +4,43 @@
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 <% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
 
-<fieldset class="cbi-section">
+<fieldset class="cbi-section oh-create-card">
 <legend><%:Create profile%></legend>
-<form class="oh-form" method="post" action="<%=page_url%>">
+<p class="oh-form-help"><%:Values are converted to the database units automatically. Data limits use binary bytes (B, KiB, MiB, GiB); rates use kbit/s, Mbit/s, or Gbit/s.%></p>
+<form class="oh-form oh-create-form oh-profile-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" />
 <input type="hidden" name="action" value="create" />
 <div class="cbi-value"><label><%:Name%></label><input name="name" required maxlength="64" /></div>
 <div class="cbi-value"><label><%:Period%></label><select name="period_type"><option>none</option><option>hourly</option><option>daily</option><option>monthly</option><option>yearly</option></select></div>
-<div class="cbi-value"><label><%:Time limit (seconds)%></label><input name="time_limit_s" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Upload limit (bytes)%></label><input name="upload_limit_b" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Download limit (bytes)%></label><input name="download_limit_b" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Upload rate (kbit/s)%></label><input name="upload_rate_kbps" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Download rate (kbit/s)%></label><input name="download_rate_kbps" type="number" min="0" value="0" /></div>
+<div class="cbi-value"><label><%:Time limit%></label><span class="oh-unit-field"><input name="time_value" type="number" min="0" step="any" value="0" /><select name="time_unit"><% for _, unit in ipairs(time_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == "hours" then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></div>
+<div class="cbi-value"><label><%:Upload limit%></label><span class="oh-unit-field"><input name="upload_value" type="number" min="0" step="any" value="0" /><select name="upload_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == "MiB" then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></div>
+<div class="cbi-value"><label><%:Download limit%></label><span class="oh-unit-field"><input name="download_value" type="number" min="0" step="any" value="0" /><select name="download_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == "GiB" then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></div>
+<div class="cbi-value"><label><%:Upload rate%></label><span class="oh-unit-field"><input name="upload_rate_value" type="number" min="0" step="any" value="0" /><select name="upload_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == "Mbit/s" then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></div>
+<div class="cbi-value"><label><%:Download rate%></label><span class="oh-unit-field"><input name="download_rate_value" type="number" min="0" step="any" value="0" /><select name="download_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == "Mbit/s" then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></div>
 <div class="cbi-value"><label><%:Maximum simultaneous devices%></label><input name="max_devices" type="number" min="1" value="1" /></div>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Create%>" />
 </form>
 </fieldset>
 
 <div class="oh-table-wrap">
-<table class="table cbi-section-table">
+<table class="table cbi-section-table oh-profile-table">
 <tr class="tr table-titles"><th><%:Name%></th><th><%:Period%></th><th><%:Time%></th><th><%:Data up/down%></th><th><%:Rates%></th><th><%:Devices%></th><th></th></tr>
 <% for _, p in ipairs(profiles) do %>
-<tr class="tr">
-<td colspan="6"><form class="oh-record-form" method="post" action="<%=page_url%>">
+<tr class="tr oh-profile-card-row">
+<td colspan="7"><div class="oh-profile-card"><form class="oh-record-form oh-profile-update" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=p.id%>" />
 <label><%:Name%> <input name="name" value="<%=pcdata(p.name)%>" maxlength="64" /></label>
 <label><%:Period%> <select name="period_type"><% for _, period in ipairs({"none","hourly","daily","monthly","yearly"}) do %><option value="<%=period%>"<% if p.period_type == period then %> selected<% end %>><%=period%></option><% end %></select></label>
-<label><%:Time%> <input name="time_limit_s" type="number" min="0" value="<%=p.time_limit_s%>" /></label>
-<label><%:Upload bytes%> <input name="upload_limit_b" type="number" min="0" value="<%=p.upload_limit_b%>" /></label>
-<label><%:Download bytes%> <input name="download_limit_b" type="number" min="0" value="<%=p.download_limit_b%>" /></label>
-<label><%:Upload kbit/s%> <input name="upload_rate_kbps" type="number" min="0" value="<%=p.upload_rate_kbps%>" /></label>
-<label><%:Download kbit/s%> <input name="download_rate_kbps" type="number" min="0" value="<%=p.download_rate_kbps%>" /></label>
+<label><%:Time%> <span class="oh-unit-field"><input name="time_value" type="number" min="0" step="any" value="<%=p.time_value%>" /><select name="time_unit"><% for _, unit in ipairs(time_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == p.time_unit then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></label>
+<label><%:Upload limit%> <span class="oh-unit-field"><input name="upload_value" type="number" min="0" step="any" value="<%=p.upload_value%>" /><select name="upload_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == p.upload_unit then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></label>
+<label><%:Download limit%> <span class="oh-unit-field"><input name="download_value" type="number" min="0" step="any" value="<%=p.download_value%>" /><select name="download_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == p.download_unit then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></label>
+<label><%:Upload rate%> <span class="oh-unit-field"><input name="upload_rate_value" type="number" min="0" step="any" value="<%=p.upload_rate_value%>" /><select name="upload_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == p.upload_rate_unit then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></label>
+<label><%:Download rate%> <span class="oh-unit-field"><input name="download_rate_value" type="number" min="0" step="any" value="<%=p.download_rate_value%>" /><select name="download_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=pcdata(unit.name)%>"<% if unit.name == p.download_rate_unit then %> selected<% end %>><%=pcdata(unit.name)%></option><% end %></select></span></label>
 <label><%:Devices%> <input name="max_devices" type="number" min="1" value="<%=p.max_devices%>" /></label>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
 </form>
-</td><td><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=p.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Delete this profile?%>');" /></form></td>
+<div class="oh-profile-actions"><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=p.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Delete this profile?%>');" /></form></div>
+</div></td>
 </tr>
 <% end %>
 </table>

@@ -30,6 +30,7 @@ set_mode() {
 	valid_mode "$1" || return 1
 	"$UCI_BIN" set "open-hotspot.global.session_restore=$1" || return 1
 	"$UCI_BIN" commit open-hotspot || return 1
+	chmod 600 /etc/config/open-hotspot || return 1
 	if [ "$1" = enabled ]; then
 		rm -f "$MARKER"
 	else
@@ -39,7 +40,7 @@ set_mode() {
 }
 
 restore_one() {
-	mac="$1"; account_id="$2"; profile_id="$3"; session_key="$4"
+	mac="$1"; account_id="$2"; profile_id="$3"; session_key="$4"; renewed_at="${5:-}"
 	prof=$(db_profile_get "$profile_id") || return 1
 	period_type=$(printf '%s' "$prof" | cut -d'|' -f1)
 	time_limit=$(printf '%s' "$prof" | cut -d'|' -f2)
@@ -49,8 +50,10 @@ restore_one() {
 	download_rate=$(printf '%s' "$prof" | cut -d'|' -f6)
 	[ -n "$period_type" ] || return 1
 
-	bounds=$(period_bounds "$period_type") || return 1
-	period_start=$(printf '%s' "$bounds" | cut -f1)
+	# The account renewal is part of the policy identity.  Restoring against
+	# the calendar window would resurrect a session with an old quota window.
+	window=$(period_window_effective "$period_type" "$renewed_at" "$RESTORE_NOW") || return 1
+	period_start=$(printf '%s' "$window" | cut -f1)
 	used=$(db_usage_get "$account_id" "$period_start") || return 1
 	used_time=$(printf '%s' "$used" | cut -d'|' -f1); used_time=${used_time:-0}
 	used_upload=$(printf '%s' "$used" | cut -d'|' -f2); used_upload=${used_upload:-0}
@@ -79,6 +82,7 @@ restore_sessions() {
 	. "$PERIOD_HELPER"
 	. "$NDS_HELPER"
 	. "$QUOTA_HELPER"
+	RESTORE_NOW=$(date -u '+%s') || return 1
 	opennds_validate_config || return 1
 	current_pid=$(opennds_pid)
 	[ -n "$current_pid" ] || return 1
@@ -87,7 +91,8 @@ restore_sessions() {
 	fi
 
 	rows=$(sqlite3 -batch -separator '|' "$DB_PATH" \
-		"SELECT DISTINCT d.mac, a.id, a.profile_id, s.session_key
+		"SELECT DISTINCT d.mac, a.id, a.profile_id, s.session_key,
+		                COALESCE(a.renewed_at,'')
 		   FROM devices d
 		   JOIN accounts a ON a.id=d.account_id
 		   JOIN active_sessions s ON s.device_id=d.id
@@ -95,9 +100,9 @@ restore_sessions() {
 		    AND a.deleted_at IS NULL AND s.state='active';") || return 1
 
 	failed=0
-	while IFS='|' read -r mac account_id profile_id session_key; do
+	while IFS='|' read -r mac account_id profile_id session_key renewed_at; do
 		[ -n "$mac" ] || continue
-		if ! restore_one "$mac" "$account_id" "$profile_id" "$session_key"; then
+		if ! restore_one "$mac" "$account_id" "$profile_id" "$session_key" "$renewed_at"; then
 			failed=1
 		fi
 	done <<EOF
@@ -118,9 +123,53 @@ status() {
 	fi
 }
 
+reconcile_stale() {
+	# Disabled restore means a previous boot's native openNDS auth_restore rows
+	# are not entitled to remain live without a manager-owned SQLite session.
+	# Reconcile those clients first, then close manager-only rows once the daemon
+	# reports zero clients. An unreadable status fails closed.
+	[ "$(mode)" = disabled ] || return 0
+	. "$DB_HELPER"
+	. "$NDS_HELPER"
+	opennds_validate_config || return 1
+	clients=$(opennds_current_clients) || return 1
+	if [ "$clients" -gt 0 ]; then
+		auth_macs=$(opennds_authenticated_macs 2>/dev/null || true)
+		while IFS= read -r mac; do
+			[ -n "$mac" ] || continue
+			_valid_mac "$mac" || return 1
+			active=$(db_active_session_count_by_mac "$mac") || return 1
+			[ "$active" = 1 ] && continue
+			deauth_rc=0
+			opennds_deauth "$mac" >/dev/null 2>&1 || deauth_rc=$?
+			if [ "$deauth_rc" -eq 0 ]; then
+				db_log_event native_restore_reconciled '' 'no-manager-session' || true
+			else
+				db_log_event native_restore_reconcile_failed '' "reconcile:deauth_rc=$deauth_rc" || true
+			fi
+		done <<EOF
+$auth_macs
+EOF
+		clients=$(opennds_current_clients) || return 1
+	fi
+	[ "$clients" -eq 0 ] || return 0
+	closed=$(sqlite3 -batch -noheader "$DB_PATH" "BEGIN IMMEDIATE;
+UPDATE active_sessions
+	   SET state='closed', closed_at=COALESCE(closed_at,datetime('now')),
+	       last_seen_at=datetime('now')
+	 WHERE state='active';
+	SELECT changes(); COMMIT;") || return 1
+	case "$closed" in
+		0) ;;
+		*[!0-9]*) return 1 ;;
+		*) db_log_event stale_session_reconciled '' 'opennds-reported-zero-clients' || true ;;
+	esac
+}
+
 case "${1:-}" in
 	apply) set_mode "${2:-}" ;;
 	restore) restore_sessions ;;
+	reconcile) reconcile_stale ;;
 	status) status ;;
-	*) printf 'usage: session-restore.sh {apply enabled|disabled|restore|status}\n' >&2; exit 2 ;;
+	*) printf 'usage: session-restore.sh {apply enabled|disabled|restore|reconcile|status}\n' >&2; exit 2 ;;
 esac

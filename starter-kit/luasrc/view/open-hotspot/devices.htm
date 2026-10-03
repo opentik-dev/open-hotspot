@@ -2,9 +2,9 @@
 <div class="oh-page">
 <h2><%:Open-HotSpot devices%></h2>
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
-<% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
+<% if page_message ~= "" then %><div class="alert-message <%=page_message:match('^Error:') and 'danger' or 'success'%>"><%=pcdata(page_message)%></div><% end %>
 
-<p><%:A blocked device cannot authenticate. Removing is allowed only when no session or usage history references the device.%></p>
+<p><%:A blocked device cannot authenticate. Removing is allowed only when no session or usage history references the device (for historical devices, use Reassign; for live sessions, Disconnect first).%></p>
 <div class="oh-table-wrap">
 <table class="table cbi-section-table">
 <tr class="tr table-titles"><th><%:Account%></th><th><%:MAC address%></th><th><%:Status%></th><th><%:First seen%></th><th><%:Last seen%></th><th><%:Live sessions%></th><th><%:Actions%></th></tr>
@@ -12,22 +12,32 @@
 <tr class="tr">
 <td><%=pcdata(device.username)%></td>
 <td><%=pcdata(device.mac)%></td>
-<td><%=pcdata(device.status)%></td>
+<td><%=pcdata(device.status)%><% if device.has_history then %> <span class="badge" title="<%:Historical device retained for accounting; use Reassign. Archive is planned separately.%>">(<%:Historical%>)</span><% end %></td>
 <td><%=pcdata(device.first_seen)%></td>
 <td><%=pcdata(device.last_seen or "")%></td>
 <td><%=device.live_sessions%></td>
 <td>
+<div class="oh-action-row">
 <form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="id" value="<%=device.id%>" />
 <% if device.status == "blocked" then %><input type="hidden" name="action" value="unblock" /><input class="cbi-button cbi-button-save" type="submit" value="<%:Unblock%>" /><% else %><input type="hidden" name="action" value="block" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Block%>" onclick="return confirm('<%:Block this device?%>');" /><% end %>
 </form>
-<form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="id" value="<%=device.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" onclick="return confirm('<%:Remove this device? Historical devices cannot be removed.%>');" /></form>
-<% if device.live_sessions and device.live_sessions > 0 then %><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="id" value="<%=device.id%>" /><input type="hidden" name="action" value="force-deauth" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Disconnect%>" onclick="return confirm('<%:Disconnect this device now?%>');" /></form><% end %>
+<% if device.lifecycle_state == "live" or (device.live_sessions and device.live_sessions > 0) then %>
+<input class="cbi-button cbi-button-neutral disabled" type="button" value="<%:Remove (Active)%>" disabled="disabled" title="<%:Live session active: Disconnect first%>" />
+<span class="oh-history-hint" title="<%:Live session active: Disconnect first%>"><%:Disconnect first%></span>
+<% elseif device.lifecycle_state == "historical" or device.has_history then %>
+<input class="cbi-button cbi-button-neutral disabled" type="button" value="<%:Remove (Locked)%>" disabled="disabled" title="<%:Historical device retained for accounting; use Reassign. Archive is planned separately.%>" />
+<span class="oh-history-hint" title="<%:Historical device retained for accounting; use Reassign. Archive is planned separately.%>"><%:Historical (use Reassign)%></span>
+<% else %>
+<form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="id" value="<%=device.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" onclick="return confirm('<%:Remove this device? Only devices without history can be removed.%>');" /></form>
+<% end %>
+<% if device.lifecycle_state == "live" or (device.live_sessions and device.live_sessions > 0) then %><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="id" value="<%=device.id%>" /><input type="hidden" name="action" value="force-deauth" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Disconnect%>" onclick="return confirm('<%:Disconnect this device now?%>');" /></form><% end %>
 <form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="id" value="<%=device.id%>" /><input type="hidden" name="action" value="reassign" />
 <select name="target_account_id"><option value=""><%:Move to account...%></option><% for _, account in ipairs(accounts or {}) do %><% if account.id ~= device.account_id and account.status == "active" then %><option value="<%=account.id%>"><%=pcdata(account.username)%></option><% end %><% end %></select>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Reassign%>" onclick="return confirm('<%:Reassign this MAC after confirming no live session?%>');" />
 </form>
+</div>
 </td>
 </tr>
 <% end %>

@@ -14,6 +14,11 @@ grep -F 'db_usage_get' "$script" >/dev/null
 grep -F 'quota_remaining' "$script" >/dev/null
 grep -F 'session_restore_set' "$setup" >/dev/null
 grep -F 'session-restore.sh restore' "$cycle" >/dev/null
+grep -F 'session-restore.sh reconcile' "$cycle" >/dev/null
+grep -F 'reconcile_stale' "$script" >/dev/null
+grep -F 'opennds_current_clients' "$script" >/dev/null
+grep -F 'native_restore_reconciled' "$script" >/dev/null
+grep -F 'native_restore_reconcile_failed' "$script" >/dev/null
 ! grep -Eq '192\.168\.|gatewayaddress|client_ip' "$script"
 
 printf '%s\n' 'session-restore-contract-ok'

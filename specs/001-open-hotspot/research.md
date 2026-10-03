@@ -379,7 +379,7 @@ The custom variable is not a username field. It is a URL-escaped opaque value
 provided by the FAS. The implementation must use the token/session context and
 must not infer an account from the MAC alone. The default target BinAuth
 script's final contract is: stdout contains five numeric values
-`session_length upload_rate download_rate upload_quota download_quota`, and
+`sessiontimeout upload_rate download_rate upload_quota download_quota`, and
 exit status 0 allows authentication while exit status 1 denies it.
 
 Evidence: installed `/usr/lib/opennds/binauth_log.sh`, installed
@@ -503,11 +503,14 @@ seconds, then connection refused, and the new process reached `openNDS is now
 running` about 30 seconds after the exit. The service eventually returned to
 `running`, but the command return time is not the readiness time.
 
-The current configuration points `option binauth` to a replacement
-`custombinauth.sh`. The official documentation warns that replacing the
-default BinAuth script disables the default `auth_restore` functionality. Live
-session restoration after reboot was not claimed because no authenticated
-client was available; this remains an open acceptance test.
+The manager keeps the stock `binauth_log.sh` dispatcher and sets its
+documented `custombinauth` include option to `/usr/lib/opennds/custombinauth.sh`;
+it does not replace the whole `binauth` script, so the stock logging and
+`auth_restore` path remain available. The target's openNDS 11 `ndscfg` wrapper
+can discard command-line arguments when called with non-tty stdin, which makes
+the stock custom-hook lookup empty. The package therefore applies a narrow,
+recoverable fallback in `binauth_log.sh` to read the same option directly from
+UCI. Live session restoration after reboot remains a separate acceptance test.
 
 ### 15.9 Gate status after target verification
 

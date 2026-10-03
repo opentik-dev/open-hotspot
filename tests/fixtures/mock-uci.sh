@@ -15,8 +15,16 @@ case "$command_name" in
 		[ -f "$state" ] || exit 1
 		awk -F= -v wanted="$key" '
 			$1 == wanted { value=substr($0, index($0, "=") + 1); found=1 }
-			END { if (found) print value; else exit 1 }
+		END { if (found) print value; else exit 1 }
 		' "$state"
+		;;
+	show)
+		[ -f "$state" ] || exit 1
+		while IFS= read -r entry; do
+			key=${entry%%=*}
+			value=${entry#*=}
+			printf 'open-hotspot.global.%s=%s\n' "$key" "$value"
+		done < "$state"
 		;;
 	set)
 		assignment=${1:?missing assignment}

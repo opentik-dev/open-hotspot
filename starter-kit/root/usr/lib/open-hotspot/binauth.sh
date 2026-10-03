@@ -2,7 +2,7 @@
 # binauth.sh — source-safe OpenNDS callback adapter.
 #
 # This file is sourced by custombinauth.sh after the stock openNDS BinAuth
-# logger has initialized session_length/rate/quota/exitlevel. It contains no
+# logger has initialized sessiontimeout/rate/quota/exitlevel. It contains no
 # administrative control calls. The installed target v10.3.1 stock
 # binauth_log.sh has two layouts: auth_client receives method, MAC, origin URL,
 # user agent, client IP, token, and custom data (7 arguments total); other
@@ -113,9 +113,9 @@ EOF
 	# openNDS native units are minutes, kbit/s, and kBytes. Round positive
 	# internal values upward; zero remains the documented unlimited value.
 	if [ "$remaining_time" -eq 0 ]; then
-		session_length=0
+		sessiontimeout=0
 	else
-		session_length=$(( (remaining_time + 59) / 60 ))
+		sessiontimeout=$(( (remaining_time + 59) / 60 ))
 	fi
 	upload_rate="$upload_rate"
 	download_rate="$download_rate"
@@ -163,7 +163,7 @@ _oh_binauth_segments() {
 	[ "$session_end" -ge "$session_start" ] || return 1
 	renewed_epoch=0
 	if [ -n "$renewed_at" ]; then
-		renewed_epoch=$(date -u -d "$renewed_at" '+%s' 2>/dev/null) || return 1
+		renewed_epoch=$(_period_epoch_utc "$renewed_at") || return 1
 		case "$renewed_epoch" in ''|*[!0-9]*) return 1 ;; esac
 	fi
 	if [ "$session_end" -eq "$session_start" ]; then
@@ -233,11 +233,22 @@ open_hotspot_binauth_close() {
 	_oh_binauth_int "$ended" || return 1
 	[ "$ended" -ge "$started" ] || return 1
 	_oh_binauth_token "$token" || return 1
-	custom=$(_oh_binauth_auth_key "$custom") || return 1
 
 	. "${OPEN_HOTSPOT_DB_HELPER:-/usr/lib/open-hotspot/db.sh}"
 	. "${OPEN_HOTSPOT_PERIOD_HELPER:-/usr/lib/open-hotspot/period.sh}"
-	period_context=$(db_session_period_type "$custom" "$mac") || return 1
+	# The target openNDS 11 build preserves the transaction key for auth_client
+	# but emits the documented base64 marker for an empty custom field on a
+	# deauth callback. Correlate that one explicit marker to the single active
+	# SQLite session for this MAC. Unknown custom data still fails closed.
+	session_key=$(_oh_binauth_auth_key "$custom" 2>/dev/null || true)
+	if [ -z "$session_key" ]; then
+		case "$custom" in
+			ZW1wdHk=|empty) session_key=$(db_session_key_by_mac "$mac") || return 1 ;;
+			*) return 1 ;;
+		esac
+	fi
+	_oh_binauth_key "$session_key" || return 1
+	period_context=$(db_session_period_type "$session_key" "$mac") || return 1
 	[ -n "$period_context" ] || return 1
 	old_ifs="$IFS"; IFS='|'
 	read -r period_type renewed_at <<EOF
@@ -246,7 +257,7 @@ EOF
 	IFS="$old_ifs"
 	[ -n "$period_type" ] || return 1
 	segments=$(_oh_binauth_segments "$period_type" "$renewed_at" "$started" "$ended" "$incoming" "$outgoing") || return 1
-	db_session_close "$method" "$mac" "$custom" "$incoming" "$outgoing" \
+	db_session_close "$method" "$mac" "$session_key" "$incoming" "$outgoing" \
 		"$started" "$ended" "$segments"
 }
 

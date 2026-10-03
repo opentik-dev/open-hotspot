@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  OPENWRT_VERSION: 25.12.5
+  OPENWRT_TARGET: ipq40xx/generic
+
+jobs:
+  checks:
+    name: Contract and unit checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Run required checks
+        run: |
+          python3 -m unittest discover -s tests -v
+          sh tests/test_shell_syntax.sh
+          sh tests/test_quota.sh
+          for test in tests/test_*.sh; do
+            case "$test" in
+              */test_deploy_contract.sh) continue ;;
+            esac
+            sh "$test"
+          done
+
+  build-apk:
+    name: Build APK from source
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore OpenWrt SDK cache
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/openwrt-sdk
+          key: openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_TARGET }}-v1
+      - name: Download and unpack target SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          index="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/"
+          mkdir -p "$RUNNER_TEMP/sdk-download" "$RUNNER_TEMP/openwrt-sdk"
+          sdk_name="$(curl -fsSL "$index" | grep -oE 'openwrt-sdk-[^"]+\.tar\.zst' | head -n 1)"
+          test -n "$sdk_name"
+          curl -fL --retry 3 "$index$sdk_name" -o "$RUNNER_TEMP/sdk-download/$sdk_name"
+          tar --zstd -xf "$RUNNER_TEMP/sdk-download/$sdk_name" -C "$RUNNER_TEMP/openwrt-sdk" --strip-components=1
+      - name: Build and verify reproducible APK
+        env:
+          OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
+        run: sh tools/build-apk.sh --verify
+      - name: Verify generated artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          release="$(sed -n 's/^PKG_RELEASE:=//p' starter-kit/Makefile)"
+          version="$(sed -n 's/^PKG_VERSION:=//p' starter-kit/Makefile)"
+          apk="dist/luci-app-open-hotspot-${version}-r${release}.apk"
+          test -s "$apk"
+          sha256sum "$apk" > "$RUNNER_TEMP/SHA256SUMS"
+          cat "$RUNNER_TEMP/SHA256SUMS"
+          manifest_sha="$(sed -n 's/^\*\*SHA-256:\*\*[[:space:]]*`\([a-f0-9]\{64\}\)`.*/\1/p' docs/delivery-manifest.md | head -n 1)"
+          if [ -z "$manifest_sha" ]; then
+            echo "::error file=docs/delivery-manifest.md::Missing or invalid documented SHA-256 in docs/delivery-manifest.md" >&2
+            exit 1
+          fi
+          built_sha="$(awk '{print $1}' "$RUNNER_TEMP/SHA256SUMS")"
+          if [ "$built_sha" != "$manifest_sha" ]; then
+            echo "::error::Built APK SHA-256 ($built_sha) does not match documented SHA-256 ($manifest_sha) in docs/delivery-manifest.md" >&2
+            exit 1
+          fi
+          echo "PASS: Built APK matches documented delivery manifest SHA-256: $built_sha"
+      - name: Run deployment contract checks
+        env:
+          OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tests/test_deploy_contract.sh 2>&1 | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
+      - name: Upload built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-hotspot-apk-${{ github.sha }}
+          path: |
+            dist/luci-app-open-hotspot-*.apk
+            ${{ runner.temp }}/SHA256SUMS
+          if-no-files-found: error

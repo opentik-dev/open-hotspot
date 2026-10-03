@@ -4,9 +4,9 @@
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 <% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
 
-<fieldset class="cbi-section">
+<fieldset class="cbi-section oh-create-card">
 <legend><%:Create account%></legend>
-<form class="oh-form" method="post" action="<%=page_url%>">
+<form class="oh-form oh-create-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="create" />
 <div class="cbi-value"><label><%:Username%></label><input name="username" required maxlength="64" /></div>
 <div class="cbi-value"><label><%:PIN%></label><input name="pin" required type="password" inputmode="numeric" minlength="4" maxlength="32" /></div>
@@ -17,11 +17,11 @@
 </fieldset>
 
 <div class="oh-table-wrap">
-<table class="table cbi-section-table">
+<table class="table cbi-section-table oh-account-table">
 <tr class="tr table-titles"><th><%:Username%></th><th><%:Profile%></th><th><%:Status%></th><th><%:Expiry%></th><th><%:Actions%></th></tr>
 <% for _, account in ipairs(accounts) do %>
 <tr class="tr">
-<td colspan="5">
+<td colspan="5"><div class="oh-account-card">
 <form class="oh-record-form oh-account-update" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=account.id%>" />
 <label class="oh-field"><span><%:Username%></span><input name="username" value="<%=pcdata(account.username)%>" maxlength="64" /></label>
@@ -30,6 +30,7 @@
 <label class="oh-field"><span><%:Expiry%></span><input name="expires_at" value="<%=pcdata(account.expires_at or "")%>" placeholder="YYYY-MM-DDTHH:MM:SSZ" /></label>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
 </form>
+<div class="oh-action-row">
 <form class="oh-inline-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="renew" /><input type="hidden" name="id" value="<%=account.id%>" />
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Renew quota period%>" onclick="return confirm('<%:Start a fresh quota period and disconnect current sessions?%>');" />
@@ -40,7 +41,8 @@
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Set PIN%>" />
 </form>
 <form class="oh-delete-form" method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=account.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Suspend this account?%>');" /></form>
-</td>
+</div>
+</div></td>
 </tr>
 <% end %>
 </table>

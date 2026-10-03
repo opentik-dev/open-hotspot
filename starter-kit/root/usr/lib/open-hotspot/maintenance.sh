@@ -9,6 +9,9 @@ flock -n 9 || exit 0
 
 . /usr/lib/open-hotspot/db.sh
 
+db_expire_pending_auth ||
+	db_log_event auth_expiry_failed '' 'pending-auth-expiry-failed' || true
+
 RETENTION_DAYS=$(uci -q get open-hotspot.global.history_retention || echo 90)
 LOG_CAP_KB=$(uci -q get open-hotspot.global.log_retention_kb || echo 256)
 _valid_int "$RETENTION_DAYS" || RETENTION_DAYS=90

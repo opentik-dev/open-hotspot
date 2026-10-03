@@ -56,6 +56,21 @@ shared `br-lan` would also lock out the administrator and is not a valid IoT
 isolation design. On the current test topology, create the dedicated network
 and SSID first; do not apply the policy to the existing shared `br-lan`.
 
+### Device exceptions
+
+Tapo plugs/bulbs, the D-Link plug, and an Android TV managed with atvtools are
+not treated as authenticated portal users by default. They must be placed on a
+dedicated client/IoT network and given only the minimum explicitly required
+local access. The default policy remains captive and router-admin access denied.
+
+Do not add these devices to a router-admin allow rule or make them trusted by
+MAC as an implicit workaround; that would bypass the account and audit model.
+If a device must operate without an interactive portal, record that as an
+explicit trusted-device requirement and verify the exact openNDS v11
+preemptive/trusted-client contract before implementing it. Until that evidence
+exists, the supported choices are a separately controlled IoT network or
+interactive authentication from a companion device.
+
 ## IoT network design
 
 Create a separate OpenWrt network with a distinct logical device/bridge, then

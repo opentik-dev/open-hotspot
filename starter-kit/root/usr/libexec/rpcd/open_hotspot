@@ -2,9 +2,9 @@
 # rpcd plugin for the local Open-HotSpot management boundary.
 # JSON is carried over stdin; secrets are never command-line arguments.
 
-. /usr/share/libubox/jshn.sh
+. "${OPEN_HOTSPOT_JSHN_SH:-/usr/share/libubox/jshn.sh}"
 
-ADMIN=/usr/lib/open-hotspot/admin.sh
+ADMIN="${OPEN_HOTSPOT_ADMIN_BIN:-/usr/lib/open-hotspot/admin.sh}"
 NDS_HELPER=/usr/lib/open-hotspot/opennds.sh
 TEMPLATE_HELPER=/usr/lib/open-hotspot/template.sh
 
@@ -20,6 +20,32 @@ rpc_ok() {
 	json_init
 	json_add_boolean ok 1
 	json_dump
+}
+
+rpc_device_remove() {
+	reason=$($ADMIN device-remove "$1" 2>/dev/null) && {
+		rpc_ok
+		return
+	}
+	case "$reason" in
+		invalid-id|device-not-found|live-session|usage-history|database)
+			rpc_error "$reason"
+			;;
+		*) rpc_error validation ;;
+	esac
+}
+
+rpc_device_reassign() {
+	reason=$($ADMIN device-reassign "$1" "$2" 2>/dev/null) && {
+		rpc_ok
+		return
+	}
+	case "$reason" in
+		invalid-id|device-not-found|device-invalid|same-account|device-inactive|live-session|target-account-invalid|reassign-conflict|database)
+			rpc_error "$reason"
+			;;
+		*) rpc_error validation ;;
+	esac
 }
 
 rpc_profile_list() {
@@ -79,7 +105,7 @@ rpc_device_list() {
 	json_add_array devices
 	old_ifs="$IFS"
 	IFS='|'
-	while read -r id account_id username mac status first_seen last_seen live_sessions; do
+	while read -r id account_id username mac status first_seen last_seen live_sessions has_history lifecycle_state; do
 		[ -n "$id" ] || continue
 		json_add_object
 		json_add_int id "$id"
@@ -90,6 +116,8 @@ rpc_device_list() {
 		json_add_string first_seen "$first_seen"
 		json_add_string last_seen "${last_seen:-}"
 		json_add_int live_sessions "$live_sessions"
+		json_add_boolean has_history "${has_history:-0}"
+		json_add_string lifecycle_state "${lifecycle_state:-removable}"
 		json_close_object
 	done <<EOF
 $rows
@@ -233,6 +261,7 @@ rpc_template_apply() {
 	$TEMPLATE_HELPER apply "$name" >/dev/null 2>&1 || rpc_error template-apply
 	uci set open-hotspot.global.active_template="$name" || rpc_error template-config
 	uci commit open-hotspot || rpc_error template-config
+	chmod 600 /etc/config/open-hotspot 2>/dev/null || rpc_error template-config
 	rpc_template_list
 }
 
@@ -285,9 +314,112 @@ rpc_mutation() {
 	fi
 }
 
+# Sanitize admin_events detail and diagnostics: redact full MAC addresses, IP addresses,
+# long hex keys/tokens, and PIN fields.
+_rpc_sanitize_detail() {
+	printf '%s' "$1" | \
+		sed -e 's/[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]/[MAC-redacted]/g' \
+		    -e 's/[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]/[MAC-redacted]/g' \
+		    -e 's/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/[IP-redacted]/g' \
+		    -e 's/[0-9a-fA-F]\{32,64\}/[KEY-redacted]/g' \
+		    -e 's/[Pp][Ii][Nn]=[^ ;]*/pin=[REDACTED]/g' \
+		    -e 's/[Tt][Oo][Kk][Ee][Nn]=[^ ;]*/token=[REDACTED]/g'
+}
+
+rpc_dev_events_list() {
+	rows=$(sqlite3 -batch -noheader -separator '|' \
+		"${OPEN_HOTSPOT_DB_PATH:-/etc/open-hotspot/hotspot.db}" \
+		'SELECT id, ts, action, COALESCE(account_id,""), COALESCE(detail,"")
+		   FROM admin_events ORDER BY id DESC LIMIT 50;' 2>/dev/null) || rpc_error database
+	json_init
+	json_add_array events
+	old_ifs="$IFS"
+	IFS='|'
+	while read -r id ts action account_id detail; do
+		[ -n "$id" ] || continue
+		safe_detail=$(_rpc_sanitize_detail "$detail")
+		json_add_object
+		json_add_int id "$id"
+		json_add_string ts "$ts"
+		json_add_string action "$action"
+		json_add_string account_id "${account_id:-}"
+		json_add_string detail "$safe_detail"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
+rpc_dev_diagnose() {
+	DIAGNOSE_SCRIPT="${OPEN_HOTSPOT_DIAGNOSE:-/usr/lib/open-hotspot/diagnose.sh}"
+	version_file="${OPEN_HOTSPOT_VERSION_FILE:-/usr/lib/open-hotspot/open-hotspot.version}"
+	pkg_version="unknown"
+	if [ -r "$version_file" ]; then
+		pkg_version=$(cat "$version_file" 2>/dev/null | tr -d '\r\n')
+	fi
+	if [ -z "$pkg_version" ] || [ "$pkg_version" = "unknown" ]; then
+		makefile="${OPEN_HOTSPOT_MAKEFILE:-/usr/lib/open-hotspot/Makefile}"
+		[ -r "$makefile" ] || makefile="/etc/open-hotspot/Makefile"
+		if [ -r "$makefile" ]; then
+			v=$(sed -n 's/^PKG_VERSION:=//p' "$makefile" 2>/dev/null || true)
+			r=$(sed -n 's/^PKG_RELEASE:=//p' "$makefile" 2>/dev/null || true)
+			[ -n "$v" ] && [ -n "$r" ] && pkg_version="${v}-r${r}"
+		elif command -v opkg >/dev/null 2>&1; then
+			pkg_version=$(opkg status luci-app-open-hotspot 2>/dev/null | sed -n 's/^Version:[[:space:]]*//p' | head -n 1)
+		elif command -v apk >/dev/null 2>&1; then
+			pkg_version=$(apk info luci-app-open-hotspot 2>/dev/null | sed -n 's/^luci-app-open-hotspot-\([0-9].*\) description:/\1/p' | head -n 1)
+		fi
+	fi
+	[ -n "$pkg_version" ] || pkg_version="unknown"
+	diag_output=""
+	diag_exit=0
+	if [ -x "$DIAGNOSE_SCRIPT" ]; then
+		diag_tmp=$(mktemp /tmp/oh-diag.XXXXXX 2>/dev/null || echo /tmp/oh-diag.$$)
+		# Bounded execution: timeout 30s, capture exit code, limit output to 8192 bytes
+		if command -v timeout >/dev/null 2>&1; then
+			timeout 30 "$DIAGNOSE_SCRIPT" >"$diag_tmp" 2>&1 || diag_exit=$?
+		else
+			"$DIAGNOSE_SCRIPT" >"$diag_tmp" 2>&1 &
+			diag_pid=$!
+			diag_waited=0
+			while [ "$diag_waited" -lt 30 ]; do
+				if ! kill -0 "$diag_pid" 2>/dev/null; then
+					break
+				fi
+				sleep 1
+				diag_waited=$((diag_waited + 1))
+			done
+			if kill -0 "$diag_pid" 2>/dev/null; then
+				kill -TERM "$diag_pid" 2>/dev/null || true
+				sleep 1
+				kill -KILL "$diag_pid" 2>/dev/null || true
+				diag_exit=124
+			else
+				wait "$diag_pid" 2>/dev/null || diag_exit=$?
+			fi
+		fi
+		diag_output=$(head -c 8192 "$diag_tmp" 2>/dev/null || true)
+		rm -f "$diag_tmp"
+	else
+		diag_output="diagnose.sh not found or not executable"
+		diag_exit=127
+	fi
+	# Sanitize any MAC/IP that may appear in diagnostic output, then bound to 8192 bytes
+	diag_output=$(_rpc_sanitize_detail "$diag_output")
+	diag_output=$(printf '%s' "$diag_output" | head -c 8192)
+	json_init
+	json_add_string output "$diag_output"
+	json_add_int exit_code "$diag_exit"
+	json_add_string pkg_version "$pkg_version"
+	json_dump
+}
+
 case "${1:-}" in
 	list)
-		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_renew":{"id":0},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"device_force_deauth":{"id":0},"device_reassign":{"id":0,"target_account_id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"account_status_list":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{},"router_access_set":{"mode":"deny","network":""},"session_restore_set":{"mode":"disabled"}}'
+		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_renew":{"id":0},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"device_force_deauth":{"id":0},"device_reassign":{"id":0,"target_account_id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"account_status_list":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{},"router_access_set":{"mode":"deny","network":""},"session_restore_set":{"mode":"disabled"},"dev_events_list":{},"dev_diagnose":{}}'
 		;;
 	call)
 		method="${2:-}"
@@ -337,20 +469,23 @@ case "${1:-}" in
 				[ "$method" = profile_delete ] && command_name=profile-delete || command_name=account-delete
 				rpc_mutation "$command_name" "$id"
 				;;
-			device_block|device_unblock|device_remove|device_force_deauth)
-			json_get_var id id
-			case "$method" in
-				device_block) command_name=device-block ;;
-				device_unblock) command_name=device-unblock ;;
-				device_remove) command_name=device-remove ;;
-				device_force_deauth) command_name=device-force-deauth ;;
-			esac
+			device_block|device_unblock|device_force_deauth)
+				json_get_var id id
+				case "$method" in
+					device_block) command_name=device-block ;;
+					device_unblock) command_name=device-unblock ;;
+					device_force_deauth) command_name=device-force-deauth ;;
+				esac
 				rpc_mutation "$command_name" "$id"
+				;;
+			device_remove)
+				json_get_var id id
+				rpc_device_remove "$id"
 				;;
 			device_reassign)
 				json_get_var id id
 				json_get_var target_account_id target_account_id
-				rpc_mutation device-reassign "$id" "$target_account_id"
+				rpc_device_reassign "$id" "$target_account_id"
 				;;
 			voucher_generate)
 				json_get_var count count
@@ -386,6 +521,8 @@ case "${1:-}" in
 				json_get_var pin pin
 				if printf '%s\n' "$pin" | "$ADMIN" account-set-pin "$id" >/dev/null 2>&1; then rpc_ok; else rpc_error validation; fi
 				;;
+			dev_events_list) rpc_dev_events_list ;;
+			dev_diagnose) rpc_dev_diagnose ;;
 			*) rpc_error unknown-method ;;
 		esac
 		;;

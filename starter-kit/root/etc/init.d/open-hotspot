@@ -66,6 +66,8 @@ start_service() {
 	# outside BinAuth and re-applies current SQLite policy through ndsctl.
 	[ -x /usr/lib/open-hotspot/session-restore.sh ] &&
 		/usr/lib/open-hotspot/session-restore.sh restore >/dev/null 2>&1 || true
+	[ -x /usr/lib/open-hotspot/session-restore.sh ] &&
+		/usr/lib/open-hotspot/session-restore.sh reconcile >/dev/null 2>&1 || true
 
 	stop_service   # avoid duplicate lines on restart
 	min="$(_interval_minutes)"

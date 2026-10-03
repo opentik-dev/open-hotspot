@@ -24,6 +24,21 @@ _period_local_hour() { TZ="$(_period_timezone)" date -d "@$1" '+%H' 2>/dev/null;
 _period_local_epoch() { TZ="$(_period_timezone)" date -d "$1" '+%s' 2>/dev/null; }
 _period_iso_utc() { date -u -d "@$1" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null; }
 
+# BusyBox date accepts "YYYY-MM-DD HH:MM:SS" but not GNU's ISO form with a
+# literal T/Z.  Keep the persisted contract ISO-8601 while normalizing only
+# at the parser boundary.  This is also the parser used by BinAuth, cycle, and
+# reboot restore, so renewed_at cannot move between different time zones.
+_period_epoch_utc() {
+	value="$1"
+	case "$value" in
+		[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z)
+			value=$(printf '%s' "$value" | sed 's/T/ /; s/Z$//')
+			;;
+		*) return 1 ;;
+	esac
+	date -u -d "$value" '+%s' 2>/dev/null
+}
+
 # period_window_at <period_type> <epoch>
 # -> period_start_iso<TAB>period_end_iso<TAB>period_start_epoch<TAB>period_end_epoch
 period_window_at() {
@@ -101,7 +116,7 @@ period_window_effective() {
 	base_end_epoch=$(printf '%s' "$window" | cut -f4)
 	reset_epoch=0
 	if [ -n "$renewed_at" ]; then
-		reset_epoch=$(date -u -d "$renewed_at" '+%s' 2>/dev/null) || return 1
+		reset_epoch=$(_period_epoch_utc "$renewed_at") || return 1
 		case "$reset_epoch" in ''|*[!0-9]*) return 1 ;; esac
 	fi
 	if [ "$reset_epoch" -gt "$base_start_epoch" ] && [ "$reset_epoch" -lt "$base_end_epoch" ]; then

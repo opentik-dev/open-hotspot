@@ -1,0 +1,55 @@
+<%+header%>
+
+<div class="oh-page cbi-section">
+	<h2 name="content">Open-HotSpot Event Log</h2>
+	<div class="alert-message info">
+		This is a bounded, read-only and redacted manager event stream with the latest diagnostic snapshot. It is separate from the DEV feature lab. Raw system logs remain available through the router's controlled operations path.
+	</div>
+
+	<% if page_error and page_error ~= "" then %>
+		<div class="alert-message warning"><%=pcdata(page_error)%></div>
+	<% end %>
+
+	<h3>Recent service events</h3>
+	<div class="oh-table-wrap"><div class="table">
+		<div class="tr table-titles">
+			<div class="th">Time</div>
+			<div class="th">Action</div>
+			<div class="th">Account</div>
+			<div class="th">Detail</div>
+		</div>
+		<% if #events > 0 then %>
+			<% for i, e in ipairs(events) do
+				if i > 50 then break end
+			%>
+			<div class="tr">
+				<div class="td"><%=pcdata(e.ts)%></div>
+				<div class="td"><%=pcdata(e.action)%></div>
+				<div class="td"><%=pcdata(e.account_id)%></div>
+				<div class="td"><%=pcdata(e.detail)%></div>
+			</div>
+			<% end %>
+		<% else %>
+			<div class="tr">
+				<div class="td" colspan="4"><em>No service events recorded</em></div>
+			</div>
+		<% end %>
+	</div></div>
+
+	<h3>Diagnostic snapshot</h3>
+	<% if diagnose_exit ~= 0 and diagnose_exit ~= -1 then %>
+		<div class="alert-message warning">Diagnostic exited with code <%=pcdata(diagnose_exit)%></div>
+	<% end %>
+	<% if diagnose_output and diagnose_output ~= "" then %>
+		<pre style="max-height: 400px; overflow: auto;"><%=pcdata(diagnose_output)%></pre>
+	<% else %>
+		<p><em>Diagnostic snapshot unavailable</em></p>
+	<% end %>
+
+	<h3>Package info</h3>
+	<p>Version: <%=pcdata(pkg_version)%></p>
+</div>
+
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+
+<%+footer%>

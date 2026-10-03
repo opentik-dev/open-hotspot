@@ -73,6 +73,14 @@ jobs:
           body: |
             Built from commit `${{ github.sha }}` by the release workflow.
 
+            ## Highlights
+
+            - Devices now show a distinct device label alongside the current account owner.
+            - Device actions are grouped into responsive cards for clearer Block, Disconnect, Remove, and Reassign workflows.
+            - Existing historical-device and live-session safety rules remain unchanged.
+
+            This is a pre-production candidate. Hardware acceptance gates remain authoritative in the linked documentation below.
+
             Acceptance status: see `docs/release-acceptance-matrix.md` and `docs/release-gates.md`.
           files: |
             ${{ steps.metadata.outputs.apk }}

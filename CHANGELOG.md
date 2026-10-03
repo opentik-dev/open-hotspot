@@ -3,7 +3,13 @@
 This file summarizes user-visible and engineering-significant changes. The
 release ledger and field checkpoints remain in [`docs/release-history.md`](docs/release-history.md).
 
-## Unreleased
+## 1.2.0-r100 (candidate; hardware acceptance pending)
+
+- Devices UI clarity:
+  - Separates the device label from the current account owner, using the stored
+    hostname when available and a stable `Device #<id>` fallback otherwise.
+  - Groups device actions in responsive cards so Block, Remove/Disconnect, and
+    Reassign remain visible and aligned on desktop and narrow screens.
 
 - Controlled account switching hardening:
   - Added schema migration 005 with persisted `rejection_reason` and

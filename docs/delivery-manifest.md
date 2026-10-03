@@ -1,40 +1,38 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r99`
-**Artifact:** CI-built reproducible APK (`open-hotspot-apk-24f0d75`),
-verified in GitHub Actions CI (run 37155015258 with reproducible fakeroot packaging)
-**SHA-256:** `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r100`
+**Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
+CI publication remains pending merge and tag verification.
+**SHA-256:** `50514fbccb744d917aba05ebe97bb2f525a9c470106d7ac7541bbd616f0e136e`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** r99 is the canonical candidate combining controlled account
-switching (schema v5), bounded event taxonomy with storage-boundary redaction
-(schema v6), and portable bit-for-bit packaging via SDK fakeroot (root:root);
-prior intermediate hashes (`a7efeff...` and non-fakeroot `cc3323f...`)
-are superseded; target remains on installed r97.
+**Decision:** r100 is the canonical UI candidate based on merged main/r99,
+adding distinct device identity presentation and responsive device actions;
+r99 remains the installed field candidate and rollback evidence is preserved.
 
-The r97 package remains the last installed field candidate and its historical
+The r99 package remains the last installed field candidate and its historical
 artifact checksum is recorded in the release ledger. The prior r98 package contains
 the device-lifecycle and failure-observability changes from the reviewed source
 branch; it has not been installed on the target. The
 multi-day first-login validity presets are intentionally not included until
 the rolling-validity accounting contract is implemented and tested. The
-rollback archive and SQLite export are required before any r99 target mutation;
+rollback archive and SQLite export are required before any r100 target mutation;
 post-install preflight, diagnostics, and `ndsctl status` must be recorded after
 deployment. Quota, restart, failure-containment, and the remaining hardware
 gates are still pending.
 
 ## Delivered
 
-- SQLite schema and migrations through schema v6 in the r99 candidate;
+- SQLite schema and migrations through schema v6 in the r99 base;
   the prior r98 artifact remains schema v4.
 - Local FAS credential verification with fail-closed handling.
 - Verified target-specific BinAuth parsing with no `ndsctl` call in BinAuth.
 - Native openNDS policy adapter, periods, quota accounting, vouchers, and recovery helpers.
 - LuCI profiles, accounts, devices, vouchers, history, dashboard, backup/import, Renew, and explicit MAC Reassign.
 - Arabic and English portal templates.
-- Controlled account switching is transactionally bounded in the r99 candidate:
+- Controlled account switching is transactionally bounded in the r99 base:
   it preserves the old device/history identity, rejects live/pending
   sessions and stale policy, and records redacted switch/denial events.
-- Bounded event taxonomy and storage-boundary redaction in the r99 candidate:
+- Bounded event taxonomy and storage-boundary redaction in the r99 base:
   admin_events taxonomy columns (category, severity, source, result), idempotent
   migration 006, MAC/IP/secret redaction before SQLite writes, and read-only
   LuCI Events filters.

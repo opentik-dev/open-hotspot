@@ -48,11 +48,22 @@ grep -F 'name="token"' "$devices" >/dev/null
 grep -F 'device_list' "$controller" >/dev/null
 grep -F 'device_block' "$controller" >/dev/null
 grep -F 'device_remove' "$controller" >/dev/null
+grep -F 'historical device: use Reassign. Archive is planned separately' "$controller" >/dev/null
+grep -F 'live session: Disconnect first' "$controller" >/dev/null
+grep -F 'retry and inspect Events' "$controller" >/dev/null
 grep -F 'device_force_deauth' "$controller" >/dev/null
 grep -F 'account_renew' "$controller" >/dev/null
 grep -F 'device_reassign' "$controller" >/dev/null
 grep -F 'force-deauth' "$devices" >/dev/null
 grep -F 'target_account_id' "$devices" >/dev/null
+grep -F 'has_history' "$devices" >/dev/null
+grep -F 'lifecycle_state' "$devices" >/dev/null
+grep -F 'Remove (Locked)' "$devices" >/dev/null
+grep -F 'Remove (Active)' "$devices" >/dev/null
+grep -F 'Historical (use Reassign)' "$devices" >/dev/null
+grep -F 'Historical device retained for accounting; use Reassign. Archive is planned separately.' "$devices" >/dev/null
+grep -F 'use Reassign' "$devices" >/dev/null
+grep -F 'Disconnect first' "$devices" >/dev/null
 grep -F 'Renew quota period' "$accounts" >/dev/null
 grep -F 'call("vouchers")' "$controller" >/dev/null
 grep -F 'call("status")' "$controller" >/dev/null
@@ -83,3 +94,9 @@ grep -F 'call("dev_lab")' "$controller" >/dev/null
 grep -F 'EXPERIMENTAL' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null
 grep -F 'IoT Internet bypass' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null
 grep -F 'Open-HotSpot Event Log' "$events" >/dev/null
+
+if command -v luac >/dev/null 2>&1; then
+	luac -p "$controller" "$setup"
+else
+	echo "NOTE: luac not available in test environment; Lua compiler syntax unverified (portable contract checks used)."
+fi

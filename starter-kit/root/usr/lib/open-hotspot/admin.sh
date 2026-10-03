@@ -211,11 +211,21 @@ admin_account_delete() {
 admin_device_list() {
 	# A visible separator preserves an empty last_seen field through POSIX
 	# read/IFS parsing; tab is IFS whitespace and would collapse that field.
+	# Lifecycle precedence: live > historical > removable.
 	sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
 		'SELECT d.id,d.account_id,a.username,d.mac,d.status,
 		        d.first_seen,COALESCE(d.last_seen,""),
 		        (SELECT count(*) FROM active_sessions s
-		          WHERE s.device_id=d.id AND s.state="active")
+		          WHERE s.device_id=d.id AND s.state IN ("active","pending")),
+		        CASE WHEN (SELECT 1 FROM usage_events u WHERE u.device_id=d.id LIMIT 1) IS NOT NULL
+		               OR (SELECT 1 FROM active_sessions s WHERE s.device_id=d.id AND s.state="closed" LIMIT 1) IS NOT NULL
+		             THEN 1 ELSE 0 END,
+		        CASE WHEN (SELECT count(*) FROM active_sessions s WHERE s.device_id=d.id AND s.state IN ("active","pending")) > 0
+		             THEN "live"
+		             WHEN (SELECT 1 FROM usage_events u WHERE u.device_id=d.id LIMIT 1) IS NOT NULL
+		               OR (SELECT 1 FROM active_sessions s WHERE s.device_id=d.id AND s.state="closed" LIMIT 1) IS NOT NULL
+		             THEN "historical"
+		             ELSE "removable" END
 		   FROM devices d JOIN accounts a ON a.id=d.account_id
 		  WHERE a.deleted_at IS NULL
 		  ORDER BY a.username,d.mac;'
@@ -247,13 +257,79 @@ EOF
 }
 
 admin_device_remove() {
-	id="$1"; _valid_int "$id" || return 1
-	sqlite3 -batch "$DB_PATH" "PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;
+	id="$1"
+	if ! _valid_int "$id"; then
+		db_log_event device_remove_denied '' "reason=invalid-id" || true
+		echo "invalid-id"
+		return 1
+	fi
+
+	row=$(sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
+		"SELECT account_id FROM devices WHERE id=$id LIMIT 1;") || {
+		db_log_event device_remove_denied '' "reason=database:device_id=$id" || true
+		echo "database"
+		return 1
+	}
+
+	if [ -z "$row" ]; then
+		db_log_event device_remove_denied '' "reason=device-not-found:device_id=$id" || true
+		echo "device-not-found"
+		return 1
+	fi
+	account_id="$row"
+
+	live_sessions=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state IN ('pending','active');") || {
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		echo "database"
+		return 1
+	}
+	_valid_int "$live_sessions" || {
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		echo "database"
+		return 1
+	}
+
+	if [ "$live_sessions" -gt 0 ]; then
+		db_log_event device_remove_denied "$account_id" "reason=live-session:device_id=$id" || true
+		echo "live-session"
+		return 1
+	fi
+
+	history_count=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT (SELECT count(*) FROM usage_events WHERE device_id=$id) +
+		        (SELECT count(*) FROM active_sessions WHERE device_id=$id);") || {
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		echo "database"
+		return 1
+	}
+	_valid_int "$history_count" || {
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		echo "database"
+		return 1
+	}
+
+	if [ "$history_count" -gt 0 ]; then
+		db_log_event device_remove_denied "$account_id" "reason=usage-history:device_id=$id" || true
+		echo "usage-history"
+		return 1
+	fi
+
+	del_res=$(sqlite3 -batch "$DB_PATH" "PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;
 	DELETE FROM devices
 	 WHERE id=$id
 	   AND NOT EXISTS (SELECT 1 FROM active_sessions WHERE device_id=$id)
 	   AND NOT EXISTS (SELECT 1 FROM usage_events WHERE device_id=$id);
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null
+	SELECT changes(); COMMIT;" 2>/dev/null | tail -n 1) || del_res=0
+
+	if [ "$del_res" = "1" ]; then
+		db_log_event device_removed "$account_id" "device_id=$id" || true
+		return 0
+	else
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		echo "database"
+		return 1
+	fi
 }
 
 # MAC ownership is never changed by authentication. Reassignment is explicit,

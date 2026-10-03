@@ -4,7 +4,7 @@
 
 . "${OPEN_HOTSPOT_JSHN_SH:-/usr/share/libubox/jshn.sh}"
 
-ADMIN=/usr/lib/open-hotspot/admin.sh
+ADMIN="${OPEN_HOTSPOT_ADMIN_BIN:-/usr/lib/open-hotspot/admin.sh}"
 NDS_HELPER=/usr/lib/open-hotspot/opennds.sh
 TEMPLATE_HELPER=/usr/lib/open-hotspot/template.sh
 
@@ -20,6 +20,19 @@ rpc_ok() {
 	json_init
 	json_add_boolean ok 1
 	json_dump
+}
+
+rpc_device_remove() {
+	reason=$($ADMIN device-remove "$1" 2>/dev/null) && {
+		rpc_ok
+		return
+	}
+	case "$reason" in
+		invalid-id|device-not-found|live-session|usage-history|database)
+			rpc_error "$reason"
+			;;
+		*) rpc_error validation ;;
+	esac
 }
 
 rpc_device_reassign() {
@@ -92,7 +105,7 @@ rpc_device_list() {
 	json_add_array devices
 	old_ifs="$IFS"
 	IFS='|'
-	while read -r id account_id username mac status first_seen last_seen live_sessions; do
+	while read -r id account_id username mac status first_seen last_seen live_sessions has_history lifecycle_state; do
 		[ -n "$id" ] || continue
 		json_add_object
 		json_add_int id "$id"
@@ -103,6 +116,8 @@ rpc_device_list() {
 		json_add_string first_seen "$first_seen"
 		json_add_string last_seen "${last_seen:-}"
 		json_add_int live_sessions "$live_sessions"
+		json_add_boolean has_history "${has_history:-0}"
+		json_add_string lifecycle_state "${lifecycle_state:-removable}"
 		json_close_object
 	done <<EOF
 $rows
@@ -454,15 +469,18 @@ case "${1:-}" in
 				[ "$method" = profile_delete ] && command_name=profile-delete || command_name=account-delete
 				rpc_mutation "$command_name" "$id"
 				;;
-			device_block|device_unblock|device_remove|device_force_deauth)
-			json_get_var id id
-			case "$method" in
-				device_block) command_name=device-block ;;
-				device_unblock) command_name=device-unblock ;;
-				device_remove) command_name=device-remove ;;
-				device_force_deauth) command_name=device-force-deauth ;;
-			esac
+			device_block|device_unblock|device_force_deauth)
+				json_get_var id id
+				case "$method" in
+					device_block) command_name=device-block ;;
+					device_unblock) command_name=device-unblock ;;
+					device_force_deauth) command_name=device-force-deauth ;;
+				esac
 				rpc_mutation "$command_name" "$id"
+				;;
+			device_remove)
+				json_get_var id id
+				rpc_device_remove "$id"
 				;;
 			device_reassign)
 				json_get_var id id

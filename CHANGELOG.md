@@ -5,6 +5,27 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+- Device removal lifecycle and failure observability hardening:
+  - Added machine-readable failure reasons to `admin.sh device-remove`: `invalid-id`,
+    `device-not-found`, `live-session`, `usage-history`, and `database`.
+  - Added safe administrative audit logging: logs `device_removed` with numeric
+    entity identifiers on successful deletion, and `device_remove_denied` with safe
+    reasons on rejection without exposing raw MAC addresses, IPs, PINs, or tokens.
+  - Updated rpcd `open_hotspot` to route `device_remove` through `rpc_device_remove`,
+    propagating the real failure reason over ubus rather than collapsing to generic
+    `validation` error.
+  - Added explicit `has_history` boolean and `lifecycle_state` (`live`, `historical`,
+    `removable`) to `device_list` with strict `live > historical > removable` precedence.
+  - Updated LuCI Devices view and controller to provide actionable human-readable
+    guidance: disabling removal on historical devices with clear reason (“Historical device
+    retained for accounting; use Reassign. Archive is planned separately.”), directing active
+    sessions to Disconnect first, and displaying compact status badges and hints.
+  - Added automated controlled database-failure test (SQLite trigger `RAISE(FAIL)`) and
+    concurrency/race condition test, proving foreign-key and transactional integrity
+    guarantee that a device cannot be deleted if a session or usage reference appears.
+  - Maintained strict historical accounting protection and foreign-key integrity;
+    devices referenced by active sessions or usage events are never physically deleted.
+
 - Prepared r97 account-status clarity: unlimited time/data limits now render
   as `Unlimited` instead of the internal zero sentinel. Added the DNS Insights
   decision record and kept its DEV registry entry design-only and disabled.

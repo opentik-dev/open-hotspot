@@ -22,4 +22,12 @@ grep -F 'admin_device_reassign' "$admin" >/dev/null
 grep -F 'admin_voucher_list' "$admin" >/dev/null
 grep -F 'admin_voucher_generate' "$admin" >/dev/null
 grep -F 'admin_voucher_revoke' "$admin" >/dev/null
+grep -F 'device_removed' "$admin" >/dev/null
+grep -F 'device_remove_denied' "$admin" >/dev/null
+grep -F 'usage-history' "$admin" >/dev/null
+grep -F 'live-session' "$admin" >/dev/null
+grep -F 'device-not-found' "$admin" >/dev/null
+grep -F 'invalid-id' "$admin" >/dev/null
+grep -F 'has_history' "$admin" || grep -F 'usage_events u WHERE u.device_id=d.id' "$admin" >/dev/null
+grep -F 'lifecycle_state' "$admin" || grep -F '"historical"' "$admin" >/dev/null
 ! grep -Eq 'ndsctl|opennds[[:space:]]+auth|opennds[[:space:]]+deauth' "$admin"

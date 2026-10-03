@@ -210,20 +210,37 @@ function devices()
 		local id = integer("id", 0)
 		if action == "block" then
 			result, err = ubus_call("device_block", { id = id })
-			elseif action == "unblock" then
-				result, err = ubus_call("device_unblock", { id = id })
-			elseif action == "remove" then
-				result, err = ubus_call("device_remove", { id = id })
-			elseif action == "force-deauth" then
-				result, err = ubus_call("device_force_deauth", { id = id })
-			elseif action == "reassign" then
-				result, err = ubus_call("device_reassign", {
-					id = id, target_account_id = integer("target_account_id", 0)
-				})
+		elseif action == "unblock" then
+			result, err = ubus_call("device_unblock", { id = id })
+		elseif action == "remove" then
+			result, err = ubus_call("device_remove", { id = id })
+			if err then
+				if err == "usage-history" then
+					message = "Error: historical device: use Reassign. Archive is planned separately"
+				elseif err == "live-session" then
+					message = "Error: live session: Disconnect first"
+				elseif err == "database" then
+					message = "Error: database failure: retry and inspect Events"
+				elseif err == "device-not-found" then
+					message = "Error: device not found: retry and inspect Events"
+				elseif err == "invalid-id" then
+					message = "Error: invalid device ID: retry and inspect Events"
+				else
+					message = "Error: unknown/database failure: retry and inspect Events"
+				end
+			end
+		elseif action == "force-deauth" then
+			result, err = ubus_call("device_force_deauth", { id = id })
+		elseif action == "reassign" then
+			result, err = ubus_call("device_reassign", {
+				id = id, target_account_id = integer("target_account_id", 0)
+			})
 		else
 			err = "unknown action"
 		end
-		message = err and ("Error: " .. err) or "Saved"
+		if not message then
+			message = err and ("Error: " .. err) or "Saved"
+		end
 	end
 	local result, err = ubus_call("device_list", {})
 	local accounts_result, accounts_error = ubus_call("account_list", {})

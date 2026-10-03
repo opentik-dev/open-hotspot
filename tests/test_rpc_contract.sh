@@ -20,8 +20,12 @@ grep -F 'account_status_list' "$rpc" >/dev/null
 grep -F 'account_renew' "$rpc" >/dev/null
 grep -F 'device_reassign' "$rpc" >/dev/null
 grep -F 'rpc_device_reassign' "$rpc" >/dev/null
+grep -F 'rpc_device_remove' "$rpc" >/dev/null
 grep -F 'same-account' "$rpc" >/dev/null
 grep -F 'live-session' "$rpc" >/dev/null
+grep -F 'usage-history' "$rpc" >/dev/null
+grep -F 'has_history' "$rpc" >/dev/null
+grep -F 'lifecycle_state' "$rpc" >/dev/null
 grep -F 'history_list' "$rpc" >/dev/null
 grep -F 'setup_base' "$rpc" >/dev/null
 grep -F 'router_access_set' "$rpc" >/dev/null

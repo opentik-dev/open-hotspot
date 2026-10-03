@@ -3,7 +3,7 @@
 **Candidate:** `luci-app-open-hotspot 1.2.0-r100`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI publication remains pending merge and tag verification.
-**SHA-256:** `50514fbccb744d917aba05ebe97bb2f525a9c470106d7ac7541bbd616f0e136e`
+**SHA-256:** `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** r100 is the canonical UI candidate based on merged main/r99,
 adding distinct device identity presentation and responsive device actions;

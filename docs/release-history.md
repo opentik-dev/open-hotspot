@@ -12,7 +12,7 @@ as a fabricated commit history.
 
 `1.2.0-r100` is the current source candidate. Its local reproducible artifact
 checksum is
-`50514fbccb744d917aba05ebe97bb2f525a9c470106d7ac7541bbd616f0e136e`.
+`bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`.
 It adds distinct device identity presentation and responsive device actions on
 the merged r99 base. CI publication and hardware validation remain pending.
 The installed field candidate is `1.2.0-r99` with artifact checksum
@@ -122,7 +122,7 @@ final release freeze.
 | r97 | `d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe` | Account-status clarity candidate. Displays unlimited time/data limits as `Unlimited` instead of the internal zero sentinel and records the DNS Insights design-only decision; no DNS collector or runtime quota behavior is enabled. Installed over r96; post-recovery diagnostic passed, while the transient post-upgrade openNDS stop is recorded separately. |
 | r98 | `7f44b04399dee35c0b59663bbdcaca64099a0526a65a9709c29c2d78fc184592` | Source candidate containing device lifecycle indicators, machine-readable removal failures, safe audit events, pending-session alignment, and transactional race/failure coverage. CI-built artifact; not installed; hardware validation remains open. |
 | r99 | `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672` | Source candidate containing schema v6, controlled account switching, bounded event taxonomy, storage-boundary redaction, and deterministic root:root SDK fakeroot packaging. CI-built artifact; hardware validation remains pending; not installed. |
-| r100 | `50514fbccb744d917aba05ebe97bb2f525a9c470106d7ac7541bbd616f0e136e` | Device identity/UI candidate based on r99. Separates device label from account owner and groups device actions in responsive cards. Local fakeroot build verified; CI publication and hardware validation remain pending. |
+| r100 | `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a` | Device identity/UI candidate based on r99. Separates device label from account owner and groups device actions in responsive cards. Local fakeroot build verified; CI publication and hardware validation remain pending. |
 
 ## Existing GitHub history
 

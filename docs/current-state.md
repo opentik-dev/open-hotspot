@@ -8,19 +8,20 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current installed field candidate is r99. The source branch now contains
-an unpublished r100 candidate; r99 remains the previous installed candidate.
+The current installed field candidate is r100 in controlled trial. The source
+candidate and installed trial are the same r100 commit; r99 is the rollback
+candidate.
 
 Controlled account switching is isolated on the source branch
 `codex/controlled-account-switching`, based on merged `main`. It is not part
-of the installed r99 target state and remains pending CI, packaging, and
+of the installed r100 target state and remains pending CI, packaging, and
 hardware validation.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Installed field candidate | Open-HotSpot r99 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; event taxonomy and account switching present; hardware acceptance pending |
-| Source candidate | Open-HotSpot r100 / openNDS 11.0.0 | Device identity/UI candidate; not installed | Device label separation and responsive action layout; CI and hardware validation pending |
-| Previous candidate | Open-HotSpot r98 / openNDS 11.0.0 | Previous CI candidate | Superseded as source candidate by r99 |
+| Installed field candidate | Open-HotSpot r100 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed for controlled UI trial; event taxonomy/account switching present; hardware acceptance pending |
+| Source candidate | Open-HotSpot r100 / openNDS 11.0.0 | Same reviewed candidate as trial | Device label separation and responsive action layout; production acceptance pending |
+| Previous candidate | Open-HotSpot r99 / openNDS 11.0.0 | Previous installed candidate and rollback | Superseded by r100 trial; preserve as rollback |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1

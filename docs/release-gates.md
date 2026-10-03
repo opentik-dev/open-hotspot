@@ -2,9 +2,10 @@
 
 This register is the operational release decision register. `r90` is the
 last field-tested acceptance candidate with router-access isolation, runtime
-readiness recovery, and a packaged read-only integration diagnostic. `r99` is
-the current installed field candidate and `r100` is the uninstalled source
-candidate; r98 and earlier candidates are superseded.
+readiness recovery, and a packaged read-only integration diagnostic. `r100` is
+the current installed controlled-trial candidate; r99 is the preserved rollback
+candidate. Neither is a production release until the physical gates below have
+evidence.
 Neither is a production release
 until every critical gate below has evidence from the physical target.
 
@@ -31,8 +32,8 @@ until every critical gate below has evidence from the physical target.
 
 ## Current decision
 
-`r60` remains the protected rollback baseline. `r99` is the current installed
-candidate on the controlled target; `r100` is the uninstalled source candidate
+`r60` remains the protected rollback baseline. `r99` is the preserved previous
+candidate and `r100` is installed on the controlled target for UI trial,
 containing the device identity/UI correction.
 Hardware validation remains pending.
 Neither is approved as a production baseline. The next field session

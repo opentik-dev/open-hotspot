@@ -2,20 +2,22 @@
 
 **Candidate:** `luci-app-open-hotspot 1.2.0-r100`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
-CI publication remains pending merge and tag verification.
+CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
 **SHA-256:** `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r100 installed for controlled UI trial; r99 and r60 remain rollback paths.
 **Decision:** r100 is the canonical UI candidate based on merged main/r99,
 adding distinct device identity presentation and responsive device actions;
-r99 remains the installed field candidate and rollback evidence is preserved.
+r100 is installed for controlled trial and r99 rollback evidence is preserved.
 
-The r99 package remains the last installed field candidate and its historical
+The r100 package is the installed controlled-trial candidate and its checksum is
+recorded in the release ledger. The r99 package remains the rollback candidate.
+Its historical artifact checksum is recorded in the release ledger. The prior
 artifact checksum is recorded in the release ledger. The prior r98 package contains
 the device-lifecycle and failure-observability changes from the reviewed source
 branch; it has not been installed on the target. The
 multi-day first-login validity presets are intentionally not included until
 the rolling-validity accounting contract is implemented and tested. The
-rollback archive and SQLite export are required before any r100 target mutation;
+rollback archive and SQLite export were required and captured before the r100 target mutation;
 post-install preflight, diagnostics, and `ndsctl status` must be recorded after
 deployment. Quota, restart, failure-containment, and the remaining hardware
 gates are still pending.

@@ -1,9 +1,9 @@
 # Open-HotSpot project status
 
 **As of:** 2026-10-03
-**Installed field candidate:** Open-HotSpot 1.2.0-r99
-**Current source candidate:** Open-HotSpot 1.2.0-r100 (not installed)
-**Previous candidate:** Open-HotSpot 1.2.0-r98
+**Installed field candidate:** Open-HotSpot 1.2.0-r100
+**Current source candidate:** Open-HotSpot 1.2.0-r100 (controlled trial)
+**Previous candidate:** Open-HotSpot 1.2.0-r99
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -53,7 +53,7 @@
   reproducible APK packaging via deterministic SOURCE_DATE_EPOCH (clean git archive build
   verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), safe
   reconciliation error reporting, reconciled release metadata, and a read-only
-  DEV diagnostics LuCI page. r99 is now installed on the target and passed
+  DEV diagnostics LuCI page. r100 is now installed on the target and passed
   guarded post-install preflight/diagnostics, but it does not close any
   hardware gate without the required client-session evidence.
 

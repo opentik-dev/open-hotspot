@@ -8,19 +8,18 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current installed field candidate is r97. The source branch now contains
-an unpublished r99 candidate; r98 remains the previous CI candidate and is not
-installed on the target.
+The current installed field candidate is r99. The source branch now contains
+an unpublished r100 candidate; r99 remains the previous installed candidate.
 
 Controlled account switching is isolated on the source branch
 `codex/controlled-account-switching`, based on merged `main`. It is not part
-of the installed r97/r98 target state and remains pending CI, packaging, and
+of the installed r99 target state and remains pending CI, packaging, and
 hardware validation.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Installed field candidate | Open-HotSpot r97 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; account-status clarity and UI card layout present; hardware acceptance pending |
-| Source candidate | Open-HotSpot r99 / openNDS 11.0.0 | Local candidate; not installed | Controlled account switching and schema v5; CI artifact and hardware validation pending |
+| Installed field candidate | Open-HotSpot r99 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; event taxonomy and account switching present; hardware acceptance pending |
+| Source candidate | Open-HotSpot r100 / openNDS 11.0.0 | Device identity/UI candidate; not installed | Device label separation and responsive action layout; CI and hardware validation pending |
 | Previous candidate | Open-HotSpot r98 / openNDS 11.0.0 | Previous CI candidate | Superseded as source candidate by r99 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 

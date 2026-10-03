@@ -63,6 +63,9 @@ grep -F 'Remove (Active)' "$devices" >/dev/null
 grep -F 'Historical (use Reassign)' "$devices" >/dev/null
 grep -F 'Historical device retained for accounting; use Reassign. Archive is planned separately.' "$devices" >/dev/null
 grep -F 'use Reassign' "$devices" >/dev/null
+grep -F 'Device name' "$devices" >/dev/null
+grep -F 'oh-device-card' "$devices" >/dev/null
+grep -F 'oh-device-reassign' "$devices" >/dev/null
 grep -F 'Disconnect first' "$devices" >/dev/null
 grep -F 'Renew quota period' "$accounts" >/dev/null
 grep -F 'call("vouchers")' "$controller" >/dev/null

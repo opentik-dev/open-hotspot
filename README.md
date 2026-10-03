@@ -71,10 +71,14 @@ Router:       Linksys EA8300
 OpenWrt:      25.12.5
 Target:       ipq40xx/generic
 openNDS:      11.0.0
-Open-HotSpot: 1.2.0-r92 (installed; hardware acceptance pending)
+Open-HotSpot: 1.2.0-r99 (installed; hardware acceptance pending)
 ```
 
-The current field candidate is Open-HotSpot 1.2.0-r92 with openNDS 11.0.0.
+The current field candidate is Open-HotSpot 1.2.0-r99 with openNDS 11.0.0.
+The next source candidate, r100, adds a distinct device identity label in the
+Devices page, keeps the account owner separate for safe Reassign operations,
+and groups device actions in responsive cards. It is not installed until CI
+and the guarded field procedure succeed.
 The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS
 10.3.1-r3. These are separate compatibility tracks; see
 [`docs/current-state.md`](docs/current-state.md) before operating a target.
@@ -119,6 +123,7 @@ users.
 - [Acceptance runbook](docs/factory-reset-acceptance-runbook.md)
 - [Release gate register](docs/release-gates.md)
 - [Release history](docs/release-history.md)
+- [Current release notes](CHANGELOG.md)
 - [OpenNDS 11 migration decision](docs/decisions/ADR-003-opennds-v11-migration.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

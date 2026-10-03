@@ -251,10 +251,11 @@ admin_device_list() {
 		             THEN 1 ELSE 0 END,
 		        CASE WHEN (SELECT count(*) FROM active_sessions s WHERE s.device_id=d.id AND s.state IN ("active","pending")) > 0
 		             THEN "live"
-		             WHEN (SELECT 1 FROM usage_events u WHERE u.device_id=d.id LIMIT 1) IS NOT NULL
-		               OR (SELECT 1 FROM active_sessions s WHERE s.device_id=d.id AND s.state="closed" LIMIT 1) IS NOT NULL
-		             THEN "historical"
-		             ELSE "removable" END
+			            WHEN (SELECT 1 FROM usage_events u WHERE u.device_id=d.id LIMIT 1) IS NOT NULL
+			              OR (SELECT 1 FROM active_sessions s WHERE s.device_id=d.id AND s.state="closed" LIMIT 1) IS NOT NULL
+			            THEN "historical"
+			            ELSE "removable" END,
+		        replace(replace(replace(COALESCE(NULLIF(trim(d.hostname),""),"Device #" || d.id),"|"," "),char(10)," "),char(13)," ") AS device_name
 		   FROM devices d JOIN accounts a ON a.id=d.account_id
 		  WHERE a.deleted_at IS NULL
 		  ORDER BY a.username,d.mac;'

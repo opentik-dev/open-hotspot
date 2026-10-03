@@ -105,7 +105,7 @@ rpc_device_list() {
 	json_add_array devices
 	old_ifs="$IFS"
 	IFS='|'
-	while read -r id account_id username mac status first_seen last_seen live_sessions has_history lifecycle_state; do
+	while read -r id account_id username mac status first_seen last_seen live_sessions has_history lifecycle_state device_name; do
 		[ -n "$id" ] || continue
 		json_add_object
 		json_add_int id "$id"
@@ -118,6 +118,7 @@ rpc_device_list() {
 		json_add_int live_sessions "$live_sessions"
 		json_add_boolean has_history "${has_history:-0}"
 		json_add_string lifecycle_state "${lifecycle_state:-removable}"
+		json_add_string device_name "${device_name:-Device #$id}"
 		json_close_object
 	done <<EOF
 $rows

@@ -380,10 +380,11 @@ d60_line=$(printf '%s\n' "$dev_list_out" | grep '^60|' || true)
 if [ -n "$d60_line" ]; then
 	d60_hist=$(printf '%s' "$d60_line" | awk -F'|' '{print $9}')
 	d60_state=$(printf '%s' "$d60_line" | awk -F'|' '{print $10}')
-	if [ "$d60_hist" = "0" ] && [ "$d60_state" = "removable" ]; then
+	d60_name=$(printf '%s' "$d60_line" | awk -F'|' '{print $11}')
+	if [ "$d60_hist" = "0" ] && [ "$d60_state" = "removable" ] && [ "$d60_name" = "Device #60" ]; then
 		pass "admin_device_list reports has_history=0 and lifecycle_state=removable for clean device 60"
 	else
-		fail "admin_device_list device 60 mismatch: hist='$d60_hist' state='$d60_state'"
+		fail "admin_device_list device 60 mismatch: name='$d60_name' hist='$d60_hist' state='$d60_state'"
 	fi
 else
 	fail "admin_device_list missing device 60"

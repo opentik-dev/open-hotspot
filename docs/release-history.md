@@ -10,21 +10,16 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r99` is the canonical source candidate. Its canonical reproducible
-artifact checksum is
-`96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672`, built and
-verified in GitHub Actions CI (run 37155015258).
-It contains controlled account switching (Task 2) and bounded event taxonomy with schema v6
-and storage-boundary redaction (Task 3). Intermediate local artifact hash
-`a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6` was superseded
-by commit `9315a43`. It has not been installed on the target. The last
-installed field candidate is `1.2.0-r97` with artifact checksum
-`d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe`; guarded
-deployment over r96 completed after bounded openNDS recovery, with the final
-post-recovery diagnostic at `failures=0 warnings=0` and `ndsctl status` healthy.
-Physical acceptance gates remain open. r97 is the
-installed field candidate; r98 is retained as the prior CI source candidate and
-r99 supersedes it as the current source candidate;
+`1.2.0-r100` is the current source candidate. Its local reproducible artifact
+checksum is
+`50514fbccb744d917aba05ebe97bb2f525a9c470106d7ac7541bbd616f0e136e`.
+It adds distinct device identity presentation and responsive device actions on
+the merged r99 base. CI publication and hardware validation remain pending.
+The installed field candidate is `1.2.0-r99` with artifact checksum
+`96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672`; its
+guarded post-install diagnostic and `ndsctl status` were healthy.
+Physical acceptance gates remain open. r99 is the
+installed field candidate and r100 is the current source candidate;
 earlier packages remain field
 evidence and rollback checkpoints. Historical entries below are retained for
 audit and are not current release instructions. r40 removes upstream-address assumptions
@@ -127,6 +122,7 @@ final release freeze.
 | r97 | `d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe` | Account-status clarity candidate. Displays unlimited time/data limits as `Unlimited` instead of the internal zero sentinel and records the DNS Insights design-only decision; no DNS collector or runtime quota behavior is enabled. Installed over r96; post-recovery diagnostic passed, while the transient post-upgrade openNDS stop is recorded separately. |
 | r98 | `7f44b04399dee35c0b59663bbdcaca64099a0526a65a9709c29c2d78fc184592` | Source candidate containing device lifecycle indicators, machine-readable removal failures, safe audit events, pending-session alignment, and transactional race/failure coverage. CI-built artifact; not installed; hardware validation remains open. |
 | r99 | `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672` | Source candidate containing schema v6, controlled account switching, bounded event taxonomy, storage-boundary redaction, and deterministic root:root SDK fakeroot packaging. CI-built artifact; hardware validation remains pending; not installed. |
+| r100 | `50514fbccb744d917aba05ebe97bb2f525a9c470106d7ac7541bbd616f0e136e` | Device identity/UI candidate based on r99. Separates device label from account owner and groups device actions in responsive cards. Local fakeroot build verified; CI publication and hardware validation remain pending. |
 
 ## Existing GitHub history
 

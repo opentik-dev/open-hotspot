@@ -5,6 +5,10 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+- Prepared r96 visual card redesign: compacted the account/profile creation
+  forms and placed each editable record and its actions inside a responsive,
+  consistently bordered card.
+
 - Prepared r95 UI/units hardening: compact responsive create forms, consistent
   action rows, and direct unit selectors for time, data limits, and rates.
   Multi-day first-login validity presets are intentionally not enabled yet;
@@ -24,7 +28,16 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
 
-## 1.2.0-r95 (installed field candidate; acceptance pending)
+## 1.2.0-r96 (installed UI candidate; acceptance pending)
+
+- Replaced the loose account/profile record layout with bordered responsive
+  cards containing the editable fields and their action controls.
+- Compressed the account/profile creation forms into aligned two-column grids;
+  retained the existing unit conversion and runtime/session behavior.
+- Updated the deployment contract and simulations to derive the current APK
+  release instead of remaining pinned to an older artifact.
+
+## 1.2.0-r95 (superseded installed field candidate; acceptance pending)
 
 - Added seconds/minutes/hours/days selectors for time limits, B/KiB/MiB/GiB
   selectors for data limits, and kbit/s/Mbit/s/Gbit/s selectors for rates.

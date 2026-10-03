@@ -4,7 +4,7 @@
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 <% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
 
-<fieldset class="cbi-section">
+<fieldset class="cbi-section oh-create-card">
 <legend><%:Create account%></legend>
 <form class="oh-form oh-create-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="create" />
@@ -17,11 +17,11 @@
 </fieldset>
 
 <div class="oh-table-wrap">
-<table class="table cbi-section-table">
+<table class="table cbi-section-table oh-account-table">
 <tr class="tr table-titles"><th><%:Username%></th><th><%:Profile%></th><th><%:Status%></th><th><%:Expiry%></th><th><%:Actions%></th></tr>
 <% for _, account in ipairs(accounts) do %>
 <tr class="tr">
-<td colspan="5">
+<td colspan="5"><div class="oh-account-card">
 <form class="oh-record-form oh-account-update" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=account.id%>" />
 <label class="oh-field"><span><%:Username%></span><input name="username" value="<%=pcdata(account.username)%>" maxlength="64" /></label>
@@ -42,7 +42,7 @@
 </form>
 <form class="oh-delete-form" method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=account.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Suspend this account?%>');" /></form>
 </div>
-</td>
+</div></td>
 </tr>
 <% end %>
 </table>

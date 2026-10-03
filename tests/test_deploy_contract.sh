@@ -6,14 +6,14 @@
 # 2. deploy-r92.sh passes bash syntax validation.
 # 3. Strict bash error handling (set -euo pipefail) is enabled.
 # 4. No '|| true' exists in the backup workflow (Phase 4).
-# 5. Rollback taxonomy matches documentation (r60 baseline vs r90/r91 candidate).
+# 5. Rollback taxonomy matches documentation (r60 baseline vs r90-r95 candidate).
 # 6. opennds -v exit code is captured directly and non-zero output is validated.
 # 7. Failure count parsing handles arbitrary non-zero counts (e.g. failures=12).
 # 8. The embedded remote rollback archive command passes POSIX shell syntax.
 # 9. The offline APK installed-package parser is used; package tracking files are not parsed as versions.
 # 10. A non-existent APK path is rejected immediately.
 # 11. A checksum mismatch is rejected immediately.
-# 12. Local verification passes for the official r92 artifact.
+# 12. Local verification passes for the current Makefile artifact.
 # 13. Installation is gated behind preflight, diagnose, and checksums.
 # 14. Acceptance status is explicitly output as Pending Hardware Validation.
 # 15-29. Simulations cover transport, preflight, diagnostics, rollback, identity,
@@ -23,6 +23,11 @@ set -euo pipefail
 
 PROJECT=${PROJECT_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
 DEPLOY_SCRIPT="$PROJECT/tools/deploy-r92.sh"
+CURRENT_VERSION=$(sed -n 's/^PKG_VERSION:=//p' "$PROJECT/starter-kit/Makefile")
+CURRENT_RELEASE=$(sed -n 's/^PKG_RELEASE:=//p' "$PROJECT/starter-kit/Makefile")
+CURRENT_APK="$PROJECT/dist/luci-app-open-hotspot-${CURRENT_VERSION}-r${CURRENT_RELEASE}.apk"
+CURRENT_APK_NAME="luci-app-open-hotspot-${CURRENT_VERSION}-r${CURRENT_RELEASE}.apk"
+CURRENT_APK_SHA=$(sha256sum "$CURRENT_APK" | awk '{print $1}')
 
 FAILURES=0
 PASSES=0
@@ -60,7 +65,7 @@ else
 fi
 
 # 5. Verify rollback taxonomy matches documentation
-if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-r92-r93-r94-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
+if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-r92-r93-r94-r95-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
 	pass "Rollback taxonomy cross-verifies openNDS version with installed package"
 else
 	fail "Rollback taxonomy does not cross-verify openNDS version with package"
@@ -118,12 +123,12 @@ else
 	fail "Mismatched APK checksum was not rejected properly (rc=$bad_rc: $bad_out)"
 fi
 
-# 11. Local validation of genuine r92 APK
+# 11. Local validation of the current APK
 local_out=$(bash "$DEPLOY_SCRIPT" --check-local 2>&1) && local_rc=0 || local_rc=$?
 if [ "$local_rc" -eq 0 ] && printf '%s\n' "$local_out" | grep -q "Local APK checksum verified"; then
-	pass "Official r92 APK local verification passed"
+	pass "Current APK local verification passed"
 else
-	fail "Official r92 APK local verification failed (rc=$local_rc: $local_out)"
+	fail "Current APK local verification failed (rc=$local_rc: $local_out)"
 fi
 
 # 12. Gate ordering: preflight, diagnose, and checksums must precede installation
@@ -303,11 +308,11 @@ elif echo "$cmd" | grep -q "rm -f '/tmp/mock-sqlite-export.tar.gz'"; then
 	elif echo "$cmd" | grep -q "tar -czf -"; then
 		tar -czf - -C "$SIM_MOCK_ROUTER" etc usr lib
 	exit 0
-elif echo "$cmd" | grep -q "cat > '/tmp/luci-app-open-hotspot-1.2.0-r92.apk'"; then
+elif echo "$cmd" | grep -q "cat > '/tmp/luci-app-open-hotspot-1.2.0-r"; then
 	cat >/dev/null
 	exit 0
 elif echo "$cmd" | grep -q "sha256sum.*luci-app-open-hotspot"; then
-	echo "a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db  /tmp/luci-app-open-hotspot-1.2.0-r92.apk"
+	echo "$SIM_APK_SHA  /tmp/$SIM_APK_NAME"
 	exit 0
 elif echo "$cmd" | grep -q "apk add --allow-untrusted"; then
 	echo "OK: 1 packages installed"
@@ -323,6 +328,8 @@ chmod +x "$MOCK_SSH"
 
 export SIM_AUDIT_LOG="$AUDIT_LOG"
 export SIM_MOCK_ROUTER="$MOCK_ROUTER"
+export SIM_APK_NAME="$CURRENT_APK_NAME"
+export SIM_APK_SHA="$CURRENT_APK_SHA"
 
 # --- Simulation 1: SSH Connection Failure ---
 : > "$AUDIT_LOG"

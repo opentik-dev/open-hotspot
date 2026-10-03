@@ -1,13 +1,13 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r95`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r96`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89`
+**SHA-256:** `cc6a485aeb1cf77581ea64397c104d9ef92b02f8dbfa5d18ee04eabe964d636b`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** Installed controlled UI/units candidate; not yet a production baseline.
 
-The r95 package is the current installed UI/units candidate. It was installed
-over r94 by the guarded deployment driver. The
+The r96 package is the current UI card-layout candidate. It is installed over
+r95 by the guarded deployment driver. The
 multi-day first-login validity presets are intentionally not included until
 the rolling-validity accounting contract is implemented and tested. The
 rollback archive and SQLite export were created before mutation; post-install

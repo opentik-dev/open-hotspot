@@ -4,7 +4,7 @@
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 <% if page_message ~= "" then %><div class="alert-message success"><%=pcdata(page_message)%></div><% end %>
 
-<fieldset class="cbi-section">
+<fieldset class="cbi-section oh-create-card">
 <legend><%:Create profile%></legend>
 <p class="oh-form-help"><%:Values are converted to the database units automatically. Data limits use binary bytes (B, KiB, MiB, GiB); rates use kbit/s, Mbit/s, or Gbit/s.%></p>
 <form class="oh-form oh-create-form oh-profile-form" method="post" action="<%=page_url%>">
@@ -23,11 +23,11 @@
 </fieldset>
 
 <div class="oh-table-wrap">
-<table class="table cbi-section-table">
+<table class="table cbi-section-table oh-profile-table">
 <tr class="tr table-titles"><th><%:Name%></th><th><%:Period%></th><th><%:Time%></th><th><%:Data up/down%></th><th><%:Rates%></th><th><%:Devices%></th><th></th></tr>
 <% for _, p in ipairs(profiles) do %>
-<tr class="tr">
-<td colspan="6"><form class="oh-record-form oh-profile-update" method="post" action="<%=page_url%>">
+<tr class="tr oh-profile-card-row">
+<td colspan="7"><div class="oh-profile-card"><form class="oh-record-form oh-profile-update" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=p.id%>" />
 <label><%:Name%> <input name="name" value="<%=pcdata(p.name)%>" maxlength="64" /></label>
 <label><%:Period%> <select name="period_type"><% for _, period in ipairs({"none","hourly","daily","monthly","yearly"}) do %><option value="<%=period%>"<% if p.period_type == period then %> selected<% end %>><%=period%></option><% end %></select></label>
@@ -39,7 +39,8 @@
 <label><%:Devices%> <input name="max_devices" type="number" min="1" value="<%=p.max_devices%>" /></label>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
 </form>
-</td><td><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=p.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Delete this profile?%>');" /></form></td>
+<div class="oh-profile-actions"><form method="post" action="<%=page_url%>"><input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="<%=p.id%>" /><input class="cbi-button cbi-button-reset" type="submit" value="<%:Delete%>" onclick="return confirm('<%:Delete this profile?%>');" /></form></div>
+</div></td>
 </tr>
 <% end %>
 </table>

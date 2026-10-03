@@ -6,8 +6,8 @@ excluding credentials, FAS keys, router backups, and raw live-client data.
 
 ## Current deployment truth — 2026-10-03
 
-The active target candidate is Open-HotSpot `1.2.0-r94` on the EA8300
-candidate slot with openNDS `11.0.0`. It was installed over r92 by the guarded
+The active target candidate is Open-HotSpot `1.2.0-r96` on the EA8300
+candidate slot with openNDS `11.0.0`. It was installed over r95 by the guarded
 driver; post-install preflight, diagnostics, and `ndsctl status` passed. The
 separated Events/DEV UI is present; the observed authenticated
 client remained stable beyond 35 minutes.
@@ -104,6 +104,7 @@ with the reusable candidate driver for the current path.
 
 | OP-077 | 2026-10-03 | Ten-minute live-client stability observation after r94 | EA8300/r94/openNDS 11.0.0; two existing client sessions; read-only monitoring | Ten sanitized SSH samples at roughly one-minute intervals kept `clients=2`, `authenticated=2`, and `active_sessions=2`; no session disappearance or diagnostic failure occurred. Aggregate openNDS counters were non-zero at the end of the window. | success / symptom not reproduced | session-stability evidence | This closes the reported 3–4 minute eviction symptom as `Verified — not reproduced` for this observation window. It does not close quota cutoff, close/accounting, restart, failure-containment, network-isolation, or release-freeze gates. | Samples 1–10 stable; SQLite `pending=0|devices=4|active_sessions=2|usage_events=61`; diagnostic before monitoring `failures=0 warnings=0`; final openNDS report showed two authenticated clients and non-zero aggregate traffic. No client identifiers, credentials, or tokens recorded. | Eviction symptom Verified not reproduced; T006/T011/T052/T086/T087/T088/T090 remain Pending Hardware Validation |
 | OP-078 | 2026-10-03 | Guarded r95 UI/units deployment | EA8300 candidate slot 02; r94/openNDS 11.0.0 before mutation | Built reproducible r95, expanded the guarded-driver prior-candidate allowlist to include r94, created rollback/SQLite backups, verified remote checksum, and upgraded the package over r94. | success / target verified | target/package and LuCI surface | Keep multi-day first-login validity presets out of the runtime until the rolling-validity/accounting contract is implemented and tested. | r95 SHA-256 `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89`; post-install `failures=0 warnings=0`; package `1.2.0-r95`; profile unit fields, compact account form, and shared unit CSS present on target; database counts `pending=0|devices=4|active_sessions=2|usage_events=61`. No credentials or raw identifiers committed. | r95 Installed and Verified; T006/T011/T052/T086/T087/T088/T090 remain Pending Hardware Validation |
+| OP-079 | 2026-10-03 | Guarded r96 UI card-layout deployment | EA8300 candidate slot 02; r95/openNDS 11.0.0 before mutation | First attempt stopped before mutation because the prior-candidate regex still excluded r95; after correcting that condition, rebuilt and deployed r96 with a complete SQLite/system rollback backup and exact local/remote SHA-256 verification. | success / target verified | target/package and LuCI surface | Keep the UI change separate from runtime acceptance; next work remains the quota/restart/failure/recovery/isolation evidence matrix. | r96 SHA-256 `cc6a485aeb1cf77581ea64397c104d9ef92b02f8dbfa5d18ee04eabe964d636b`; post-install preflight `topology=ok`, diagnostics `failures=0 warnings=0`, openNDS 11.0.0 healthy, package `1.2.0-r96`, CSS/card markers present, and SQLite counts `0|4|2|61`. No credentials or raw client identifiers committed. | r96 Installed and Verified; T006/T011/T012/T052/T086/T087/T088/T090 and network isolation remain Pending Hardware Validation |
 
 ## Current known facts
 

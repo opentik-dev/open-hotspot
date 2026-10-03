@@ -24,13 +24,16 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
 
-## 1.2.0-r95 (UI/units candidate; installation pending)
+## 1.2.0-r95 (installed field candidate; acceptance pending)
 
 - Added seconds/minutes/hours/days selectors for time limits, B/KiB/MiB/GiB
   selectors for data limits, and kbit/s/Mbit/s/Gbit/s selectors for rates.
 - Tightened account/profile creation layouts and action-button alignment for
   long lists and narrow screens.
 - Kept the existing r94 runtime and session behavior unchanged.
+- Installed over r94 on the EA8300; post-install preflight, diagnostics, and
+  `ndsctl status` passed. Multi-day first-login validity presets remain
+  intentionally deferred pending a rolling-validity accounting contract.
 
 ## 1.2.0-r94 (installed field candidate; acceptance pending)
 

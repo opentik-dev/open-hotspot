@@ -10,8 +10,10 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r95` is the current UI/units candidate; installation is pending. The
-last installed field candidate is r94 with artifact checksum
+`1.2.0-r95` is the current installed UI/units candidate. Its artifact checksum
+is `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89`; guarded
+deployment over r94 completed with post-install `failures=0 warnings=0` and
+`ndsctl status` healthy. The last installed field candidate was r94 with artifact checksum
 `b801cdccd9e7b06ddf6aa72bf68d404769788f13543ad11c7264834979413eb6`; guarded
 deployment over r93 completed with post-install `failures=0 warnings=0` and
 `ndsctl status` healthy. Physical acceptance gates remain open. r94 is the
@@ -112,7 +114,7 @@ final release freeze.
 | r92 | `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db` | Superseded installed predecessor. Stabilized authenticated session lifecycle, reproducible packaging, DEV diagnostics, and guarded deployment. Installed over r91 on the EA8300; post-install preflight, diagnostics, and `ndsctl status` passed. |
 | r93 | `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a` | Last installed field candidate. Separates the Events and DEV LuCI surfaces, preserves the r92 session-stability changes, and was installed over r92 on the EA8300. Post-install preflight, diagnostics, and `ndsctl status` passed; remaining acceptance gates are open. |
 | r94 | `b801cdccd9e7b06ddf6aa72bf68d404769788f13543ad11c7264834979413eb6` | UI hardening candidate: shared stylesheet loading and consistent responsive action rows/buttons across LuCI surfaces. Built and tested locally; target installation pending. |
-| r95 | `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89` | UI/units hardening candidate: compact responsive forms and direct time/data/rate unit selectors. Built and tested locally; installation pending. Rolling multi-day first-login validity presets are deferred pending a separate accounting contract. |
+| r95 | `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89` | Current installed UI/units candidate. Adds compact responsive forms and direct time/data/rate unit selectors; installed over r94 on the EA8300. Post-install preflight, diagnostics, and `ndsctl status` passed. Rolling multi-day first-login validity presets are deferred pending a separate accounting contract. |
 
 ## Existing GitHub history
 

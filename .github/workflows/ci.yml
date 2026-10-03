@@ -72,9 +72,8 @@ jobs:
       - name: Run deployment contract checks
         env:
           OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
-        shell: bash
         run: |
-          sh tests/test_deploy_contract.sh
+          bash tests/test_deploy_contract.sh 2>&1 | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
       - name: Upload built APK
         uses: actions/upload-artifact@v4
         with:

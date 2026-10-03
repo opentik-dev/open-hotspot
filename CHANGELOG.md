@@ -5,6 +5,10 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+- Prepared r97 account-status clarity: unlimited time/data limits now render
+  as `Unlimited` instead of the internal zero sentinel. Added the DNS Insights
+  decision record and kept its DEV registry entry design-only and disabled.
+
 - Prepared r96 visual card redesign: compacted the account/profile creation
   forms and placed each editable record and its actions inside a responsive,
   consistently bordered card.
@@ -28,7 +32,14 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
 
-## 1.2.0-r96 (installed UI candidate; acceptance pending)
+## 1.2.0-r97 (UI/account-status candidate; acceptance pending)
+
+- Clarified unlimited account status display without changing quota arithmetic,
+  openNDS policy conversion, or accounting.
+- Added `docs/dns-observability-plan.md`; no DNS collector or resolver mutation
+  is included or enabled.
+
+## 1.2.0-r96 (superseded installed UI candidate; acceptance pending)
 
 - Replaced the loose account/profile record layout with bordered responsive
   cards containing the editable fields and their action controls.

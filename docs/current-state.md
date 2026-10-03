@@ -8,12 +8,12 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current UI card-layout candidate is r96; it is installed on the target.
+The current account-status clarity candidate is r97; it is installed on the target.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current field candidate | Open-HotSpot r96 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; UI card layout present; hardware acceptance pending |
-| Previous candidate | Open-HotSpot r95 / openNDS 11.0.0 | Previous target state | Superseded by r96 |
+| Current field candidate | Open-HotSpot r97 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; account-status clarity and UI card layout present; hardware acceptance pending |
+| Previous candidate | Open-HotSpot r96 / openNDS 11.0.0 | Previous target state | Superseded by r97 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1

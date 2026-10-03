@@ -30,10 +30,10 @@ until every critical gate below has evidence from the physical target.
 
 ## Current decision
 
-`r90` remains the last field-tested candidate suitable for controlled pilot
-validation and rollback testing. `r93` is the current installed candidate with
-the separated Events/DEV UI; it also contains the r92 session stability and
-reproducible build fixes. Hardware validation remains pending.
+`r60` remains the protected rollback baseline. `r97` is the current UI/account-
+status candidate on the controlled target; it contains the separated Events/DEV
+UI, r92 session-stability changes, reproducible packaging, and the r97 display
+clarity fix. Hardware validation remains pending.
 Neither is approved as a production baseline. The next field session
 must prioritize the disposable client flow, counter/quota mapping, and restart
 behavior; code changes must not claim those gates closed without target evidence.

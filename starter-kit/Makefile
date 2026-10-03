@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-open-hotspot
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=96
+PKG_RELEASE:=97
 PKG_SOURCE_DATE_EPOCH:=1790968682
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_MAINTAINER:=Mohammed Al-Haddad <mohammed@example.com>

@@ -28,6 +28,7 @@ CURRENT_RELEASE=$(sed -n 's/^PKG_RELEASE:=//p' "$PROJECT/starter-kit/Makefile")
 CURRENT_APK="$PROJECT/dist/luci-app-open-hotspot-${CURRENT_VERSION}-r${CURRENT_RELEASE}.apk"
 CURRENT_APK_NAME="luci-app-open-hotspot-${CURRENT_VERSION}-r${CURRENT_RELEASE}.apk"
 CURRENT_APK_SHA=$(sha256sum "$CURRENT_APK" | awk '{print $1}')
+export CANDIDATE_SHA256="${CANDIDATE_SHA256:-$CURRENT_APK_SHA}"
 
 FAILURES=0
 PASSES=0

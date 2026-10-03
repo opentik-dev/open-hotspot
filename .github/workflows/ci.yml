@@ -25,7 +25,12 @@ jobs:
           python3 -m unittest discover -s tests -v
           sh tests/test_shell_syntax.sh
           sh tests/test_quota.sh
-          for test in tests/test_*.sh; do sh "$test"; done
+          for test in tests/test_*.sh; do
+            case "$test" in
+              */test_deploy_contract.sh) continue ;;
+            esac
+            sh "$test"
+          done
 
   build-apk:
     name: Build APK from source
@@ -64,6 +69,12 @@ jobs:
           test -s "$apk"
           sha256sum "$apk" > "$RUNNER_TEMP/SHA256SUMS"
           cat "$RUNNER_TEMP/SHA256SUMS"
+      - name: Run deployment contract checks
+        env:
+          OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
+        shell: bash
+        run: |
+          sh tests/test_deploy_contract.sh
       - name: Upload built APK
         uses: actions/upload-artifact@v4
         with:

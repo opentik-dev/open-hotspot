@@ -53,6 +53,11 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
   devices remain disabled until admission, expiry, audit, and rollback rules
   are implemented and tested.
 
+## 1.2.0-r98 (device-lifecycle candidate; acceptance pending)
+
+- Added machine-readable device-removal outcomes, lifecycle indicators, pending-session alignment, safe failure events, and transactional race/failure regression coverage.
+- This candidate has not been installed on the router; r97 remains the last installed field artifact.
+
 ## 1.2.0-r97 (UI/account-status candidate; acceptance pending)
 
 - Clarified unlimited account status display without changing quota arithmetic,

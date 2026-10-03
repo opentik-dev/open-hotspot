@@ -10,15 +10,16 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r97` is the current account-status clarity candidate. Its artifact checksum
-is `d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe`; guarded
+`1.2.0-r98` is the current source candidate. Its artifact checksum is
+`e402b389eb2b5ae216a677d002976f6e97228ec882761af67dc9373d8bb84cbc`. It contains the reviewed device
+lifecycle and failure-observability changes and has not been installed on the
+target. The last installed field candidate is `1.2.0-r97` with artifact checksum
+`d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe`; guarded
 deployment over r96 completed after bounded openNDS recovery, with the final
-post-recovery diagnostic at `failures=0 warnings=0` and
-`ndsctl status` healthy. The last installed field candidate was r96 with artifact checksum
-`cc6a485aeb1cf77581ea64397c104d9ef92b02f8dbfa5d18ee04eabe964d636b`; guarded
-deployment over r95 completed with post-install `failures=0 warnings=0` and
-`ndsctl status` healthy. Physical acceptance gates remain open. r96 is the
-previous candidate and is superseded by r97. Earlier packages remain field
+post-recovery diagnostic at `failures=0 warnings=0` and `ndsctl status` healthy.
+Physical acceptance gates remain open. r97 is the
+installed field candidate and r98 supersedes it only as a source candidate;
+earlier packages remain field
 evidence and rollback checkpoints. Historical entries below are retained for
 audit and are not current release instructions. r40 removes upstream-address assumptions
 from local FAS activation, r41 adds a dynamic-address contract guard and
@@ -118,6 +119,7 @@ final release freeze.
 | r95 | `17577d9c84b542e0e15d2a7d82fa7743b5f1322afe01be87d1358a43ee973e89` | Superseded installed UI/units candidate. Adds compact responsive forms and direct time/data/rate unit selectors; installed over r94 on the EA8300. Post-install preflight, diagnostics, and `ndsctl status` passed. Rolling multi-day first-login validity presets are deferred pending a separate accounting contract. |
 | r96 | `cc6a485aeb1cf77581ea64397c104d9ef92b02f8dbfa5d18ee04eabe964d636b` | Superseded UI card-layout candidate. Places account/profile records and action controls inside bordered responsive cards and compacts creation forms; runtime/session behavior is unchanged. Installed over r95 on the EA8300; hardware acceptance gates remain open. |
 | r97 | `d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe` | Account-status clarity candidate. Displays unlimited time/data limits as `Unlimited` instead of the internal zero sentinel and records the DNS Insights design-only decision; no DNS collector or runtime quota behavior is enabled. Installed over r96; post-recovery diagnostic passed, while the transient post-upgrade openNDS stop is recorded separately. |
+| r98 | `e402b389eb2b5ae216a677d002976f6e97228ec882761af67dc9373d8bb84cbc` | Source candidate containing device lifecycle indicators, machine-readable removal failures, safe audit events, pending-session alignment, and transactional race/failure coverage. Built reproducibly from the reviewed branch; not installed; hardware validation remains open. |
 
 ## Existing GitHub history
 

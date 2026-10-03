@@ -1,21 +1,21 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r97`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r98`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `7f7e84ce1ba21498dc87152cb0f5eae8c743a18932040199950beef3cd38e01d`
+**SHA-256:** `e402b389eb2b5ae216a677d002976f6e97228ec882761af67dc9373d8bb84cbc`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** Installed controlled UI/units candidate; not yet a production baseline.
+**Decision:** Built source candidate; target remains on installed r97; not yet a production baseline.
 
-The r97 package is the current account-status clarity candidate. It was
-installed over r96 by the guarded deployment driver; a transient openNDS stop
-during post-upgrade was recovered by the bounded service-start procedure and
-the final diagnostic passed. The
+The r97 package remains the last installed field candidate and its historical
+artifact checksum is recorded in the release ledger. This r98 package contains
+the device-lifecycle and failure-observability changes from the reviewed source
+branch; it has not been installed on the target. The
 multi-day first-login validity presets are intentionally not included until
 the rolling-validity accounting contract is implemented and tested. The
-rollback archive and SQLite export were created before mutation; post-install
-preflight, diagnostics, and `ndsctl status` passed. The observed client stayed
-authenticated beyond 35 minutes; quota, restart, failure-containment, and the
-remaining hardware gates are still pending.
+rollback archive and SQLite export are required before any r98 target mutation;
+post-install preflight, diagnostics, and `ndsctl status` must be recorded after
+deployment. Quota, restart, failure-containment, and the remaining hardware
+gates are still pending.
 
 ## Delivered
 

@@ -8,11 +8,13 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current account-status clarity candidate is r97; it is installed on the target.
+The current installed field candidate is r97. The source branch also contains
+an unpublished r98 candidate; it is not installed on the target.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current field candidate | Open-HotSpot r97 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; account-status clarity and UI card layout present; hardware acceptance pending |
+| Installed field candidate | Open-HotSpot r97 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; account-status clarity and UI card layout present; hardware acceptance pending |
+| Source candidate | Open-HotSpot r98 / openNDS 11.0.0 | Local/CI candidate; not installed | Device lifecycle and failure observability changes; deployment and hardware validation pending |
 | Previous candidate | Open-HotSpot r96 / openNDS 11.0.0 | Previous target state | Superseded by r97 |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 

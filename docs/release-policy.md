@@ -1,7 +1,7 @@
 # Release and version policy
 
 The package version is the pair declared in `starter-kit/Makefile`. The
-current source candidate is r100, with r99 as the last installed target version and
+current source candidate is r100, with r100 as the controlled-trial target version and
 hardware acceptance still pending:
 
 ```text

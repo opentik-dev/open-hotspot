@@ -16,7 +16,7 @@ export OPEN_HOTSPOT_MIGRATIONS_PATH="$root/starter-kit/root/usr/lib/open-hotspot
 . "$root/starter-kit/root/usr/lib/open-hotspot/db.sh"
 
 db_init
-[ "$(db_schema_version)" = '4' ]
+[ "$(db_schema_version)" = '5' ]
 db_init
 [ "$(sqlite3 "$OPEN_HOTSPOT_DB_PATH" 'SELECT count(*) FROM profiles;')" = '1' ]
 
@@ -53,8 +53,47 @@ CREATE TABLE active_sessions (
     last_seen_at TEXT NOT NULL,
     state TEXT NOT NULL
 );
+CREATE TABLE auth_transactions (
+    id INTEGER PRIMARY KEY,
+    auth_key TEXT NOT NULL UNIQUE,
+    account_id INTEGER NOT NULL,
+    device_mac TEXT NOT NULL,
+    profile_id INTEGER NOT NULL,
+    policy_snapshot TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    consumed_at TEXT,
+    state TEXT NOT NULL
+);
 SQL
 DB_PATH="$tmp/v1.db" db_init
-[ "$(DB_PATH="$tmp/v1.db" db_schema_version)" = '4' ]
+[ "$(DB_PATH="$tmp/v1.db" db_schema_version)" = '5' ]
 [ "$(sqlite3 "$tmp/v1.db" "SELECT count(*) FROM pragma_table_info('accounts') WHERE name IN ('failed_attempts','last_failed_at','lock_until');")" = '3' ]
 [ "$(sqlite3 "$tmp/v1.db" "SELECT count(*) FROM pragma_table_info('active_sessions') WHERE name='policy_period_start';")" = '1' ]
+
+# A real v4 database must upgrade through migration 005 and preserve rows.
+sqlite3 "$tmp/v4.db" <<'SQL'
+CREATE TABLE schema_meta (version INTEGER PRIMARY KEY);
+INSERT INTO schema_meta(version) VALUES (4);
+CREATE TABLE auth_transactions (
+    id INTEGER PRIMARY KEY,
+    auth_key TEXT NOT NULL UNIQUE,
+    account_id INTEGER NOT NULL,
+    device_mac TEXT NOT NULL,
+    profile_id INTEGER NOT NULL,
+    policy_snapshot TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    consumed_at TEXT,
+    state TEXT NOT NULL
+);
+INSERT INTO auth_transactions
+    (id,auth_key,account_id,device_mac,profile_id,policy_snapshot,created_at,expires_at,state)
+VALUES
+    (7,'v4-auth-key',1,'AA:BB:CC:DD:EE:FF',1,'1|0|0|0|0|0|p|q',
+     '2026-10-03T00:00:00Z','2026-10-03T00:15:00Z','pending');
+SQL
+DB_PATH="$tmp/v4.db" db_init
+[ "$(DB_PATH="$tmp/v4.db" db_schema_version)" = '5' ]
+[ "$(sqlite3 "$tmp/v4.db" "SELECT count(*) FROM pragma_table_info('auth_transactions') WHERE name IN ('rejection_reason','rejected_at');")" = '2' ]
+[ "$(sqlite3 "$tmp/v4.db" "SELECT auth_key || ':' || state FROM auth_transactions WHERE id=7;")" = 'v4-auth-key:pending' ]

@@ -126,9 +126,14 @@ template, without manually editing openNDS files.
 - **FR-016**: Renew starts a fresh aggregate quota window at the current UTC
   instant, preserves prior usage history, deauthenticates currently active
   devices through the verified adapter, and records an administrative event.
-- **FR-017**: MAC reassignment is explicit and audited; it is rejected while
-  the device has a live session, requires an active target account, and is
-  never performed implicitly by authentication.
+- **FR-017**: Administrative MAC reassignment is explicit and audited; it is
+  rejected while the device has a live or pending session and requires an
+  active target account. Authentication never performs an unrestricted MAC
+  change: its controlled account-switch path may transfer an existing device
+  only when the previous account is inactive, expired, deleted, or exhausted,
+  the target policy snapshot is still current, and no live/pending session
+  exists. Every switch or denial is transactionally audited without raw MAC,
+  PIN, IP, or token data.
 
 ### Profiles and quotas
 

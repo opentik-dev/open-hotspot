@@ -332,31 +332,111 @@ admin_device_remove() {
 	fi
 }
 
-# MAC ownership is never changed by authentication. Reassignment is explicit,
-# audited, and only allowed after the old live session has been observed closed.
+# MAC ownership is never changed by ordinary account CRUD. Reassignment is
+# explicit, audited, and only allowed after the old live session has been
+# observed closed. The portal has a separate controlled admission path.
+_admin_device_reassign_fail() {
+	reason="$1"; account_id="${2:-}"; device_id="${3:-unknown}"
+	db_log_event device_switch_denied "$account_id" "reason=$reason:device_id=$device_id" || true
+	printf '%s\n' "$reason"
+	return 1
+}
+
 admin_device_reassign() {
 	id="$1"; target_account="$2"
-	_valid_int "$id" && _valid_int "$target_account" || return 1
+	_valid_int "$id" && _valid_int "$target_account" || {
+		_admin_device_reassign_fail invalid-args '' unknown
+		return 1
+	}
 	row=$(sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
 		"SELECT account_id,mac,status FROM devices WHERE id=$id LIMIT 1;") || return 1
-	[ -n "$row" ] || return 1
+	[ -n "$row" ] || {
+		_admin_device_reassign_fail device-not-found '' "$id"
+		return 1
+	}
 	old_ifs="$IFS"; IFS='|'
 	read -r old_account mac status <<EOF
 $row
 EOF
 	IFS="$old_ifs"
-	_valid_int "$old_account" && _valid_mac "$mac" || return 1
-	[ "$old_account" -ne "$target_account" ] || return 1
-	[ "$status" = active ] || return 1
+	_valid_int "$old_account" && _valid_mac "$mac" || {
+		_admin_device_reassign_fail device-invalid '' "$id"
+		return 1
+	}
+	[ "$old_account" -ne "$target_account" ] || {
+		_admin_device_reassign_fail same-account "$old_account" "$id"
+		return 1
+	}
+	case "$status" in
+		active) : ;;
+		blocked) _admin_device_reassign_fail device-blocked "$old_account" "$id"; return 1 ;;
+		*) _admin_device_reassign_fail device-inactive "$old_account" "$id"; return 1 ;;
+	esac
+	live_sessions=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state IN ('active','pending');") || {
+		_admin_device_reassign_fail database "$old_account" "$id"
+		return 1
+	}
+	[ "$live_sessions" = 0 ] || {
+		_admin_device_reassign_fail live-session "$old_account" "$id"
+		return 1
+	}
 	[ "$(sqlite3 -batch -noheader "$DB_PATH" \
-		"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state='active';")" = 0 ] || return 1
-	[ "$(sqlite3 -batch -noheader "$DB_PATH" \
-		"SELECT count(*) FROM accounts WHERE id=$target_account AND status='active' AND deleted_at IS NULL;")" = 1 ] || return 1
-	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
-	UPDATE devices SET account_id=$target_account, updated_at=datetime('now')
-	 WHERE id=$id AND account_id=$old_account AND status='active';
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null || return 1
-	db_log_event device_reassign "$target_account" "$id:$mac:from=$old_account" || true
+		"SELECT count(*) FROM accounts WHERE id=$target_account AND status='active' AND deleted_at IS NULL;")" = 1 ] || {
+		_admin_device_reassign_fail target-account-invalid "$old_account" "$id"
+		return 1
+	}
+	max_devices=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT p.max_devices FROM accounts a JOIN profiles p ON p.id=a.profile_id WHERE a.id=$target_account LIMIT 1;") || {
+		_admin_device_reassign_fail database "$old_account" "$id"
+		return 1
+	}
+	_valid_int "$max_devices" || {
+		_admin_device_reassign_fail database "$old_account" "$id"
+		return 1
+	}
+	active_target=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT count(DISTINCT s.device_id) FROM active_sessions s JOIN devices d ON d.id=s.device_id WHERE s.account_id=$target_account AND s.state IN ('active','pending') AND d.id<>$id;") || {
+		_admin_device_reassign_fail database "$old_account" "$id"
+		return 1
+	}
+	[ "$active_target" -lt "$max_devices" ] || {
+		_admin_device_reassign_fail max-devices-exceeded "$old_account" "$id"
+		return 1
+	}
+	if ! sqlite3 -cmd '.bail on' -cmd '.timeout 5000' -batch "$DB_PATH" <<SQL
+PRAGMA foreign_keys=ON;
+BEGIN IMMEDIATE;
+CREATE TEMP TABLE oh_reassign_guard(ok INTEGER CHECK(ok=1));
+INSERT INTO oh_reassign_guard
+SELECT CASE WHEN
+    EXISTS (SELECT 1 FROM devices
+             WHERE id=$id AND account_id=$old_account AND status='active')
+    AND EXISTS (SELECT 1 FROM accounts
+                 WHERE id=$target_account AND status='active' AND deleted_at IS NULL)
+    AND NOT EXISTS (SELECT 1 FROM active_sessions
+                    WHERE device_id=$id AND state IN ('active','pending'))
+    AND (SELECT count(DISTINCT s.device_id)
+           FROM active_sessions s
+           JOIN devices d ON d.id=s.device_id
+          WHERE s.account_id=$target_account
+            AND s.state IN ('active','pending')
+            AND d.id<>$id)
+        < (SELECT p.max_devices
+             FROM accounts a JOIN profiles p ON p.id=a.profile_id
+            WHERE a.id=$target_account)
+    THEN 1 ELSE 0 END;
+UPDATE devices SET account_id=$target_account, updated_at=datetime('now')
+ WHERE id=$id AND account_id=$old_account AND status='active';
+INSERT INTO oh_reassign_guard SELECT changes();
+INSERT INTO admin_events(account_id,action,detail,ts)
+VALUES ($target_account,'device_account_switched','device_id=$id:from_account=$old_account',datetime('now'));
+COMMIT;
+SQL
+	then
+		printf 'database\n'
+		return 1
+	fi
 }
 
 admin_device_force_deauth() {

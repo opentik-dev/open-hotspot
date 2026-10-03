@@ -45,7 +45,7 @@ class SchemaContractTests(unittest.TestCase):
                 "admin_events",
             }.issubset(names)
         )
-        self.assertEqual(self.db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 4)
+        self.assertEqual(self.db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 5)
         self.assertEqual(
             self.db.execute("SELECT name FROM profiles WHERE id=1").fetchone()[0],
             "default-unlimited",
@@ -143,6 +143,11 @@ class SchemaContractTests(unittest.TestCase):
             row[1] for row in self.db.execute("PRAGMA table_info(accounts)")
         }
         self.assertIn("renewed_at", account_columns)
+        auth_columns = {
+            row[1] for row in self.db.execute("PRAGMA table_info(auth_transactions)")
+        }
+        self.assertIn("rejection_reason", auth_columns)
+        self.assertIn("rejected_at", auth_columns)
         self.db.execute(
             "INSERT INTO accounts(username,pin_hash,pin_salt,pin_iter,profile_id) "
             "VALUES ('renewed','h','s',1000,1)"

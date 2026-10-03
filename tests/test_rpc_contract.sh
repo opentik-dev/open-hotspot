@@ -22,6 +22,8 @@ grep -F 'device_reassign' "$rpc" >/dev/null
 grep -F 'rpc_device_reassign' "$rpc" >/dev/null
 grep -F 'rpc_device_remove' "$rpc" >/dev/null
 grep -F 'same-account' "$rpc" >/dev/null
+grep -F 'device-blocked' "$rpc" >/dev/null
+grep -F 'max-devices-exceeded' "$rpc" >/dev/null
 grep -F 'live-session' "$rpc" >/dev/null
 grep -F 'usage-history' "$rpc" >/dev/null
 grep -F 'has_history' "$rpc" >/dev/null

@@ -11,6 +11,11 @@ for detailed acceptance decisions.
 The current installed field candidate is r97. The source branch also contains
 an unpublished r98 candidate; it is not installed on the target.
 
+Controlled account switching is isolated on the source branch
+`codex/controlled-account-switching`, based on merged `main`. It is not part
+of the installed r97/r98 target state and remains pending CI, packaging, and
+hardware validation.
+
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
 | Installed field candidate | Open-HotSpot r97 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed successfully; account-status clarity and UI card layout present; hardware acceptance pending |

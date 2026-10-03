@@ -1,4 +1,4 @@
--- Open-HotSpot schema v3.
+-- Open-HotSpot schema v5.
 -- Persistent state is local SQLite data; openNDS remains the enforcement engine.
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
@@ -116,7 +116,9 @@ CREATE TABLE IF NOT EXISTS auth_transactions (
     created_at        TEXT NOT NULL DEFAULT (datetime('now')),
     expires_at        TEXT NOT NULL,
     consumed_at       TEXT,
-    state             TEXT NOT NULL CHECK (state IN ('pending','consumed','rejected','expired'))
+    state             TEXT NOT NULL CHECK (state IN ('pending','consumed','rejected','expired')),
+    rejection_reason  TEXT,
+    rejected_at       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_auth_transactions_expiry ON auth_transactions(state, expires_at);
 
@@ -147,6 +149,7 @@ INSERT OR IGNORE INTO schema_meta(version) VALUES (1);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (2);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (3);
 INSERT OR IGNORE INTO schema_meta(version) VALUES (4);
+INSERT OR IGNORE INTO schema_meta(version) VALUES (5);
 INSERT OR IGNORE INTO profiles
     (id, name, period_type, time_limit_s, upload_limit_b, download_limit_b,
      upload_rate_kbps, download_rate_kbps, max_devices)

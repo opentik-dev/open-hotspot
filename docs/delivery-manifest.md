@@ -4,7 +4,11 @@
 **Artifact:** CI-generated APK attached to the matching GitHub Release
 **SHA-256:** `7f44b04399dee35c0b59663bbdcaca64099a0526a65a9709c29c2d78fc184592`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** Built source candidate; target remains on installed r97; not yet a production baseline.
+**Decision:** r98 is the reviewed device-lifecycle artifact; target remains on
+installed r97. The controlled account-switching work is on the separate
+`codex/controlled-account-switching` branch and is not contained in this r98
+APK. It requires a new release identity after review and CI; r98 must not be
+used to claim or test that feature.
 
 The r97 package remains the last installed field candidate and its historical
 artifact checksum is recorded in the release ledger. This r98 package contains
@@ -19,12 +23,18 @@ gates are still pending.
 
 ## Delivered
 
-- SQLite schema and migrations through schema v4.
+- SQLite schema and migrations through schema v4 in the r98 artifact. Schema v5
+  and persisted admission rejection reasons exist only in the unreleased
+  controlled-switching branch.
 - Local FAS credential verification with fail-closed handling.
 - Verified target-specific BinAuth parsing with no `ndsctl` call in BinAuth.
 - Native openNDS policy adapter, periods, quota accounting, vouchers, and recovery helpers.
 - LuCI profiles, accounts, devices, vouchers, history, dashboard, backup/import, Renew, and explicit MAC Reassign.
 - Arabic and English portal templates.
+- Controlled account switching is transactionally bounded in the unreleased
+  branch: it preserves the old device/history identity, rejects live/pending
+  sessions and stale policy, and records redacted switch/denial events. It is
+  source-tested but not included in the r98 APK or installed on the target.
 - Package checks, schema checks, shell checks, quota checks, and target installation checks.
 - r78 target proof: FAS 200, handoff 307, Authenticated session, IP-based deauth,
   automatic BinAuth close, and SQLite usage event.

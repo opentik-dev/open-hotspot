@@ -8,7 +8,7 @@
 
 DB_PATH="${OPEN_HOTSPOT_DB_PATH:-/etc/open-hotspot/hotspot.db}"
 SCHEMA_PATH="${OPEN_HOTSPOT_SCHEMA_PATH:-/usr/lib/open-hotspot/schema.sql}"
-DB_SCHEMA_VERSION=4
+DB_SCHEMA_VERSION=5
 DB_MIGRATIONS_PATH="${OPEN_HOTSPOT_MIGRATIONS_PATH:-/usr/lib/open-hotspot/migrations}"
 
 db_secure_files() {
@@ -164,81 +164,249 @@ db_profile_get() {
 # single SQLite transaction. Output is:
 # account_id<TAB>device_id<TAB>policy_snapshot<TAB>auth_key
 #
-# The temporary table keeps the selected row inside the same sqlite3 process;
-# this is important because auth admission and active-session creation must not
-# be split into independent commands.
+# A device may move to another account only through this controlled admission
+# path. The old owner must be inactive/expired/exhausted and the device must
+# have no pending or active session. Expected denials are persisted on the
+# auth transaction and audited without exposing a MAC or auth key. Unexpected
+# SQLite failures abort the whole transaction and leave the auth transaction
+# pending.
 db_auth_consume() {
 	auth_key="$1"; mac="$2"; session_start="$3"
 	_valid_hex32 "$auth_key" || return 1
 	_valid_mac "$mac" || return 1
 	_valid_epoch "$session_start" || return 1
+	mac=$(printf '%s' "$mac" | tr 'a-f' 'A-F')
 
-result=$(sqlite3 -cmd '.timeout 5000' -batch -separator '|' "$DB_PATH" <<SQL
+	# Callback retries must be deterministic. A rejected transaction returns the
+	# stored reason and never emits a second denial event.
+	tx=$(sqlite3 -batch -noheader -separator "$(printf '\t')" "$DB_PATH" \
+		"SELECT state,device_mac,account_id,profile_id,policy_snapshot,COALESCE(rejection_reason,'')
+		   FROM auth_transactions WHERE auth_key='$(_sql_escape "$auth_key")' LIMIT 1;") || {
+		printf 'REJECTED\tauth-invalid\n'
+		return 1
+	}
+	[ -n "$tx" ] || {
+		printf 'REJECTED\tauth-invalid\n'
+		return 1
+	}
+	old_ifs="$IFS"; IFS="$(printf '\t')"
+	read -r tx_state tx_mac tx_account tx_profile tx_snapshot tx_reason <<EOF
+$tx
+EOF
+	IFS="$old_ifs"
+
+	case "$tx_state" in
+		rejected)
+		printf 'REJECTED\t%s\n' "${tx_reason:-auth-invalid}"
+		return 1
+		;;
+		consumed)
+			[ "$(printf '%s' "$tx_mac" | tr 'a-f' 'A-F')" = "$mac" ] || { printf 'REJECTED\tauth-invalid\n'; return 1; }
+		existing=$(sqlite3 -batch -noheader -separator "$(printf '\t')" "$DB_PATH" \
+			"SELECT s.account_id,s.device_id,t.policy_snapshot,t.auth_key
+			   FROM active_sessions s JOIN auth_transactions t ON t.auth_key=s.session_key
+			  WHERE s.session_key='$(_sql_escape "$auth_key")' AND s.state='active'
+			    AND t.device_mac='$mac' COLLATE NOCASE LIMIT 1;") || return 1
+			if [ -n "$existing" ]; then
+				printf '%s\n' "$existing"
+				return 0
+			fi
+			printf 'REJECTED\talready-consumed\n'
+			return 1
+		;;
+		expired)
+			printf 'REJECTED\tauth-invalid\n'
+			return 1
+		;;
+		pending) : ;;
+		*) printf 'REJECTED\tauth-invalid\n'; return 1 ;;
+	esac
+
+	# The eight-field snapshot is deliberately stable and is also parsed by the
+	# BinAuth adapter: profile, remaining time/up/down, rates, period start/end.
+	snap_profile=''; snap_time=''; snap_up=''; snap_down=''; snap_up_rate=''; snap_down_rate=''; snap_start=''; snap_end=''
+	old_ifs="$IFS"; IFS='|'
+	read -r snap_profile snap_time snap_up snap_down snap_up_rate snap_down_rate snap_start snap_end <<EOF
+$tx_snapshot
+EOF
+	IFS="$old_ifs"
+	reason_hint=''
+	_valid_int "$snap_profile" || reason_hint=stale-policy
+	_valid_int "$snap_time" || reason_hint=stale-policy
+	_valid_int "$snap_up" || reason_hint=stale-policy
+	_valid_int "$snap_down" || reason_hint=stale-policy
+	_valid_int "$snap_up_rate" || reason_hint=stale-policy
+	_valid_int "$snap_down_rate" || reason_hint=stale-policy
+	case "$snap_start:$snap_end" in ''|*[!0-9TZ:.-]*) reason_hint=stale-policy ;; esac
+	[ "$(printf '%s' "$tx_mac" | tr 'a-f' 'A-F')" = "$mac" ] || reason_hint=auth-invalid
+	_valid_int "$tx_account" || reason_hint=auth-invalid
+	_valid_int "$tx_profile" || reason_hint=auth-invalid
+
+	# Compute the candidate period before the lock, then compare the account's
+	# renewed_at value and all snapshot fields again inside BEGIN IMMEDIATE.
+	period_helper="${OPEN_HOTSPOT_PERIOD_HELPER:-/usr/lib/open-hotspot/period.sh}"
+	expected_start="$snap_start"; expected_end="$snap_end"; renewed_at=''; period_type=''
+	if [ -z "$reason_hint" ]; then
+		current=$(sqlite3 -batch -noheader -separator "$(printf '\t')" "$DB_PATH" \
+			"SELECT p.period_type,COALESCE(a.renewed_at,'')
+			   FROM accounts a JOIN profiles p ON p.id=a.profile_id
+			  WHERE a.id=$tx_account AND a.profile_id=$tx_profile AND a.deleted_at IS NULL LIMIT 1;") || reason_hint=target-account-invalid
+		if [ -n "$current" ]; then
+			old_ifs="$IFS"; IFS="$(printf '\t')"
+			read -r period_type renewed_at <<EOF
+$current
+EOF
+			IFS="$old_ifs"
+			if [ -r "$period_helper" ]; then
+				. "$period_helper"
+				window=$(period_window_effective "$period_type" "$renewed_at" "$session_start") || reason_hint=stale-policy
+				if [ -n "${window:-}" ]; then
+					expected_start=$(printf '%s' "$window" | cut -f1)
+					expected_end=$(printf '%s' "$window" | cut -f2)
+				fi
+			fi
+		else
+			reason_hint=target-account-invalid
+		fi
+	fi
+
+	result=$(sqlite3 -cmd '.bail on' -cmd '.timeout 5000' -batch -separator "$(printf '\t')" "$DB_PATH" <<SQL
 PRAGMA foreign_keys=ON;
 BEGIN IMMEDIATE;
-CREATE TEMP TABLE oh_auth_context (
-    auth_key TEXT, account_id INTEGER, device_mac TEXT,
-    policy_snapshot TEXT, profile_id INTEGER
-);
-INSERT INTO oh_auth_context(auth_key, account_id, device_mac, policy_snapshot, profile_id)
-SELECT t.auth_key, t.account_id, t.device_mac, t.policy_snapshot, t.profile_id
+CREATE TEMP TABLE oh_rejection(reason TEXT, device_id TEXT);
+$(if [ -n "$reason_hint" ]; then
+	printf "INSERT INTO oh_rejection SELECT '%s',COALESCE(CAST(d.id AS TEXT),'unknown') FROM auth_transactions t LEFT JOIN devices d ON d.mac=t.device_mac COLLATE NOCASE WHERE t.auth_key='%s' AND t.state='pending';\n" "$reason_hint" "$(_sql_escape "$auth_key")"
+else
+	cat <<SQLCASE
+INSERT INTO oh_rejection(reason,device_id)
+SELECT CASE
+         WHEN t.device_mac <> '$mac' COLLATE NOCASE
+              OR t.expires_at IS NULL
+              OR julianday(t.expires_at) IS NULL
+              OR julianday(t.expires_at) <= julianday('now')
+           THEN 'auth-invalid'
+         WHEN a.id IS NULL OR a.status <> 'active' OR a.deleted_at IS NOT NULL
+              OR (a.expires_at IS NOT NULL AND julianday(a.expires_at) <= julianday('now'))
+           THEN 'target-account-invalid'
+         WHEN p.id IS NULL OR t.profile_id <> p.id
+              OR COALESCE(a.renewed_at,'') <> '$(_sql_escape "$renewed_at")'
+              OR '$(_sql_escape "$snap_start")' <> '$(_sql_escape "$expected_start")'
+              OR '$(_sql_escape "$snap_end")' <> '$(_sql_escape "$expected_end")'
+              OR p.upload_rate_kbps <> $snap_up_rate
+              OR p.download_rate_kbps <> $snap_down_rate
+              OR (CASE WHEN p.time_limit_s > 0 THEN MAX(0,p.time_limit_s-COALESCE((SELECT seconds_used FROM usage_periods u WHERE u.account_id=a.id AND u.period_start='$(_sql_escape "$snap_start")' LIMIT 1),0)) ELSE 0 END) <> $snap_time
+              OR (CASE WHEN p.upload_limit_b > 0 THEN MAX(0,p.upload_limit_b-COALESCE((SELECT bytes_up FROM usage_periods u WHERE u.account_id=a.id AND u.period_start='$(_sql_escape "$snap_start")' LIMIT 1),0)) ELSE 0 END) <> $snap_up
+              OR (CASE WHEN p.download_limit_b > 0 THEN MAX(0,p.download_limit_b-COALESCE((SELECT bytes_down FROM usage_periods u WHERE u.account_id=a.id AND u.period_start='$(_sql_escape "$snap_start")' LIMIT 1),0)) ELSE 0 END) <> $snap_down
+              OR (p.time_limit_s > 0 AND $snap_time = 0)
+              OR (p.upload_limit_b > 0 AND $snap_up = 0)
+              OR (p.download_limit_b > 0 AND $snap_down = 0)
+           THEN 'stale-policy'
+         WHEN d.status = 'blocked' THEN 'device-blocked'
+         WHEN d.id IS NOT NULL AND EXISTS (
+              SELECT 1 FROM active_sessions s
+               WHERE s.device_id=d.id AND s.state IN ('active','pending'))
+           THEN 'live-session'
+         WHEN d.id IS NOT NULL AND d.account_id <> a.id
+              AND old.status='active' AND old.deleted_at IS NULL
+              AND (old.expires_at IS NULL OR julianday(old.expires_at) > julianday('now'))
+              AND (oldp.time_limit_s = 0 OR COALESCE((SELECT seconds_used FROM usage_periods u WHERE u.account_id=old.id ORDER BY u.period_start DESC LIMIT 1),0) < oldp.time_limit_s)
+              AND (oldp.upload_limit_b = 0 OR COALESCE((SELECT bytes_up FROM usage_periods u WHERE u.account_id=old.id ORDER BY u.period_start DESC LIMIT 1),0) < oldp.upload_limit_b)
+              AND (oldp.download_limit_b = 0 OR COALESCE((SELECT bytes_down FROM usage_periods u WHERE u.account_id=old.id ORDER BY u.period_start DESC LIMIT 1),0) < oldp.download_limit_b)
+           THEN 'previous-account-active'
+         WHEN (SELECT count(DISTINCT live.device_id)
+                 FROM active_sessions live JOIN devices live_device ON live_device.id=live.device_id
+                WHERE live.account_id=a.id AND live.state IN ('active','pending')
+                  AND live_device.mac <> t.device_mac COLLATE NOCASE) >= p.max_devices
+           THEN 'max-devices-exceeded'
+         ELSE NULL
+       END,
+       COALESCE(CAST(d.id AS TEXT),'unknown')
   FROM auth_transactions t
-  JOIN accounts a ON a.id = t.account_id
-  JOIN profiles p ON p.id = t.profile_id
- WHERE t.auth_key = '$(_sql_escape "$auth_key")'
-   AND t.device_mac = '$mac'
-   AND t.state = 'pending'
-   AND julianday(t.expires_at) > julianday('now')
-   AND a.status = 'active'
-   AND a.deleted_at IS NULL
-   AND (a.expires_at IS NULL OR julianday(a.expires_at) > julianday('now'))
-   AND NOT EXISTS (
-       SELECT 1 FROM devices blocked
-        WHERE blocked.mac = t.device_mac
-          AND (blocked.account_id != t.account_id OR blocked.status = 'blocked')
-   )
-   AND (
-       SELECT count(*)
-         FROM active_sessions live
-         JOIN devices live_device ON live_device.id = live.device_id
-        WHERE live.account_id = t.account_id
-          AND live.state = 'active'
-          AND live_device.mac != t.device_mac
-   ) < p.max_devices;
+  LEFT JOIN accounts a ON a.id=t.account_id
+  LEFT JOIN profiles p ON p.id=t.profile_id
+  LEFT JOIN devices d ON d.mac=t.device_mac COLLATE NOCASE
+  LEFT JOIN accounts old ON old.id=d.account_id
+  LEFT JOIN profiles oldp ON oldp.id=old.profile_id
+ WHERE t.auth_key='$(_sql_escape "$auth_key")' AND t.state='pending';
+SQLCASE
+fi)
+
 UPDATE auth_transactions
-   SET state = 'consumed', consumed_at = datetime('now')
- WHERE auth_key IN (SELECT auth_key FROM oh_auth_context);
-INSERT INTO devices(account_id, mac, status, last_seen, updated_at)
-SELECT account_id, device_mac, 'active', datetime('now'), datetime('now')
-  FROM oh_auth_context
- WHERE 1
-ON CONFLICT(mac) DO UPDATE SET
-    last_seen = datetime('now'), updated_at = datetime('now');
-UPDATE active_sessions
-   SET state = 'closed', closed_at = datetime('now'), last_seen_at = datetime('now')
- WHERE state = 'active'
-   AND device_id IN (
-       SELECT d.id FROM devices d JOIN oh_auth_context c ON c.device_mac = d.mac
-   );
-INSERT INTO active_sessions(account_id, device_id, session_key,
-                            started_at, last_seen_at, state, policy_period_start)
-SELECT c.account_id, d.id, c.auth_key,
-       datetime($session_start, 'unixepoch'), datetime('now'), 'active',
-       CASE
-           WHEN instr(c.policy_snapshot, '|') > 0 THEN
-               json_extract('["' || replace(c.policy_snapshot, '|', '","') || '"]', '$[6]')
-           ELSE NULL
+   SET state='rejected', rejection_reason=(SELECT reason FROM oh_rejection), rejected_at=datetime('now')
+ WHERE auth_key='$(_sql_escape "$auth_key")' AND state='pending'
+   AND (SELECT reason FROM oh_rejection) IS NOT NULL;
+CREATE TEMP TABLE oh_reject_changed AS SELECT changes() AS changed;
+CREATE TEMP TABLE oh_guard(ok INTEGER CHECK(ok=1));
+INSERT INTO oh_guard SELECT changed FROM oh_reject_changed WHERE (SELECT reason FROM oh_rejection) IS NOT NULL;
+INSERT INTO admin_events(account_id,action,detail,ts)
+SELECT t.account_id,'device_switch_denied',
+       'reason=' || r.reason || ':device_id=' || r.device_id,datetime('now')
+  FROM auth_transactions t CROSS JOIN oh_rejection r
+ WHERE t.auth_key='$(_sql_escape "$auth_key")'
+   AND r.reason IS NOT NULL
+   AND (SELECT changed FROM oh_reject_changed)=1;
+
+CREATE TEMP TABLE oh_device_before AS
+SELECT id,account_id,status FROM devices
+ WHERE mac='$mac' COLLATE NOCASE LIMIT 1;
+INSERT INTO devices(account_id,mac,status,last_seen,updated_at)
+SELECT t.account_id,t.device_mac,'active',datetime('now'),datetime('now')
+  FROM auth_transactions t
+ WHERE t.auth_key='$(_sql_escape "$auth_key")'
+   AND t.state='pending' AND (SELECT reason FROM oh_rejection) IS NULL
+   AND NOT EXISTS (SELECT 1 FROM oh_device_before);
+UPDATE devices
+   SET account_id=(SELECT account_id FROM auth_transactions WHERE auth_key='$(_sql_escape "$auth_key")'),
+       updated_at=datetime('now'),last_seen=datetime('now')
+ WHERE mac='$mac' COLLATE NOCASE
+   AND account_id <> (SELECT account_id FROM auth_transactions WHERE auth_key='$(_sql_escape "$auth_key")')
+   AND status='active'
+   AND (SELECT reason FROM oh_rejection) IS NULL;
+CREATE TEMP TABLE oh_transfer AS
+SELECT d.id AS device_id,
+       COALESCE((SELECT account_id FROM oh_device_before),d.account_id) AS old_account,
+       CASE WHEN NOT EXISTS (SELECT 1 FROM oh_device_before)
+                 OR (SELECT account_id FROM oh_device_before)=t.account_id THEN 1
+            ELSE changes() END AS ok,
+       CASE WHEN EXISTS (SELECT 1 FROM oh_device_before)
+                 AND (SELECT account_id FROM oh_device_before)<>t.account_id THEN 1 ELSE 0 END AS switched,
+       t.account_id
+  FROM devices d JOIN auth_transactions t ON t.auth_key='$(_sql_escape "$auth_key")'
+ WHERE d.mac='$mac' COLLATE NOCASE LIMIT 1;
+INSERT INTO oh_guard SELECT ok FROM oh_transfer WHERE (SELECT reason FROM oh_rejection) IS NULL;
+INSERT INTO admin_events(account_id,action,detail,ts)
+SELECT account_id,'device_account_switched',
+       'device_id=' || device_id || ':from_account=' || old_account,datetime('now')
+  FROM oh_transfer
+ WHERE switched=1 AND (SELECT reason FROM oh_rejection) IS NULL;
+INSERT INTO active_sessions(account_id,device_id,session_key,started_at,last_seen_at,state,policy_period_start)
+SELECT account_id,device_id,'$(_sql_escape "$auth_key")',datetime($session_start,'unixepoch'),datetime('now'),'active','$(_sql_escape "$snap_start")'
+  FROM oh_transfer WHERE (SELECT reason FROM oh_rejection) IS NULL;
+UPDATE auth_transactions SET state='consumed',consumed_at=datetime('now')
+ WHERE auth_key='$(_sql_escape "$auth_key")' AND state='pending'
+   AND (SELECT reason FROM oh_rejection) IS NULL;
+CREATE TEMP TABLE oh_consume_changed AS SELECT changes() AS changed;
+INSERT INTO oh_guard SELECT changed FROM oh_consume_changed WHERE (SELECT reason FROM oh_rejection) IS NULL;
+SELECT CASE WHEN (SELECT reason FROM oh_rejection) IS NOT NULL
+            THEN 'REJECTED' || char(9) || (SELECT reason FROM oh_rejection)
+            ELSE t.account_id || char(9) || tr.device_id || char(9) || t.policy_snapshot || char(9) || t.auth_key
        END
-  FROM oh_auth_context c
-  JOIN devices d ON d.mac = c.device_mac AND d.account_id = c.account_id;
-SELECT c.account_id || char(9) || d.id || char(9) || c.policy_snapshot || char(9) || c.auth_key
-  FROM oh_auth_context c
-  JOIN devices d ON d.mac = c.device_mac AND d.account_id = c.account_id;
+  FROM auth_transactions t LEFT JOIN oh_transfer tr ON 1=1
+ WHERE t.auth_key='$(_sql_escape "$auth_key")' LIMIT 1;
 COMMIT;
 SQL
-	) || return 1
-	[ -n "$result" ] || return 1
-	printf '%s\n' "$result"
+	) || {
+		printf 'ERROR\tdatabase\n'
+		return 1
+	}
+	case "$result" in
+	REJECTED"$(printf '\t')"*)
+		printf '%s\n' "$result"
+		return 1
+		;;
+	'') printf 'ERROR\tdatabase\n'; return 1 ;;
+	*) printf '%s\n' "$result"; return 0 ;;
+	esac
 }
 
 db_session_period_type() {

@@ -5,6 +5,18 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+- Controlled account switching hardening:
+  - Added schema migration 005 with persisted `rejection_reason` and
+    `rejected_at` fields for deterministic callback retries.
+  - Added transactional device admission that permits a switch only when the
+    previous account is inactive/expired/deleted/exhausted and the device has
+    no live or pending session.
+  - Added full policy/remaining-quota revalidation, `changes() == 1` guards,
+    rollback-safe session creation, redacted `device_account_switched` and
+    `device_switch_denied` events, and a 21-scenario contract suite.
+  - Reassign now returns explicit machine-readable reasons instead of generic
+    validation failures.
+
 - Device removal lifecycle and failure observability hardening:
   - Added machine-readable failure reasons to `admin.sh device-remove`: `invalid-id`,
     `device-not-found`, `live-session`, `usage-history`, and `database`.

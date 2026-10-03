@@ -2,7 +2,7 @@
 
 **Candidate:** `luci-app-open-hotspot 1.2.0-r97`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `d54043c865ad47999a2c26d98c6aa017d2fd23b0a181c1def700578ebddd482d`
+**SHA-256:** `7f7e84ce1ba21498dc87152cb0f5eae8c743a18932040199950beef3cd38e01d`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** Installed controlled UI/units candidate; not yet a production baseline.
 

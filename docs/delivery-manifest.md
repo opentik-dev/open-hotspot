@@ -1,14 +1,15 @@
 # Open-HotSpot delivery manifest
 
 **Candidate:** `luci-app-open-hotspot 1.2.0-r99`
-**Artifact:** CI-built reproducible APK (`open-hotspot-apk-9315a43`),
-verified in GitHub Actions CI (runs 37149630870, 37150756510, 37151288751)
-**SHA-256:** `cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a`
+**Artifact:** CI-built reproducible APK (`open-hotspot-apk-24f0d75`),
+verified in GitHub Actions CI (run 37155015258 with reproducible fakeroot packaging)
+**SHA-256:** `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** r99 is the canonical candidate combining controlled account
-switching (schema v5) and bounded event taxonomy with storage-boundary redaction
-(schema v6); intermediate local build hash `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6`
-was superseded by canonical commit `9315a43`; target remains on installed r97.
+switching (schema v5), bounded event taxonomy with storage-boundary redaction
+(schema v6), and portable bit-for-bit packaging via SDK fakeroot (root:root);
+prior intermediate hashes (`a7efeff...` and non-fakeroot `cc3323f...`)
+are superseded; target remains on installed r97.
 
 The r97 package remains the last installed field candidate and its historical
 artifact checksum is recorded in the release ledger. The prior r98 package contains

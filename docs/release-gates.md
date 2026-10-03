@@ -2,8 +2,9 @@
 
 This register is the operational release decision register. `r90` is the
 last field-tested acceptance candidate with router-access isolation, runtime
-readiness recovery, and a packaged read-only integration diagnostic. `r93` is
-the current installed field candidate; r92 is superseded.
+readiness recovery, and a packaged read-only integration diagnostic. `r97` is
+the current installed UI/account-status field candidate; r92 and earlier
+candidates are superseded.
 Neither is a production release
 until every critical gate below has evidence from the physical target.
 

@@ -10,11 +10,14 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r99` is the current local source candidate. Its local reproducible
+`1.2.0-r99` is the canonical source candidate. Its canonical reproducible
 artifact checksum is
-`cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a`. It
-contains controlled account switching and schema v5 and has not been installed
-on the target; CI must rebuild and publish the authoritative artifact. The last
+`cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a`, built and
+verified in GitHub Actions CI (run 37149630870, commit `9315a43`). It contains
+controlled account switching (Task 2) and bounded event taxonomy with schema v6
+and storage-boundary redaction (Task 3). Intermediate local artifact hash
+`a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6` was superseded
+by commit `9315a43`. It has not been installed on the target. The last
 installed field candidate is `1.2.0-r97` with artifact checksum
 `d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe`; guarded
 deployment over r96 completed after bounded openNDS recovery, with the final

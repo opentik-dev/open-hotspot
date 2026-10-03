@@ -41,7 +41,7 @@ rpc_device_reassign() {
 		return
 	}
 	case "$reason" in
-		invalid-id|device-not-found|device-invalid|same-account|device-inactive|live-session|target-account-invalid|reassign-conflict|database)
+		invalid-args|invalid-id|device-not-found|device-invalid|same-account|device-inactive|device-blocked|live-session|previous-account-active|max-devices-exceeded|target-account-invalid|reassign-conflict|database)
 			rpc_error "$reason"
 			;;
 		*) rpc_error validation ;;

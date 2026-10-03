@@ -1,30 +1,39 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r98`
-**Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `7f44b04399dee35c0b59663bbdcaca64099a0526a65a9709c29c2d78fc184592`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r99`
+**Artifact:** Locally reproducible APK; CI must rebuild and publish the
+authoritative asset for r99
+**SHA-256:** `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
-**Decision:** Built source candidate; target remains on installed r97; not yet a production baseline.
+**Decision:** r99 is the controlled-account-switching source candidate; target
+remains on installed r97. r98 remains the prior device-lifecycle artifact and
+is not reused for this source change. The r99 candidate requires CI
+verification before publication or field installation.
 
 The r97 package remains the last installed field candidate and its historical
-artifact checksum is recorded in the release ledger. This r98 package contains
+artifact checksum is recorded in the release ledger. The prior r98 package contains
 the device-lifecycle and failure-observability changes from the reviewed source
 branch; it has not been installed on the target. The
 multi-day first-login validity presets are intentionally not included until
 the rolling-validity accounting contract is implemented and tested. The
-rollback archive and SQLite export are required before any r98 target mutation;
+rollback archive and SQLite export are required before any r99 target mutation;
 post-install preflight, diagnostics, and `ndsctl status` must be recorded after
 deployment. Quota, restart, failure-containment, and the remaining hardware
 gates are still pending.
 
 ## Delivered
 
-- SQLite schema and migrations through schema v4.
+- SQLite schema and migrations through schema v5 in the r99 source candidate;
+  the prior r98 artifact remains schema v4.
 - Local FAS credential verification with fail-closed handling.
 - Verified target-specific BinAuth parsing with no `ndsctl` call in BinAuth.
 - Native openNDS policy adapter, periods, quota accounting, vouchers, and recovery helpers.
 - LuCI profiles, accounts, devices, vouchers, history, dashboard, backup/import, Renew, and explicit MAC Reassign.
 - Arabic and English portal templates.
+- Controlled account switching is transactionally bounded in the r99 source
+  candidate: it preserves the old device/history identity, rejects live/pending
+  sessions and stale policy, and records redacted switch/denial events. It is
+  source-tested but not yet included in a CI APK or installed on the target.
 - Package checks, schema checks, shell checks, quota checks, and target installation checks.
 - r78 target proof: FAS 200, handoff 307, Authenticated session, IP-based deauth,
   automatic BinAuth close, and SQLite usage event.

@@ -3,7 +3,7 @@
 This register is the operational release decision register. `r90` is the
 last field-tested acceptance candidate with router-access isolation, runtime
 readiness recovery, and a packaged read-only integration diagnostic. `r97` is
-the current installed UI/account-status field candidate and `r98` is the
+the current installed UI/account-status field candidate and `r99` is the
 uninstalled source candidate; r92 and earlier candidates are superseded.
 Neither is a production release
 until every critical gate below has evidence from the physical target.
@@ -16,7 +16,7 @@ until every critical gate below has evidence from the physical target.
 | High | Manager, BinAuth, or cycle failure disconnects existing clients or permits unsafe new authentication. | Medium | High | Inject each failure while a client is connected: existing authorization remains unchanged; new identity decisions fail closed; failure is logged. | Engineering | Open — T086 |
 | High | Interrupted setup leaves partial configuration or an unhealthy service. | Medium | High | Interrupt setup at each state, rerun it, verify rollback/recovery, dependency health, and service readiness. | Engineering | Open — T052/T087 |
 | High | LuCI/RPC management surface is reachable from the client or captive-portal plane. | Low | High | From a client network, management ports and RPC are unreachable; from the admin plane, authenticated LuCI works. | Network/operations | Open — field test |
-| High | A device MAC is silently attributed to another account or cannot be safely reassigned. | Low | High | Explicit policy test: same MAC under another account is rejected; reassignment requires no live session, an active target account, and an audit event. | Engineering | Implemented — isolated target proof; live-client proof open |
+| High | A device MAC is silently attributed to another account or cannot be safely reassigned. | Low | High | Controlled policy test: same MAC switches only after the previous account is inactive/expired/deleted/exhausted, no live/pending session exists, the target snapshot is current, and a redacted audit event is written; administrative reassignment remains explicit. | Engineering | Implemented — isolated source proof; target/client proof open |
 | Medium | Renewal could discard history or leave active devices on stale policy. | Medium | High | `account_renew` records `renewed_at`, preserves prior aggregates, deauthenticates active devices, and starts a fresh effective window. | Engineering | Implemented — isolated target proof; reconnect proof open |
 | Medium | Backup import is accepted but recovery is not proven on the target. | Low | High | Export, validate, import into a disposable state, verify rollback archive, and confirm accounts/profiles/history after reload. | Engineering + field validation | Partially closed — archive structure, SQLite integrity/schema, and target-side validation passed; target import/rollback and post-reload proof remain open |
 | High | A/B slot rollback is mistaken for shared application state or SSH identity. | Medium | High | Switch 02 → 01 → 02 through Advanced Reboot using the currently discovered management address; verify separate host-key files, admin keys, firmware identity, and explicit backup/import boundaries. | Network/operations | Open — runbook added |
@@ -32,8 +32,8 @@ until every critical gate below has evidence from the physical target.
 ## Current decision
 
 `r60` remains the protected rollback baseline. `r97` is the current installed
-UI/account-status candidate on the controlled target; `r98` is the uninstalled
-source candidate containing the device-lifecycle and observability hardening.
+UI/account-status candidate on the controlled target; `r99` is the uninstalled
+source candidate containing controlled account switching and schema v5.
 Hardware validation remains pending.
 Neither is approved as a production baseline. The next field session
 must prioritize the disposable client flow, counter/quota mapping, and restart

@@ -208,7 +208,7 @@ $SLOT01_SSH root@"$TARGET_IP" 'ubus -v list open_hotspot'
 $SLOT01_SSH root@"$TARGET_IP" 'php-cgi -l /www/nds/fas.php'
 ```
 
-**Expected result:** setup reaches `BASE_READY`, schema is `4`, the required
+**Expected result:** setup reaches `BASE_READY`, schema is `5`, the required
 RPC methods are listed, PHP reports no syntax errors, and no silent partial
 state is present. This supplies the static part of T052/T087.
 

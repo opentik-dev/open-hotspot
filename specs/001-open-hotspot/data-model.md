@@ -178,10 +178,16 @@ event without making the MAC the account identity.
 | `expires_at` | TEXT | NOT NULL | Short-lived expiry |
 | `consumed_at` | TEXT | nullable | BinAuth/auth consumption |
 | `state` | TEXT | NOT NULL | pending/consumed/rejected/expired |
+| `rejection_reason` | TEXT | nullable | Stable machine-readable admission denial reason |
+| `rejected_at` | TEXT | nullable | UTC time of the first persisted denial |
 
 The exact handoff field/encoding is a Phase 0 gate. The table is deliberately
 opaque to the portal: it prevents the portal from inventing or changing an
-account identity after PIN verification.
+account identity after PIN verification. A device already owned by another
+account can move only through the controlled admission transaction: the old
+account must be inactive, expired, deleted, or exhausted, and the device must
+have no live or pending session. Denials are idempotent and audited without
+raw MACs, PINs, IPs, or auth keys.
 
 ## 9. `vouchers`
 

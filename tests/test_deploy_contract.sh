@@ -36,6 +36,18 @@ if [ -z "$MANIFEST_SHA" ]; then
 fi
 export CANDIDATE_SHA256="${CANDIDATE_SHA256:-$MANIFEST_SHA}"
 
+if [ -z "${OPEN_HOTSPOT_SDK:-}" ]; then
+	top_repo=$(git rev-parse --show-toplevel 2>/dev/null || true)
+	git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null || true)
+	main_repo=$(cd "$git_common_dir/.." 2>/dev/null && pwd || true)
+	for cand in "$top_repo/.build/sdk" "$main_repo/.build/sdk" "$PROJECT/.build/sdk" "$PROJECT/../../../sdk" "$top_repo/.build/sdk-clean" "$main_repo/.build/sdk-clean"; do
+		if [ -n "$cand" ] && [ -x "$cand/staging_dir/host/bin/apk" ]; then
+			export OPEN_HOTSPOT_SDK="$cand"
+			break
+		fi
+	done
+fi
+
 FAILURES=0
 PASSES=0
 

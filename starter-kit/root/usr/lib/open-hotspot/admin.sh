@@ -117,11 +117,18 @@ admin_account_create() {
 	salt=$(printf '%s' "$stored" | cut -d: -f2)
 	hash=$(printf '%s' "$stored" | cut -d: -f4)
 	[ "${#salt}" -eq 32 ] && [ "${#hash}" -eq 64 ] || return 1
-	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
+	if sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	INSERT INTO accounts(username,pin_hash,pin_salt,pin_iter,profile_id,expires_at)
 	 SELECT '$(_sql_escape "$username")','$hash','$salt',$iter,$profile_id,$expires_sql
 	 WHERE EXISTS (SELECT 1 FROM profiles WHERE id=$profile_id);
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null
+	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null; then
+		new_id=$(sqlite3 -batch -noheader "$DB_PATH" "SELECT id FROM accounts WHERE username='$(_sql_escape "$username")' AND deleted_at IS NULL LIMIT 1;" 2>/dev/null || true)
+		db_log_event account_create "$new_id" "username=$username" accounts info rpc success || true
+		return 0
+	else
+		db_log_event account_create_failed '' "username=$username" accounts error rpc failed || true
+		return 1
+	fi
 }
 
 admin_account_update() {
@@ -137,12 +144,18 @@ admin_account_update() {
 	if [ "$status" = suspended ] || [ "$old_profile" -ne "$profile_id" ]; then
 		_admin_deauth_account_sessions "$id" || return 1
 	fi
-	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
+	if sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE accounts SET username='$(_sql_escape "$username")', profile_id=$profile_id,
 	 status='$status', expires_at=$expires_sql, updated_at=datetime('now')
 	 WHERE id=$id AND deleted_at IS NULL
 	   AND EXISTS (SELECT 1 FROM profiles WHERE id=$profile_id);
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null
+	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null; then
+		db_log_event account_update "$id" "username=$username:status=$status" accounts info rpc success || true
+		return 0
+	else
+		db_log_event account_update_failed "$id" "username=$username:status=$status" accounts error rpc failed || true
+		return 1
+	fi
 }
 
 # Renew starts a fresh quota window inside the current calendar period. The
@@ -162,11 +175,15 @@ admin_account_renew() {
 		"$OPEN_HOTSPOT_NDS_HELPER" deauth "$mac" || return 1
 	done
 	renewed_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ') || return 1
-	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
+	if sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE accounts SET renewed_at='$(_sql_escape "$renewed_at")', updated_at=datetime('now')
 	 WHERE id=$id AND status='active' AND deleted_at IS NULL;
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null || return 1
-	db_log_event account_renew "$id" "$renewed_at" || true
+	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null; then
+		db_log_event account_renew "$id" "$renewed_at" accounts info rpc success || true
+	else
+		db_log_event account_renew_failed "$id" "account_id=$id" accounts error rpc failed || true
+		return 1
+	fi
 }
 
 _admin_deauth_account_sessions() {
@@ -188,19 +205,31 @@ admin_account_set_pin() {
 	stored=$(pw_hash "$pin" "$iter") || return 1
 	salt=$(printf '%s' "$stored" | cut -d: -f2)
 	hash=$(printf '%s' "$stored" | cut -d: -f4)
-	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
+	if sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE accounts SET pin_hash='$hash', pin_salt='$salt', pin_iter=$iter,
 	 updated_at=datetime('now') WHERE id=$id AND deleted_at IS NULL;
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null
+	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null; then
+		db_log_event account_set_pin "$id" "pin-updated" security info rpc success || true
+		return 0
+	else
+		db_log_event account_set_pin_failed "$id" "pin-update-failed" security error rpc failed || true
+		return 1
+	fi
 }
 
 admin_account_delete() {
 	id="$1"; _valid_int "$id" || return 1
 	_admin_deauth_account_sessions "$id" || return 1
-	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
+	if sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE accounts SET status='suspended', deleted_at=datetime('now'),
 	 updated_at=datetime('now') WHERE id=$id AND deleted_at IS NULL;
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null
+	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null; then
+		db_log_event account_delete "$id" "account_id=$id" accounts info rpc success || true
+		return 0
+	else
+		db_log_event account_delete_failed "$id" "account_id=$id" accounts error rpc failed || true
+		return 1
+	fi
 }
 
 # Device removal is deliberately conservative. A device referenced by an
@@ -259,20 +288,20 @@ EOF
 admin_device_remove() {
 	id="$1"
 	if ! _valid_int "$id"; then
-		db_log_event device_remove_denied '' "reason=invalid-id" || true
+		db_log_event device_remove_denied '' "reason=invalid-id" devices warning rpc denied || true
 		echo "invalid-id"
 		return 1
 	fi
 
 	row=$(sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
 		"SELECT account_id FROM devices WHERE id=$id LIMIT 1;") || {
-		db_log_event device_remove_denied '' "reason=database:device_id=$id" || true
+		db_log_event device_remove_denied '' "reason=database:device_id=$id" devices error rpc failed || true
 		echo "database"
 		return 1
 	}
 
 	if [ -z "$row" ]; then
-		db_log_event device_remove_denied '' "reason=device-not-found:device_id=$id" || true
+		db_log_event device_remove_denied '' "reason=device-not-found:device_id=$id" devices warning rpc denied || true
 		echo "device-not-found"
 		return 1
 	fi
@@ -280,18 +309,18 @@ admin_device_remove() {
 
 	live_sessions=$(sqlite3 -batch -noheader "$DB_PATH" \
 		"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state IN ('pending','active');") || {
-		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" devices error rpc failed || true
 		echo "database"
 		return 1
 	}
 	_valid_int "$live_sessions" || {
-		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" devices error rpc failed || true
 		echo "database"
 		return 1
 	}
 
 	if [ "$live_sessions" -gt 0 ]; then
-		db_log_event device_remove_denied "$account_id" "reason=live-session:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=live-session:device_id=$id" devices warning rpc denied || true
 		echo "live-session"
 		return 1
 	fi
@@ -299,18 +328,18 @@ admin_device_remove() {
 	history_count=$(sqlite3 -batch -noheader "$DB_PATH" \
 		"SELECT (SELECT count(*) FROM usage_events WHERE device_id=$id) +
 		        (SELECT count(*) FROM active_sessions WHERE device_id=$id);") || {
-		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" devices error rpc failed || true
 		echo "database"
 		return 1
 	}
 	_valid_int "$history_count" || {
-		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" devices error rpc failed || true
 		echo "database"
 		return 1
 	}
 
 	if [ "$history_count" -gt 0 ]; then
-		db_log_event device_remove_denied "$account_id" "reason=usage-history:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=usage-history:device_id=$id" devices warning rpc denied || true
 		echo "usage-history"
 		return 1
 	fi
@@ -323,10 +352,10 @@ admin_device_remove() {
 	SELECT changes(); COMMIT;" 2>/dev/null | tail -n 1) || del_res=0
 
 	if [ "$del_res" = "1" ]; then
-		db_log_event device_removed "$account_id" "device_id=$id" || true
+		db_log_event device_removed "$account_id" "device_id=$id" devices info rpc success || true
 		return 0
 	else
-		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" || true
+		db_log_event device_remove_denied "$account_id" "reason=database:device_id=$id" devices error rpc failed || true
 		echo "database"
 		return 1
 	fi
@@ -337,7 +366,7 @@ admin_device_remove() {
 # observed closed. The portal has a separate controlled admission path.
 _admin_device_reassign_fail() {
 	reason="$1"; account_id="${2:-}"; device_id="${3:-unknown}"
-	db_log_event device_switch_denied "$account_id" "reason=$reason:device_id=$device_id" || true
+	db_log_event device_switch_denied "$account_id" "reason=$reason:device_id=$device_id" devices warning rpc denied || true
 	printf '%s\n' "$reason"
 	return 1
 }
@@ -429,8 +458,8 @@ SELECT CASE WHEN
 UPDATE devices SET account_id=$target_account, updated_at=datetime('now')
  WHERE id=$id AND account_id=$old_account AND status='active';
 INSERT INTO oh_reassign_guard SELECT changes();
-INSERT INTO admin_events(account_id,action,detail,ts)
-VALUES ($target_account,'device_account_switched','device_id=$id:from_account=$old_account',datetime('now'));
+INSERT INTO admin_events(account_id,action,detail,category,severity,source,result,ts)
+VALUES ($target_account,'device_account_switched','device_id=$id:from_account=$old_account','devices','info','rpc','success',datetime('now'));
 COMMIT;
 SQL
 	then
@@ -451,10 +480,13 @@ $row
 EOF
 	IFS="$old_ifs"
 	_valid_int "$account_id" && _valid_mac "$mac" || return 1
-	"$OPEN_HOTSPOT_NDS_HELPER" deauth "$mac" || return 1
+	if ! "$OPEN_HOTSPOT_NDS_HELPER" deauth "$mac"; then
+		db_log_event force_deauth_failed "$account_id" "device_id=$id" sessions error rpc failed || true
+		return 1
+	fi
 	# BinAuth remains responsible for session-close accounting. This records the
 	# administrative request without changing live-session state locally.
-	db_log_event force_deauth "$account_id" "$mac" || true
+	db_log_event force_deauth "$account_id" "device_id=$id" sessions info rpc success || true
 }
 
 _voucher_code() {

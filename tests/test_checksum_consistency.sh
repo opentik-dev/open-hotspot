@@ -93,7 +93,7 @@ LEDGER_FILE="$PROJECT/docs/operational-ledger.md"
 if [ ! -f "$LEDGER_FILE" ]; then
 	fail "missing docs/operational-ledger.md"
 else
-	LEDGER_SHA=$(sed -n "s/.*r${PKG_RELEASE} reproducible SHA-256[[:space:]]*\`\([a-f0-9]\{64\}\)\`.*/\1/p" "$LEDGER_FILE" | head -n 1)
+	LEDGER_SHA=$(sed -n "s/.*r${PKG_RELEASE} reproducible SHA-256[[:space:]]*\`\([a-f0-9]\{64\}\)\`.*/\1/p" "$LEDGER_FILE" | tail -n 1)
 	if [ -z "$LEDGER_SHA" ]; then
 		fail "docs/operational-ledger.md: could not extract r${PKG_RELEASE} reproducible SHA-256"
 	elif [ "$LEDGER_SHA" != "$MANIFEST_SHA" ]; then

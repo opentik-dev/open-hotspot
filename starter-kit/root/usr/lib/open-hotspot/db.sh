@@ -8,7 +8,7 @@
 
 DB_PATH="${OPEN_HOTSPOT_DB_PATH:-/etc/open-hotspot/hotspot.db}"
 SCHEMA_PATH="${OPEN_HOTSPOT_SCHEMA_PATH:-/usr/lib/open-hotspot/schema.sql}"
-DB_SCHEMA_VERSION=5
+DB_SCHEMA_VERSION=6
 DB_MIGRATIONS_PATH="${OPEN_HOTSPOT_MIGRATIONS_PATH:-/usr/lib/open-hotspot/migrations}"
 
 db_secure_files() {
@@ -338,9 +338,10 @@ UPDATE auth_transactions
 CREATE TEMP TABLE oh_reject_changed AS SELECT changes() AS changed;
 CREATE TEMP TABLE oh_guard(ok INTEGER CHECK(ok=1));
 INSERT INTO oh_guard SELECT changed FROM oh_reject_changed WHERE (SELECT reason FROM oh_rejection) IS NOT NULL;
-INSERT INTO admin_events(account_id,action,detail,ts)
+INSERT INTO admin_events(account_id,action,detail,category,severity,source,result,ts)
 SELECT t.account_id,'device_switch_denied',
-       'reason=' || r.reason || ':device_id=' || r.device_id,datetime('now')
+       'reason=' || r.reason || ':device_id=' || r.device_id,
+       'devices','warning','fas','denied',datetime('now')
   FROM auth_transactions t CROSS JOIN oh_rejection r
  WHERE t.auth_key='$(_sql_escape "$auth_key")'
    AND r.reason IS NOT NULL
@@ -374,9 +375,10 @@ SELECT d.id AS device_id,
   FROM devices d JOIN auth_transactions t ON t.auth_key='$(_sql_escape "$auth_key")'
  WHERE d.mac='$mac' COLLATE NOCASE LIMIT 1;
 INSERT INTO oh_guard SELECT ok FROM oh_transfer WHERE (SELECT reason FROM oh_rejection) IS NULL;
-INSERT INTO admin_events(account_id,action,detail,ts)
+INSERT INTO admin_events(account_id,action,detail,category,severity,source,result,ts)
 SELECT account_id,'device_account_switched',
-       'device_id=' || device_id || ':from_account=' || old_account,datetime('now')
+       'device_id=' || device_id || ':from_account=' || old_account,
+       'devices','info','fas','success',datetime('now')
   FROM oh_transfer
  WHERE switched=1 AND (SELECT reason FROM oh_rejection) IS NULL;
 INSERT INTO active_sessions(account_id,device_id,session_key,started_at,last_seen_at,state,policy_period_start)
@@ -571,9 +573,114 @@ db_voucher_redeem() {
 }
 
 db_log_event() {
-	action="$1"; account_id="$2"; detail="$3"
+	action="$1"; account_id="${2:-}"; detail="${3:-}"
+	cat="${4:-}"; sev="${5:-}"; src="${6:-}"; res="${7:-}"
 	_valid_ident "$action" || return 1
 	acct_sql='NULL'; _valid_int "$account_id" && acct_sql="$account_id"
-	_sql "INSERT INTO admin_events(account_id, action, detail)
-	       VALUES ($acct_sql, '$action', '$(_sql_escape "$detail")');"
+
+	safe_detail=$(printf '%s' "$detail" | sed \
+		-e 's/[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]/[REDACTED]/g' \
+		-e 's/[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]/[REDACTED]/g' \
+		-e 's/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/[REDACTED]/g' \
+		-e 's/[0-9a-fA-F]\{32,64\}/[REDACTED]/g' \
+		-e 's/[Pp][Ii][Nn]=[^ ;]*/pin=[REDACTED]/g' \
+		-e 's/[Tt][Oo][Kk][Ee][Nn]=[^ ;]*/token=[REDACTED]/g' \
+		-e 's/[Ff][Aa][Ss]_[Kk][Ee][Yy]=[^ ;]*/fas_key=[REDACTED]/g' \
+		-e 's/[Ff][Aa][Ss][Kk][Ee][Yy]=[^ ;]*/faskey=[REDACTED]/g' \
+		-e 's/[Kk][Ee][Yy]=[^ ;]*/key=[REDACTED]/g' \
+		-e 's/[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]=[^ ;]*/password=[REDACTED]/g' \
+		-e 's/[Aa][Uu][Tt][Hh]_[Kk][Ee][Yy]=[^ ;]*/auth_key=[REDACTED]/g')
+	safe_detail=$(printf '%s' "$safe_detail" | head -c 512)
+
+	case "$cat" in devices|accounts|sessions|quota|system|security|backup) ;; *) cat="" ;; esac
+	case "$sev" in info|success|warning|error) ;; *) sev="" ;; esac
+	case "$src" in luci|rpc|fas|binauth|cycle|restore|system) ;; *) src="" ;; esac
+	case "$res" in success|denied|failed|reconciled) ;; *) res="" ;; esac
+
+	case "$action" in
+		device_removed)
+			cat=${cat:-devices}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		device_remove_denied)
+			cat=${cat:-devices}; sev=${sev:-warning}; src=${src:-rpc}; res=${res:-denied} ;;
+		device_account_switched)
+			cat=${cat:-devices}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		device_switch_denied)
+			cat=${cat:-devices}; sev=${sev:-warning}; src=${src:-fas}; res=${res:-denied} ;;
+		force_deauth)
+			cat=${cat:-sessions}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		force_deauth_failed)
+			cat=${cat:-sessions}; sev=${sev:-error}; src=${src:-rpc}; res=${res:-failed} ;;
+		account_renew)
+			cat=${cat:-accounts}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		account_renew_failed)
+			cat=${cat:-accounts}; sev=${sev:-error}; src=${src:-rpc}; res=${res:-failed} ;;
+		account_create)
+			cat=${cat:-accounts}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		account_create_failed)
+			cat=${cat:-accounts}; sev=${sev:-error}; src=${src:-rpc}; res=${res:-failed} ;;
+		account_update)
+			cat=${cat:-accounts}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		account_update_failed)
+			cat=${cat:-accounts}; sev=${sev:-error}; src=${src:-rpc}; res=${res:-failed} ;;
+		account_delete)
+			cat=${cat:-accounts}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		account_delete_failed)
+			cat=${cat:-accounts}; sev=${sev:-error}; src=${src:-rpc}; res=${res:-failed} ;;
+		account_set_pin)
+			cat=${cat:-security}; sev=${sev:-info}; src=${src:-rpc}; res=${res:-success} ;;
+		account_set_pin_failed)
+			cat=${cat:-security}; sev=${sev:-error}; src=${src:-rpc}; res=${res:-failed} ;;
+		policy_refresh)
+			cat=${cat:-quota}; sev=${sev:-info}; src=${src:-cycle}; res=${res:-success} ;;
+		policy_refresh_failed)
+			cat=${cat:-quota}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		policy_marker_failed)
+			cat=${cat:-quota}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		period_window_error)
+			cat=${cat:-quota}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		cycle_quota_error)
+			cat=${cat:-quota}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		quota_deauth_failed)
+			cat=${cat:-quota}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		expiry_deauth_failed)
+			cat=${cat:-accounts}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		auth_expiry_failed)
+			cat=${cat:-security}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		opennds_recovered)
+			cat=${cat:-system}; sev=${sev:-info}; src=${src:-cycle}; res=${res:-reconciled} ;;
+		opennds_not_ready)
+			cat=${cat:-system}; sev=${sev:-warning}; src=${src:-cycle}; res=${res:-failed} ;;
+		cycle_database_error)
+			cat=${cat:-system}; sev=${sev:-error}; src=${src:-cycle}; res=${res:-failed} ;;
+		native_restore_reconciled)
+			cat=${cat:-sessions}; sev=${sev:-info}; src=${src:-restore}; res=${res:-reconciled} ;;
+		native_restore_reconcile_failed)
+			cat=${cat:-sessions}; sev=${sev:-error}; src=${src:-restore}; res=${res:-failed} ;;
+		stale_session_reconciled)
+			cat=${cat:-sessions}; sev=${sev:-info}; src=${src:-restore}; res=${res:-reconciled} ;;
+		session_restore_failed)
+			cat=${cat:-sessions}; sev=${sev:-error}; src=${src:-restore}; res=${res:-failed} ;;
+		session_reconcile_failed)
+			cat=${cat:-sessions}; sev=${sev:-error}; src=${src:-restore}; res=${res:-failed} ;;
+		maintenance_checkpoint_failed)
+			cat=${cat:-system}; sev=${sev:-error}; src=${src:-system}; res=${res:-failed} ;;
+		maintenance_vacuum_failed)
+			cat=${cat:-system}; sev=${sev:-error}; src=${src:-system}; res=${res:-failed} ;;
+		backup_failed)
+			cat=${cat:-backup}; sev=${sev:-error}; src=${src:-system}; res=${res:-failed} ;;
+		backup_export|backup_import)
+			cat=${cat:-backup}; sev=${sev:-info}; src=${src:-system}; res=${res:-success} ;;
+		setup_failed)
+			cat=${cat:-system}; sev=${sev:-error}; src=${src:-system}; res=${res:-failed} ;;
+		setup_completed)
+			cat=${cat:-system}; sev=${sev:-info}; src=${src:-system}; res=${res:-success} ;;
+	esac
+
+	cat=${cat:-system}
+	sev=${sev:-info}
+	src=${src:-system}
+	res=${res:-success}
+
+	_sql "INSERT INTO admin_events(account_id, action, detail, category, severity, source, result)
+	       VALUES ($acct_sql, '$action', '$(_sql_escape "$safe_detail")', '$cat', '$sev', '$src', '$res');"
 }

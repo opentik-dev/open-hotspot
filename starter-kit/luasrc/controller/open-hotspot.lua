@@ -381,10 +381,25 @@ function templates()
 end
 
 function events_log()
-	local events_result, events_err = ubus_call("dev_events_list", {})
+	local cat = http.formvalue("category") or ""
+	local sev = http.formvalue("severity") or ""
+	local src = http.formvalue("source") or ""
+	local res = http.formvalue("result") or ""
+
+	local filter_args = {}
+	if cat ~= "" then filter_args.category = cat end
+	if sev ~= "" then filter_args.severity = sev end
+	if src ~= "" then filter_args.source = src end
+	if res ~= "" then filter_args.result = res end
+
+	local events_result, events_err = ubus_call("dev_events_list", filter_args)
 	local diagnose_result, diagnose_err = ubus_call("dev_diagnose", {})
 	template.render("open-hotspot/events", {
 		events = events_result and events_result.events or {},
+		selected_category = cat,
+		selected_severity = sev,
+		selected_source = src,
+		selected_result = res,
 		diagnose_output = diagnose_result and diagnose_result.output or "",
 		diagnose_exit = diagnose_result and diagnose_result.exit_code or -1,
 		pkg_version = diagnose_result and diagnose_result.pkg_version or "unknown",

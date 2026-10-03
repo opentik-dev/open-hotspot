@@ -48,15 +48,18 @@ setup_base() {
 
 	if ! open_hotspot_preflight; then
 		setup_record PREFLIGHT_FAILED 'preflight-blocked' || true
+		type db_log_event >/dev/null 2>&1 && db_log_event setup_failed '' 'preflight-blocked' system error system failed || true
 		return 1
 	fi
 	setup_record PREFLIGHT_OK '' || return 1
 
 	if ! db_init; then
 		setup_record DATABASE_FAILED 'database-init-failed' || true
+		type db_log_event >/dev/null 2>&1 && db_log_event setup_failed '' 'database-init-failed' system error system failed || true
 		return 1
 	fi
 	setup_record BASE_READY '' || return 1
+	type db_log_event >/dev/null 2>&1 && db_log_event setup_completed '' 'base-ready' system info system success || true
 	return 0
 }
 

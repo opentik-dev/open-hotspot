@@ -94,6 +94,17 @@ grep -F 'call("dev_lab")' "$controller" >/dev/null
 grep -F 'EXPERIMENTAL' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null
 grep -F 'IoT Internet bypass' "$root/starter-kit/luasrc/view/open-hotspot/dev.htm" >/dev/null
 grep -F 'Open-HotSpot Event Log' "$events" >/dev/null
+grep -F 'Category' "$events" >/dev/null
+grep -F 'Severity' "$events" >/dev/null
+grep -F 'Source' "$events" >/dev/null
+grep -F 'Result' "$events" >/dev/null
+grep -F 'name="category"' "$events" >/dev/null
+grep -F 'name="severity"' "$events" >/dev/null
+grep -F 'name="source"' "$events" >/dev/null
+grep -F 'name="result"' "$events" >/dev/null
+grep -F 'No service events recorded' "$events" >/dev/null
+! grep -Eq 'method="post"|method=.post.' "$events"
+! grep -F 'logread' "$events"
 
 if command -v luac >/dev/null 2>&1; then
 	luac -p "$controller" "$setup"

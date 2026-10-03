@@ -93,10 +93,40 @@ else
 	fail "Events page is missing event-log or diagnostic wiring"
 fi
 
-if grep -Eq '<form|method="post"|action=' "$EVENTS_VIEW"; then
-	fail "events.htm must be read-only but contains form/POST elements"
+if grep -Eq 'method="post"|method=.post.' "$EVENTS_VIEW"; then
+	fail "events.htm must be read-only but contains POST mutation elements"
 else
-	pass "events.htm is strictly read-only"
+	pass "events.htm is strictly read-only (no POST mutation forms)"
+fi
+
+if grep -F 'name="category"' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'name="severity"' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'name="source"' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'name="result"' "$EVENTS_VIEW" >/dev/null; then
+	pass "events.htm includes taxonomy filter controls (category, severity, source, result)"
+else
+	fail "events.htm missing taxonomy filter controls"
+fi
+
+if grep -F 'Category' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'Severity' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'Source' "$EVENTS_VIEW" >/dev/null && \
+   grep -F 'Result' "$EVENTS_VIEW" >/dev/null; then
+	pass "events.htm displays taxonomy column titles"
+else
+	fail "events.htm missing taxonomy column titles"
+fi
+
+if grep -F 'No service events recorded' "$EVENTS_VIEW" >/dev/null; then
+	pass "events.htm provides clear empty state message"
+else
+	fail "events.htm missing empty state message"
+fi
+
+if ! grep -F 'logread' "$EVENTS_VIEW" >/dev/null; then
+	pass "events.htm strictly separates manager events from raw logread"
+else
+	fail "events.htm incorrectly exposes or references raw logread"
 fi
 
 # ==============================================================================
@@ -110,11 +140,17 @@ python3 -m json.tool "$ACL" >/dev/null 2>&1 || { fail "ACL is not valid JSON"; e
 
 # rpcd list announces both dev_events_list and dev_diagnose
 list_out=$("$RPC" list)
-if printf '%s' "$list_out" | grep -F '"dev_events_list":{}' >/dev/null && \
+if printf '%s' "$list_out" | grep -F '"dev_events_list":' >/dev/null && \
    printf '%s' "$list_out" | grep -F '"dev_diagnose":{}' >/dev/null; then
 	pass "rpcd list advertises dev_events_list and dev_diagnose"
 else
 	fail "rpcd list missing dev_events_list or dev_diagnose"
+fi
+
+if printf '%s' "$list_out" | grep -F '"dev_events_list":{"category":"","severity":"","source":"","result":""}' >/dev/null; then
+	pass "rpcd list advertises dev_events_list with bounded filter arguments"
+else
+	fail "rpcd list missing dev_events_list filter argument specification"
 fi
 
 # ACL allows read access to dev_events_list and dev_diagnose
@@ -132,7 +168,7 @@ write_acl=$(python3 -c "import json, sys; d=json.load(open('$ACL'))['luci-app-op
 }
 
 # ==============================================================================
-# 3. Functional Test: dev_events_list (Limit 50, Redaction, No Secrets)
+# 3. Functional Test: dev_events_list (Limit 50, Redaction, Taxonomy Filters)
 # ==============================================================================
 TEST_DB="$TMP_DIR/hotspot.db"
 export OPEN_HOTSPOT_DB_PATH="$TEST_DB"
@@ -143,19 +179,31 @@ CREATE TABLE admin_events (
     ts         TEXT NOT NULL DEFAULT (datetime('now')),
     account_id INTEGER,
     action     TEXT NOT NULL,
-    detail     TEXT
+    detail     TEXT,
+    category   TEXT NOT NULL DEFAULT 'system'
+               CHECK (category IN ('devices','accounts','sessions','quota','system','security','backup')),
+    severity   TEXT NOT NULL DEFAULT 'info'
+               CHECK (severity IN ('info','success','warning','error')),
+    source     TEXT NOT NULL DEFAULT 'system'
+               CHECK (source IN ('luci','rpc','fas','binauth','cycle','restore','system')),
+    result     TEXT NOT NULL DEFAULT 'success'
+               CHECK (result IN ('success','denied','failed','reconciled'))
 );
 SQL
 
-# Insert 60 events to test the 50-row limit, plus sensitive fields to test redaction
+# Insert 60 events across categories to test the 50-row limit and filters
 i=1
+while [ "$i" -le 30 ]; do
+	sqlite3 "$TEST_DB" "INSERT INTO admin_events(id, ts, account_id, action, detail, category, severity, source, result) VALUES ($i, '2026-10-02 12:00:00', 1, 'device_removed', 'event $i', 'devices', 'info', 'rpc', 'success');"
+	i=$((i + 1))
+done
 while [ "$i" -le 60 ]; do
-	sqlite3 "$TEST_DB" "INSERT INTO admin_events(id, ts, account_id, action, detail) VALUES ($i, '2026-10-02 12:00:00', 1, 'test_event_$i', 'event $i');"
+	sqlite3 "$TEST_DB" "INSERT INTO admin_events(id, ts, account_id, action, detail, category, severity, source, result) VALUES ($i, '2026-10-02 12:00:00', 2, 'cycle_quota_error', 'event $i', 'quota', 'error', 'cycle', 'failed');"
 	i=$((i + 1))
 done
 
 # Insert specific event with MAC, IP, PIN, and 32-char hex session token
-sqlite3 "$TEST_DB" "INSERT INTO admin_events(id, ts, account_id, action, detail) VALUES (999, '2026-10-02 12:01:00', 2, 'leak_test', 'client 192.168.1.100 with 11:22:33:AA:BB:CC and 11-22-33-44-55-66 pin=889911 token=a1b2c3d4e5f60718293a4b5c6d7e8f90');"
+sqlite3 "$TEST_DB" "INSERT INTO admin_events(id, ts, account_id, action, detail, category, severity, source, result) VALUES (999, '2026-10-02 12:01:00', 2, 'leak_test', 'client 192.168.1.100 with 11:22:33:AA:BB:CC and 11-22-33-44-55-66 pin=889911 token=a1b2c3d4e5f60718293a4b5c6d7e8f90', 'security', 'warning', 'fas', 'denied');"
 
 events_json=$(printf '{}' | "$RPC" call dev_events_list)
 
@@ -170,6 +218,14 @@ if [ "$event_count" -eq 50 ]; then
 	pass "dev_events_list enforces maximum limit of 50 events"
 else
 	fail "dev_events_list returned $event_count events (expected exactly 50)"
+fi
+
+# Verify taxonomy fields in output
+tax_fields_ok=$(python3 -c "import json, sys; d=json.loads('''$events_json'''); ev=d.get('events', [{}])[0]; print('category' in ev and 'severity' in ev and 'source' in ev and 'result' in ev)")
+if [ "$tax_fields_ok" = "True" ]; then
+	pass "dev_events_list output includes taxonomy fields (category, severity, source, result)"
+else
+	fail "dev_events_list output missing taxonomy fields"
 fi
 
 # Verify MAC redaction
@@ -193,6 +249,96 @@ if printf '%s' "$events_json" | grep -F '889911' >/dev/null || \
 	fail "dev_events_list leaked raw PIN or session token"
 else
 	pass "dev_events_list completely redacts PIN and session token"
+fi
+
+# Verify Category filter
+cat_filter_json=$(printf '{"category":"quota"}' | "$RPC" call dev_events_list)
+cat_match=$(python3 -c "import json, sys; d=json.loads('''$cat_filter_json'''); evs=d.get('events', []); print(len(evs) > 0 and all(e.get('category') == 'quota' for e in evs))")
+if [ "$cat_match" = "True" ]; then
+	pass "dev_events_list filters accurately by category (quota)"
+else
+	fail "dev_events_list failed category filter test"
+fi
+
+# Verify Severity filter
+sev_filter_json=$(printf '{"severity":"error"}' | "$RPC" call dev_events_list)
+sev_match=$(python3 -c "import json, sys; d=json.loads('''$sev_filter_json'''); evs=d.get('events', []); print(len(evs) > 0 and all(e.get('severity') == 'error' for e in evs))")
+if [ "$sev_match" = "True" ]; then
+	pass "dev_events_list filters accurately by severity (error)"
+else
+	fail "dev_events_list failed severity filter test"
+fi
+
+# Verify Source filter
+src_filter_json=$(printf '{"source":"cycle"}' | "$RPC" call dev_events_list)
+src_match=$(python3 -c "import json, sys; d=json.loads('''$src_filter_json'''); evs=d.get('events', []); print(len(evs) > 0 and all(e.get('source') == 'cycle' for e in evs))")
+if [ "$src_match" = "True" ]; then
+	pass "dev_events_list filters accurately by source (cycle)"
+else
+	fail "dev_events_list failed source filter test"
+fi
+
+# Verify Result filter
+res_filter_json=$(printf '{"result":"denied"}' | "$RPC" call dev_events_list)
+res_match=$(python3 -c "import json, sys; d=json.loads('''$res_filter_json'''); evs=d.get('events', []); print(len(evs) == 1 and evs[0].get('result') == 'denied')")
+if [ "$res_match" = "True" ]; then
+	pass "dev_events_list filters accurately by result (denied)"
+else
+	fail "dev_events_list failed result filter test"
+fi
+
+# Verify rejection of disallowed filter values
+bad_cat_out=$(printf '{"category":"malicious'\'' OR 1=1--"}' | "$RPC" call dev_events_list 2>&1 || true)
+if printf '%s' "$bad_cat_out" | grep -F '"error": "validation"' >/dev/null || \
+   printf '%s' "$bad_cat_out" | grep -F 'validation' >/dev/null; then
+	pass "dev_events_list rejects disallowed category filter value"
+else
+	fail "dev_events_list accepted disallowed category filter: $bad_cat_out"
+fi
+
+bad_sev_out=$(printf '{"severity":"catastrophic"}' | "$RPC" call dev_events_list 2>&1 || true)
+if printf '%s' "$bad_sev_out" | grep -F '"error": "validation"' >/dev/null || \
+   printf '%s' "$bad_sev_out" | grep -F 'validation' >/dev/null; then
+	pass "dev_events_list rejects disallowed severity filter value"
+else
+	fail "dev_events_list accepted disallowed severity filter: $bad_sev_out"
+fi
+
+bad_src_out=$(printf '{"source":"external"}' | "$RPC" call dev_events_list 2>&1 || true)
+if printf '%s' "$bad_src_out" | grep -F '"error": "validation"' >/dev/null || \
+   printf '%s' "$bad_src_out" | grep -F 'validation' >/dev/null; then
+	pass "dev_events_list rejects disallowed source filter value"
+else
+	fail "dev_events_list accepted disallowed source filter: $bad_src_out"
+fi
+
+bad_res_out=$(printf '{"result":"unknown_res"}' | "$RPC" call dev_events_list 2>&1 || true)
+if printf '%s' "$bad_res_out" | grep -F '"error": "validation"' >/dev/null || \
+   printf '%s' "$bad_res_out" | grep -F 'validation' >/dev/null; then
+	pass "dev_events_list rejects disallowed result filter value"
+else
+	fail "dev_events_list accepted disallowed result filter: $bad_res_out"
+fi
+
+# ==============================================================================
+# 3b. Functional Test: Storage-boundary redaction directly in SQLite
+# ==============================================================================
+. "$PROJECT/starter-kit/root/usr/lib/open-hotspot/db.sh"
+OPEN_HOTSPOT_DB_PATH="$TEST_DB" DB_PATH="$TEST_DB" db_log_event "storage_redact_test" 2 \
+	"client 10.0.0.50 with AA:BB:CC:DD:EE:FF and AA-BB-CC-DD-EE-FF pin=123456 token=abcdef0123456789abcdef0123456789 key=mysecretkey password=secretpass auth_key=myauthkey" \
+	"security" "info" "rpc" "success"
+
+db_detail=$(sqlite3 "$TEST_DB" "SELECT detail FROM admin_events WHERE action='storage_redact_test';")
+if printf '%s' "$db_detail" | grep -Eq 'AA:BB:CC|AA-BB-CC|10\.0\.0\.50|123456|mysecretkey|secretpass|myauthkey|abcdef0123456789abcdef0123456789'; then
+	fail "db_log_event leaked sensitive data into SQLite storage: $db_detail"
+else
+	pass "db_log_event strictly redacts MAC, IP, PIN, token, key, and password at storage boundary"
+fi
+
+if printf '%s' "$db_detail" | grep -F '[REDACTED]' >/dev/null; then
+	pass "SQLite stored detail contains expected [REDACTED] placeholders"
+else
+	fail "SQLite stored detail missing [REDACTED] placeholders: $db_detail"
 fi
 
 # ==============================================================================

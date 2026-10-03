@@ -45,7 +45,7 @@ class SchemaContractTests(unittest.TestCase):
                 "admin_events",
             }.issubset(names)
         )
-        self.assertEqual(self.db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 5)
+        self.assertEqual(self.db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 6)
         self.assertEqual(
             self.db.execute("SELECT name FROM profiles WHERE id=1").fetchone()[0],
             "default-unlimited",
@@ -165,6 +165,144 @@ class SchemaContractTests(unittest.TestCase):
             ).fetchone()[0],
             "2026-09-18T12:00:00Z",
         )
+
+    def test_admin_events_has_taxonomy_columns_and_constraints(self):
+        event_columns = {
+            row[1] for row in self.db.execute("PRAGMA table_info(admin_events)")
+        }
+        self.assertIn("category", event_columns)
+        self.assertIn("severity", event_columns)
+        self.assertIn("source", event_columns)
+        self.assertIn("result", event_columns)
+
+        # Default values
+        self.db.execute("INSERT INTO admin_events(action) VALUES ('test_action')")
+        row = self.db.execute(
+            "SELECT category, severity, source, result FROM admin_events WHERE action='test_action'"
+        ).fetchone()
+        self.assertEqual(row, ("system", "info", "system", "success"))
+
+        # Valid custom values
+        self.db.execute(
+            "INSERT INTO admin_events(action, category, severity, source, result) "
+            "VALUES ('valid_event', 'devices', 'warning', 'rpc', 'denied')"
+        )
+        row = self.db.execute(
+            "SELECT category, severity, source, result FROM admin_events WHERE action='valid_event'"
+        ).fetchone()
+        self.assertEqual(row, ("devices", "warning", "rpc", "denied"))
+
+        # Invalid category CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO admin_events(action, category) VALUES ('bad', 'invalid_cat')")
+
+        # Invalid severity CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO admin_events(action, severity) VALUES ('bad', 'critical')")
+
+        # Invalid source CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO admin_events(action, source) VALUES ('bad', 'external')")
+
+        # Invalid result CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO admin_events(action, result) VALUES ('bad', 'unknown')")
+
+    def test_migration_006_preserves_existing_events_and_is_idempotent(self):
+        migration_006 = ROOT / "starter-kit/root/usr/lib/open-hotspot/migrations/006.sql"
+        db = sqlite3.connect(":memory:", isolation_level=None)
+        db.execute("PRAGMA foreign_keys = ON")
+        db.executescript(
+            """
+            CREATE TABLE schema_meta (
+                version    INTEGER PRIMARY KEY,
+                applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            INSERT INTO schema_meta(version) VALUES (1), (2), (3), (4), (5);
+            CREATE TABLE accounts (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                username        TEXT NOT NULL UNIQUE,
+                pin_hash        TEXT NOT NULL,
+                pin_salt        TEXT NOT NULL,
+                pin_iter        INTEGER NOT NULL,
+                profile_id      INTEGER NOT NULL,
+                status          TEXT NOT NULL DEFAULT 'active',
+                expires_at      TEXT,
+                deleted_at      TEXT,
+                failed_attempts INTEGER NOT NULL DEFAULT 0,
+                last_failed_at  TEXT,
+                lock_until      TEXT,
+                renewed_at      TEXT
+            );
+            INSERT INTO accounts(id, username, pin_hash, pin_salt, pin_iter, profile_id)
+            VALUES (99, 'user99', 'h', 's', 1000, 1), (10, 'user10', 'h', 's', 1000, 1);
+            CREATE TABLE admin_events (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts         TEXT NOT NULL DEFAULT (datetime('now')),
+                account_id INTEGER REFERENCES accounts(id),
+                action     TEXT NOT NULL,
+                detail     TEXT
+            );
+            INSERT INTO admin_events(id, ts, account_id, action, detail)
+            VALUES (42, '2026-10-01 12:34:56', 99, 'legacy_action', 'legacy detail string');
+            """
+        )
+        # Apply migration 006
+        db.executescript(migration_006.read_text(encoding="utf-8"))
+        self.assertEqual(db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 6)
+
+        # Existing legacy event is completely preserved and assigned default taxonomy
+        row = db.execute(
+            "SELECT id, ts, account_id, action, detail, category, severity, source, result "
+            "FROM admin_events WHERE id=42"
+        ).fetchone()
+        self.assertEqual(
+            row,
+            (42, '2026-10-01 12:34:56', 99, 'legacy_action', 'legacy detail string', 'system', 'info', 'system', 'success'),
+        )
+
+        # Insert a custom v6 event with devices / error / rpc / failed
+        db.execute(
+            "INSERT INTO admin_events(id, ts, account_id, action, detail, category, severity, source, result) "
+            "VALUES (100, '2026-10-03 14:00:00', 10, 'rpc_error_action', 'rpc failed detail', 'devices', 'error', 'rpc', 'failed')"
+        )
+
+        # Re-running migration 006 on this v6 DB is idempotent, preserves existing taxonomy, and does not fail
+        db.executescript(migration_006.read_text(encoding="utf-8"))
+        self.assertEqual(db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 6)
+
+        # Assert custom taxonomy and all fields remain intact
+        custom_row = db.execute(
+            "SELECT id, ts, account_id, action, detail, category, severity, source, result "
+            "FROM admin_events WHERE id=100"
+        ).fetchone()
+        self.assertEqual(
+            custom_row,
+            (100, '2026-10-03 14:00:00', 10, 'rpc_error_action', 'rpc failed detail', 'devices', 'error', 'rpc', 'failed'),
+        )
+
+        # Assert legacy row remains unchanged
+        row_again = db.execute(
+            "SELECT id, ts, account_id, action, detail, category, severity, source, result "
+            "FROM admin_events WHERE id=42"
+        ).fetchone()
+        self.assertEqual(row, row_again)
+
+        # Verify foreign keys are intact
+        self.assertEqual(db.execute("PRAGMA foreign_key_check").fetchall(), [])
+
+        # Re-running schema.sql on this DB is idempotent
+        db.executescript(SCHEMA.read_text(encoding="utf-8"))
+        self.assertEqual(db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 6)
+
+        # Applying migration 006 on a DB initialized directly from schema.sql v6 causes no duplicate column conflict
+        fresh_db = sqlite3.connect(":memory:", isolation_level=None)
+        fresh_db.execute("PRAGMA foreign_keys = ON")
+        fresh_db.executescript(SCHEMA.read_text(encoding="utf-8"))
+        fresh_db.executescript(migration_006.read_text(encoding="utf-8"))
+        self.assertEqual(fresh_db.execute("SELECT max(version) FROM schema_meta").fetchone()[0], 6)
+        fresh_db.close()
+        db.close()
 
 
 if __name__ == "__main__":

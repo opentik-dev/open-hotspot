@@ -292,8 +292,8 @@ fi
 # ==============================================================================
 # 9. No Sensitive Data in Event Details or UI Output
 # ==============================================================================
-# Inspect all logged events for device removal
-leaked_macs=$(sqlite3 "$DB" "SELECT count(*) FROM admin_events WHERE action IN ('device_removed', 'device_remove_denied') AND (detail LIKE '%00:11:%' OR detail LIKE '%00-11-%');")
+# Inspect all logged events for device removal and management
+leaked_macs=$(sqlite3 "$DB" "SELECT count(*) FROM admin_events WHERE (detail LIKE '%00:11:%' OR detail LIKE '%00-11-%');")
 if [ "$leaked_macs" -eq 0 ]; then
 	pass "No raw MAC addresses were leaked in admin_events details"
 else
@@ -715,7 +715,7 @@ else
 	fail "Regression: device-force-deauth did not dispatch MAC to opennds deauth helper"
 fi
 
-evt_force_deauth=$(sqlite3 "$DB" "SELECT count(*) FROM admin_events WHERE action='force_deauth' AND account_id=1 AND detail='00:11:22:33:44:02';")
+evt_force_deauth=$(sqlite3 "$DB" "SELECT count(*) FROM admin_events WHERE action='force_deauth' AND account_id=1 AND detail='device_id=11';")
 if [ "$evt_force_deauth" -ge 1 ]; then
 	pass "Regression: admin.sh logged force_deauth event in admin_events"
 else

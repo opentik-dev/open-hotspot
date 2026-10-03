@@ -3,7 +3,7 @@
 **Candidate:** `luci-app-open-hotspot 1.2.0-r99`
 **Artifact:** Locally reproducible APK; CI must rebuild and publish the
 authoritative asset for r99
-**SHA-256:** `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6`
+**SHA-256:** `cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** r99 is the controlled-account-switching source candidate; target
 remains on installed r97. r98 remains the prior device-lifecycle artifact and

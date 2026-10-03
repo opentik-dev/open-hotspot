@@ -12,7 +12,7 @@ as a fabricated commit history.
 
 `1.2.0-r99` is the current local source candidate. Its local reproducible
 artifact checksum is
-`a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6`. It
+`cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a`. It
 contains controlled account switching and schema v5 and has not been installed
 on the target; CI must rebuild and publish the authoritative artifact. The last
 installed field candidate is `1.2.0-r97` with artifact checksum
@@ -123,7 +123,7 @@ final release freeze.
 | r96 | `cc6a485aeb1cf77581ea64397c104d9ef92b02f8dbfa5d18ee04eabe964d636b` | Superseded UI card-layout candidate. Places account/profile records and action controls inside bordered responsive cards and compacts creation forms; runtime/session behavior is unchanged. Installed over r95 on the EA8300; hardware acceptance gates remain open. |
 | r97 | `d3c0009764d6a7a857ea70a837c8cae22e7f4e8d97be9edb5369dbdc7e2d5afe` | Account-status clarity candidate. Displays unlimited time/data limits as `Unlimited` instead of the internal zero sentinel and records the DNS Insights design-only decision; no DNS collector or runtime quota behavior is enabled. Installed over r96; post-recovery diagnostic passed, while the transient post-upgrade openNDS stop is recorded separately. |
 | r98 | `7f44b04399dee35c0b59663bbdcaca64099a0526a65a9709c29c2d78fc184592` | Source candidate containing device lifecycle indicators, machine-readable removal failures, safe audit events, pending-session alignment, and transactional race/failure coverage. CI-built artifact; not installed; hardware validation remains open. |
-| r99 | `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6` | Local reproducible source candidate containing schema v5 and controlled account switching with transactional rollback, idempotent denial reasons, and explicit reassignment errors. CI rebuild and hardware validation remain pending; not installed. |
+| r99 | `cc3323fc68867c1ce5885d3cdfff8ac6420e1e6156516da0405880f530c8450a` | Source candidate containing schema v6, controlled account switching, bounded event taxonomy, and storage-boundary redaction. CI-built artifact; hardware validation remains pending; not installed. |
 
 ## Existing GitHub history
 

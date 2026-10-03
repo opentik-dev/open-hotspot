@@ -13,7 +13,7 @@ as a fabricated commit history.
 `1.2.0-r99` is the canonical source candidate. Its canonical reproducible
 artifact checksum is
 `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672`, built and
-verified in GitHub Actions CI (run 37154704382).
+verified in GitHub Actions CI (run 37155015258).
 It contains controlled account switching (Task 2) and bounded event taxonomy with schema v6
 and storage-boundary redaction (Task 3). Intermediate local artifact hash
 `a7efeff17c744529be56b49c95c0cd7b1b847bea7bcd2f02a2cf2ee570438df6` was superseded

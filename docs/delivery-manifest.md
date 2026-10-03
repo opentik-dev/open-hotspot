@@ -1,8 +1,8 @@
 # Open-HotSpot delivery manifest
 
 **Candidate:** `luci-app-open-hotspot 1.2.0-r99`
-**Artifact:** CI-built reproducible APK (`open-hotspot-apk-452ac35`),
-verified in GitHub Actions CI (run 37154704382 and reproducible fakeroot packaging)
+**Artifact:** CI-built reproducible APK (`open-hotspot-apk-24f0d75`),
+verified in GitHub Actions CI (run 37155015258 with reproducible fakeroot packaging)
 **SHA-256:** `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** r99 is the canonical candidate combining controlled account

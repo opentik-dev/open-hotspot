@@ -74,12 +74,19 @@ trap restore_output EXIT INT TERM
 
 output=$(OPEN_HOTSPOT_SDK="$SDK" sh "$PROJECT/tools/build-apk.sh" --verify)
 if printf '%s\n' "$output" | grep -q "Deterministic APK verified:"; then
-	non_root_owners=$(STAGING_DIR_HOST="$SDK/staging_dir/host" "$APK" adbdump --format yaml "$OUTPUT" | grep -E '^[[:space:]]*(user|group):' | grep -vE ':[[:space:]]*root$' || true)
-	if [ -n "$non_root_owners" ]; then
-		printf '%s\n' "FAIL: Package contains non-root file ownership:" >&2
-		printf '%s\n' "$non_root_owners" >&2
+	metadata=$(mktemp /tmp/oh-apk-metadata.XXXXXX)
+	if ! STAGING_DIR_HOST="$SDK/staging_dir/host" "$APK" adbdump --format yaml "$OUTPUT" > "$metadata"; then
+		rm -f "$metadata"
+		printf '%s\n' "FAIL: apk adbdump failed" >&2
 		exit 1
 	fi
+	if non_root_owners=$(grep -E '^[[:space:]]*(user|group):' "$metadata" | grep -vE ':[[:space:]]*root$'); then
+		printf '%s\n' "FAIL: Package contains non-root file ownership:" >&2
+		printf '%s\n' "$non_root_owners" >&2
+		rm -f "$metadata"
+		exit 1
+	fi
+	rm -f "$metadata"
 	printf '%s\n' "apk-reproducibility-ok (root:root ownership verified)"
 	exit 0
 else

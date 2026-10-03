@@ -57,13 +57,25 @@ export STAGING_DIR_HOST
 
 FAKEROOT="${FAKEROOT:-$STAGING_DIR_HOST/bin/fakeroot}"
 if [ ! -x "$FAKEROOT" ]; then
-	if command -v fakeroot >/dev/null 2>&1; then
-		FAKEROOT="$(command -v fakeroot)"
-	else
-		printf 'ERROR: fakeroot not found at %s or on PATH\n' "$FAKEROOT" >&2
-		exit 1
-	fi
+	printf 'ERROR: SDK fakeroot not found at %s\n' "$FAKEROOT" >&2
+	exit 1
 fi
+
+verify_root_ownership() {
+	package_path="$1"
+	metadata=$(mktemp "$PROJECT/.build/apk-metadata-r${RELEASE}.XXXXXX")
+	if ! "$APK" adbdump --format yaml "$package_path" > "$metadata"; then
+		printf 'ERROR: apk adbdump failed for %s\n' "$package_path" >&2
+		rm -f "$metadata"
+		return 1
+	fi
+	if non_root=$(grep -E '^[[:space:]]*(user|group):' "$metadata" | grep -vE ':[[:space:]]*root$'); then
+		printf 'ERROR: Non-root file ownership detected in package:\n%s\n' "$non_root" >&2
+		rm -f "$metadata"
+		return 1
+	fi
+	rm -f "$metadata"
+}
 
 output="$PROJECT/dist/luci-app-open-hotspot-${VERSION}-r${RELEASE}.apk"
 build_dir="$PROJECT/.build/dist-r${RELEASE}"
@@ -125,21 +137,13 @@ if [ "${1:-}" = "--verify" ]; then
 		exit 1
 	fi
 
-	non_root=$("$APK" adbdump --format yaml "$temp_a" | grep -E '^[[:space:]]*(user|group):' | grep -vE ':[[:space:]]*root$' || true)
-	if [ -n "$non_root" ]; then
-		printf 'ERROR: Non-root file ownership detected in package:\n%s\n' "$non_root" >&2
-		exit 1
-	fi
+	verify_root_ownership "$temp_a"
 
 	cp -f "$temp_a" "$output"
 	sha256sum "$output" | tee "$build_dir/SHA256SUMS"
 	printf 'Deterministic APK verified: %s\n' "$hash_a"
 else
 	package_apk "$output"
-	non_root=$("$APK" adbdump --format yaml "$output" | grep -E '^[[:space:]]*(user|group):' | grep -vE ':[[:space:]]*root$' || true)
-	if [ -n "$non_root" ]; then
-		printf 'ERROR: Non-root file ownership detected in package:\n%s\n' "$non_root" >&2
-		exit 1
-	fi
+	verify_root_ownership "$output"
 	sha256sum "$output" | tee "$build_dir/SHA256SUMS"
 fi

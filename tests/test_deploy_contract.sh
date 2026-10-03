@@ -72,7 +72,7 @@ else
 fi
 
 # 5. Verify rollback taxonomy matches documentation
-if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-r92-r93-r94-r95-r96-r97-r98-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
+if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r91-r92-r93-r94-r95-r96-r97-r98-r99-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
 	pass "Rollback taxonomy cross-verifies openNDS version with installed package"
 else
 	fail "Rollback taxonomy does not cross-verify openNDS version with package"

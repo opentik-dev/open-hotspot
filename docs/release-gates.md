@@ -3,7 +3,7 @@
 This register is the operational release decision register. `r90` is the
 last field-tested acceptance candidate with router-access isolation, runtime
 readiness recovery, and a packaged read-only integration diagnostic. `r97` is
-the current installed UI/account-status field candidate and `r98` is the
+the current installed UI/account-status field candidate and `r99` is the
 uninstalled source candidate; r92 and earlier candidates are superseded.
 Neither is a production release
 until every critical gate below has evidence from the physical target.
@@ -32,8 +32,8 @@ until every critical gate below has evidence from the physical target.
 ## Current decision
 
 `r60` remains the protected rollback baseline. `r97` is the current installed
-UI/account-status candidate on the controlled target; `r98` is the uninstalled
-source candidate containing the device-lifecycle and observability hardening.
+UI/account-status candidate on the controlled target; `r99` is the uninstalled
+source candidate containing controlled account switching and schema v5.
 Hardware validation remains pending.
 Neither is approved as a production baseline. The next field session
 must prioritize the disposable client flow, counter/quota mapping, and restart

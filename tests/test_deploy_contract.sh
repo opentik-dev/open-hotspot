@@ -28,7 +28,13 @@ CURRENT_RELEASE=$(sed -n 's/^PKG_RELEASE:=//p' "$PROJECT/starter-kit/Makefile")
 CURRENT_APK="$PROJECT/dist/luci-app-open-hotspot-${CURRENT_VERSION}-r${CURRENT_RELEASE}.apk"
 CURRENT_APK_NAME="luci-app-open-hotspot-${CURRENT_VERSION}-r${CURRENT_RELEASE}.apk"
 CURRENT_APK_SHA=$(sha256sum "$CURRENT_APK" | awk '{print $1}')
-export CANDIDATE_SHA256="${CANDIDATE_SHA256:-$CURRENT_APK_SHA}"
+MANIFEST_FILE="$PROJECT/docs/delivery-manifest.md"
+MANIFEST_SHA=$(sed -n 's/^\*\*SHA-256:\*\*[[:space:]]*`\([a-f0-9]\{64\}\)`.*/\1/p' "$MANIFEST_FILE" | head -n 1)
+if [ -z "$MANIFEST_SHA" ]; then
+	echo "FAIL: Could not extract documented candidate SHA-256 from $MANIFEST_FILE" >&2
+	exit 1
+fi
+export CANDIDATE_SHA256="${CANDIDATE_SHA256:-$MANIFEST_SHA}"
 
 FAILURES=0
 PASSES=0

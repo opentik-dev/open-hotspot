@@ -69,10 +69,23 @@ jobs:
           test -s "$apk"
           sha256sum "$apk" > "$RUNNER_TEMP/SHA256SUMS"
           cat "$RUNNER_TEMP/SHA256SUMS"
+          manifest_sha="$(sed -n 's/^\*\*SHA-256:\*\*[[:space:]]*`\([a-f0-9]\{64\}\)`.*/\1/p' docs/delivery-manifest.md | head -n 1)"
+          if [ -z "$manifest_sha" ]; then
+            echo "::error file=docs/delivery-manifest.md::Missing or invalid documented SHA-256 in docs/delivery-manifest.md" >&2
+            exit 1
+          fi
+          built_sha="$(awk '{print $1}' "$RUNNER_TEMP/SHA256SUMS")"
+          if [ "$built_sha" != "$manifest_sha" ]; then
+            echo "::error::Built APK SHA-256 ($built_sha) does not match documented SHA-256 ($manifest_sha) in docs/delivery-manifest.md" >&2
+            exit 1
+          fi
+          echo "PASS: Built APK matches documented delivery manifest SHA-256: $built_sha"
       - name: Run deployment contract checks
         env:
           OPEN_HOTSPOT_SDK: ${{ runner.temp }}/openwrt-sdk
+        shell: bash
         run: |
+          set -euo pipefail
           bash tests/test_deploy_contract.sh 2>&1 | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
       - name: Upload built APK
         uses: actions/upload-artifact@v4

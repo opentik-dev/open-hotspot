@@ -108,9 +108,19 @@ plane and client/IoT plane on non-overlapping networks.
 
 ## Screenshots
 
-The repository includes LuCI screenshots for [accounts](docs/screenshots/accounts.jpg),
-[devices](docs/screenshots/devices.jpg), [profiles](docs/screenshots/profiles.jpg),
-[setup](docs/screenshots/setup.jpg), and [vouchers](docs/screenshots/vouchers.jpg).
+The repository includes updated live router LuCI screenshots for all active tabs:
+
+- [Setup](docs/screenshots/setup.jpg) — Service initialization, state, and FAS activation.
+- [Dashboard](docs/screenshots/dashboard.jpg) — Active sessions, live quota usage, and account period overview.
+- [Profiles](docs/screenshots/profiles.jpg) — Bandwidth tiers, rate limits, period quotas, and device limits.
+- [Accounts](docs/screenshots/accounts.jpg) — User credentials, period renewal, PIN assignment, and expiry.
+- [Devices](docs/screenshots/devices.jpg) — Distinct device labels, responsive action cards (Block, Disconnect, Remove, Reassign).
+- [Vouchers](docs/screenshots/vouchers.jpg) — One-time voucher generation, rate profiles, and redemption status.
+- [Portal templates](docs/screenshots/templates.jpg) — Arabic and English responsive captive portal design switch.
+- [History](docs/screenshots/history.jpg) — Bounded audit history and persistent usage records.
+- [Backup](docs/screenshots/backup.jpg) — Atomic SQLite and configuration archive export and restore.
+- [Events](docs/screenshots/events.jpg) — Bounded read-only event log with taxonomy filters (category, severity, source, result).
+- [DEV Feature Lab](docs/screenshots/dev.jpg) — Experimental workbench and future feature registry.
 
 ## Development
 

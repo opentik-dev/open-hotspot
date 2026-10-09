@@ -560,13 +560,14 @@ admin_account_status_list() {
 	now=$(date +%s) || return 1
 	rows=$(sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
 		'SELECT a.id,a.username,p.period_type,p.time_limit_s,
-		        p.upload_limit_b,p.download_limit_b,COALESCE(a.renewed_at,"")
+		        p.upload_limit_b,p.download_limit_b,p.upload_rate_kbps,
+		        p.download_rate_kbps,COALESCE(a.renewed_at,"")
 		   FROM accounts a JOIN profiles p ON p.id=a.profile_id
 		  WHERE a.deleted_at IS NULL
 		  ORDER BY a.username;') || return 1
 
 	old_ifs="$IFS"
-	while IFS='|' read -r id username period_type time_limit upload_limit download_limit renewed_at; do
+	while IFS='|' read -r id username period_type time_limit upload_limit download_limit upload_rate download_rate renewed_at; do
 		[ -n "$id" ] || continue
 		window=$(period_window_effective "$period_type" "$renewed_at" "$now") || return 1
 		period_start=$(printf '%s' "$window" | cut -f1)
@@ -592,12 +593,12 @@ EOF
 		IFS="$old_ifs"
 		active_devices=$(sqlite3 -batch -noheader "$DB_PATH" \
 			"SELECT count(*) FROM active_sessions WHERE account_id=$id AND state='active';") || return 1
-		printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+		printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
 			"$id" "$username" "$period_type" "$period_start" "$period_end" \
 			"${time_limit:-0}" "${used_s:-0}" "${remaining_s:-0}" \
 			"${upload_limit:-0}" "${used_up:-0}" "${remaining_up:-0}" \
 			"${download_limit:-0}" "${used_down:-0}" "${remaining_down:-0}" \
-			"${active_devices:-0}"
+			"${active_devices:-0}" "${upload_rate:-0}" "${download_rate:-0}"
 	done <<EOF
 $rows
 EOF

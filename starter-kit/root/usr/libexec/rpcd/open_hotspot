@@ -180,7 +180,7 @@ rpc_account_status_list() {
 	json_add_array account_status
 	old_ifs="$IFS"
 	IFS='|'
-	while read -r id username period_type period_start period_end time_limit_s seconds_used remaining_seconds upload_limit_b bytes_up remaining_up download_limit_b bytes_down remaining_down active_devices; do
+	while read -r id username period_type period_start period_end time_limit_s seconds_used remaining_seconds upload_limit_b bytes_up remaining_up download_limit_b bytes_down remaining_down active_devices upload_rate_kbps download_rate_kbps; do
 		[ -n "$id" ] || continue
 		json_add_object
 		json_add_int id "$id"
@@ -198,6 +198,8 @@ rpc_account_status_list() {
 		json_add_int bytes_down "$bytes_down"
 		json_add_int remaining_down "$remaining_down"
 		json_add_int active_devices "$active_devices"
+		json_add_int upload_rate_kbps "$upload_rate_kbps"
+		json_add_int download_rate_kbps "$download_rate_kbps"
 		json_close_object
 	done <<EOF
 $rows

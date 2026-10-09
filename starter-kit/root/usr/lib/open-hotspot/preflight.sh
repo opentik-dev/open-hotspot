@@ -7,6 +7,7 @@
 OPEN_HOTSPOT_PHP_BIN="${OPEN_HOTSPOT_PHP_BIN:-php8-cgi}"
 OPEN_HOTSPOT_NDS_BIN="${OPEN_HOTSPOT_NDS_BIN:-opennds}"
 OPEN_HOTSPOT_NDSCTL_BIN="${OPEN_HOTSPOT_NDSCTL_BIN:-ndsctl}"
+OPEN_HOTSPOT_SERVICE_PLANE_GUARD="${OPEN_HOTSPOT_SERVICE_PLANE_GUARD:-/usr/lib/open-hotspot/service-plane.sh}"
 
 _preflight_have() {
 	command -v "$1" >/dev/null 2>&1
@@ -80,6 +81,12 @@ open_hotspot_preflight() {
 	version=$($OPEN_HOTSPOT_NDS_BIN -v 2>&1 | sed -n '1p') || return 1
 	[ -n "$version" ] || return 1
 	_preflight_topology || failed="$failed topology"
+	if [ -x "$OPEN_HOTSPOT_SERVICE_PLANE_GUARD" ]; then
+		"$OPEN_HOTSPOT_SERVICE_PLANE_GUARD" check || failed="$failed service-plane"
+	else
+		echo 'service_plane_error=guard-unavailable' >&2
+		failed="$failed service-plane"
+	fi
 	[ -z "$failed" ] || {
 		printf 'preflight_error=%s\n' "$failed" >&2
 		return 1

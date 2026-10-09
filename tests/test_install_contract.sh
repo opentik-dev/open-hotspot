@@ -7,6 +7,7 @@ makefile="$root/starter-kit/Makefile"
 builder="$root/tools/build-apk.sh"
 postinstall="$root/tools/apk-post-install.sh"
 router_access="$root/starter-kit/root/usr/lib/open-hotspot/router-access.sh"
+service_plane="$root/starter-kit/root/usr/lib/open-hotspot/service-plane.sh"
 diagnostics="$root/starter-kit/root/usr/lib/open-hotspot/diagnose.sh"
 
 sh -n "$init"
@@ -38,6 +39,7 @@ grep -F 'opennds.@opennds[0].custombinauth' "$postinstall" >/dev/null
 grep -F 'open-hotspot enable' "$postinstall" >/dev/null
 grep -F 'open-hotspot start' "$postinstall" >/dev/null
 grep -F 'pidof opennds' "$root/starter-kit/root/usr/lib/open-hotspot/opennds.sh" >/dev/null
+test -x "$service_plane"
 grep -F 'opennds_wait_ready' "$root/starter-kit/root/etc/init.d/open-hotspot" >/dev/null
 grep -F 'ensure_opennds_runtime' "$root/starter-kit/root/usr/lib/open-hotspot/cycle.sh" >/dev/null
 grep -F 'open_hotspot_clients' "$router_access" >/dev/null

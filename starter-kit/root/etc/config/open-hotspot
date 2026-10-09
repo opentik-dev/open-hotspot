@@ -14,3 +14,10 @@ config manager 'global'
 	option session_restore   'disabled'
 	option client_network    ''
 	option client_router_access 'deny'
+	# `protected` refuses captive activation on the management/service bridge.
+	# Select `isolated` only after a separate captive bridge exists. The temporary
+	# profile is deliberately not a default: it requires a future expiry and an
+	# explicit risk acknowledgement on the router.
+	option captive_plane_profile 'protected'
+	option captive_plane_temporary_until ''
+	option captive_plane_temporary_ack ''

@@ -7,6 +7,17 @@
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
+## Network service-plane safety checkpoint (2026-10-09)
+
+The field evidence shows that the shared service/management bridge must not be
+used as the openNDS captive gateway. The source now contains an activation and
+preflight service-plane guard: its default `protected` profile refuses that
+overlap, while an explicitly acknowledged and future-dated temporary profile
+is limited to controlled diagnosis. This is **Implemented** and **Tested** by
+local contract tests. The dedicated captive and IoT planes remain **Pending
+Hardware Validation**; no router interface, SSID, firewall, or openNDS setting
+was changed by this source checkpoint.
+
 ## What is established
 
 - The architecture keeps openNDS as the captive-portal and traffic-enforcement

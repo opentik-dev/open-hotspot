@@ -8,6 +8,7 @@ UCI_BIN="${OPEN_HOTSPOT_UCI_BIN:-uci}"
 UHTTPD_INIT="${OPEN_HOTSPOT_UHTTPD_INIT:-/etc/init.d/uhttpd}"
 OPENNDS_INIT="${OPEN_HOTSPOT_OPENNDS_INIT:-/etc/init.d/opennds}"
 BACKUP_ROOT="${OPEN_HOTSPOT_ACTIVATION_BACKUPS:-/etc/open-hotspot/activation-backups}"
+SERVICE_PLANE_GUARD="${OPEN_HOTSPOT_SERVICE_PLANE_GUARD:-/usr/lib/open-hotspot/service-plane.sh}"
 
 die() {
 	echo "open-hotspot: $1" >&2
@@ -103,7 +104,9 @@ activate() {
 	require_file /etc/config/uhttpd || return 1
 	require_file /usr/lib/open-hotspot/custombinauth.sh || return 1
 	require_file /usr/lib/open-hotspot/opennds.sh || return 1
+	require_file "$SERVICE_PLANE_GUARD" || return 1
 	"$UCI_BIN" -q get opennds.@opennds[0] >/dev/null || die 'openNDS UCI section missing'
+	"$SERVICE_PLANE_GUARD" check || return 1
 	gateway_if=$(discover_gateway_interface) || die 'LAN gateway interface is not discoverable'
 	ensure_fas_key || return 1
 

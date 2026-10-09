@@ -103,6 +103,25 @@ diag_nds_clients() {
 	if [ "${clients:-0}" -gt 0 ] && [ "${state:-}" = Authenticated ]; then
 		sessions=$(sqlite3 "$DIAG_DB" 'select count(*) from active_sessions where state="active";' 2>/dev/null || printf 0)
 		[ "$sessions" -gt 0 ] || diag_warn 'integration=opennds-authenticated-without-manager-session'
+		# A manager session can exist while the native openNDS callback returns
+		# the default unlimited policy.  That is valid for an explicitly
+		# unlimited profile, but it is a contract failure when any active
+		# account has a bounded time/byte/rate policy.  Detect it from the
+		# redacted status text without exposing client identifiers or policy
+		# secrets in the diagnostic output.
+		bounded_sessions=$(sqlite3 "$DIAG_DB" \
+			'select count(*) from active_sessions s
+			 join accounts a on a.id=s.account_id
+			 join profiles p on p.id=a.profile_id
+			 where s.state="active" and
+			       (p.time_limit_s > 0 or p.upload_limit_b > 0 or
+			        p.download_limit_b > 0 or p.upload_rate_kbps > 0 or
+			        p.download_rate_kbps > 0);' 2>/dev/null || printf 0)
+		if [ "${bounded_sessions:-0}" -gt 0 ]; then
+			unset_rates=$(grep -c 'Rate Limit Threshold: not set' "$status_file" 2>/dev/null || printf 0)
+			[ "${unset_rates:-0}" -lt 2 ] ||
+				diag_warn 'integration=bounded-policy-not-applied-to-opennds-session'
+		fi
 	fi
 }
 

@@ -1,11 +1,11 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r104`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r105`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
-**SHA-256:** `f4c003277bb6f8e50c9a15738e14b2ed65ad7ddee56f58dc9d398ea74e6836e2`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r104 is installed with the dedicated captive plane restored; r103, r102, r101, r100, r99, and r60 remain rollback checkpoints.
-**Decision:** r104 adds a diagnostic warning for bounded manager policies not reflected in native openNDS session limits. It passed packaging/contract tests and is installed; it does not close the remaining hardware gates.
+**SHA-256:** `fcbcae9b36348f362bbf5b74a498aa7755d43cb819698634971853dc73f8c34f`
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r105 is installed with the dedicated captive plane restored; r104, r103, r102, r101, r100, r99, and r60 remain rollback checkpoints.
+**Decision:** r105 fixes the BusyBox diagnostic counter handling introduced in r104. It passed packaging/contract tests and is installed; it does not close the remaining hardware gates.
 
 The r103 package is the reproducible source and installed candidate. The r102 package is the
 previous reproducible field candidate. The r101 package is

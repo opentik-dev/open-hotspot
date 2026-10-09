@@ -118,7 +118,7 @@ diag_nds_clients() {
 			        p.download_limit_b > 0 or p.upload_rate_kbps > 0 or
 			        p.download_rate_kbps > 0);' 2>/dev/null || printf 0)
 		if [ "${bounded_sessions:-0}" -gt 0 ]; then
-			unset_rates=$(grep -c 'Rate Limit Threshold: not set' "$status_file" 2>/dev/null || printf 0)
+			unset_rates=$(grep -c 'Rate Limit Threshold: not set' "$status_file" 2>/dev/null) || unset_rates=0
 			[ "${unset_rates:-0}" -lt 2 ] ||
 				diag_warn 'integration=bounded-policy-not-applied-to-opennds-session'
 		fi

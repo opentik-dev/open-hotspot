@@ -10,12 +10,12 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r101` is the current source candidate. Its local reproducible artifact
+`1.2.0-r102` is the current source candidate. Its local reproducible artifact
 checksum is
-`8b720d2c9ac54247c7a384e86903ca91b3b1b3b7085cd62dc4d426ca1c97de40`.
-It adds dedicated non-captive IoT WAN egress and a read-only route/overlay
-audit to the r100 base. Hardware validation remains pending.
-The installed controlled-trial candidate is `1.2.0-r101`; its guarded
+`0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe`.
+It adds a fail-closed service-plane guard to activation and preflight.
+Hardware validation remains pending. The installed controlled-trial candidate
+is `1.2.0-r101`; its guarded
 deployment completed the checksum and rollback barriers, and its bounded
 post-install health probe passed. The previous `1.2.0-r100` artifact checksum is
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
@@ -126,6 +126,7 @@ final release freeze.
 | r99 | `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672` | Source candidate containing schema v6, controlled account switching, bounded event taxonomy, storage-boundary redaction, and deterministic root:root SDK fakeroot packaging. CI-built artifact; hardware validation remains pending; not installed. |
 | r100 | `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a` | Device identity/UI candidate based on r99. Separates device label from account owner and groups device actions in responsive cards. CI passed and the artifact was installed for controlled UI trial; production hardware gates remain open. |
 | r101 | `8b720d2c9ac54247c7a384e86903ca91b3b1b3b7085cd62dc4d426ca1c97de40` | Adds dedicated non-captive IoT WAN egress without LAN forwarding or an unverified MAC bypass, plus the read-only route/overlay audit. Built twice with matching SDK-fakeroot output; guarded target installation and post-install health verification passed; scenario gates remain open. |
+| r102 | `0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe` | Adds a fail-closed captive service-plane guard. It blocks activation and preflight when openNDS uses the management/service bridge; a time-limited shared-service profile requires explicit risk acknowledgement. Locally reproducible and contract-tested; not installed; hardware validation remains pending. |
 
 ## Existing GitHub history
 

@@ -1,11 +1,11 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r107`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r108`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
-**SHA-256:** `8b53bd9af1fee4c9d7368c1718a408d51f99041afe8c85f6f48ebbd329083ecc`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r107 is installed with the dedicated captive plane restored; r106, r105, r104, r103, r102, r101, r100, r99, and r60 remain rollback checkpoints.
-**Decision:** r107 corrects the diagnostic so an unlimited session can coexist with a bounded session without a false warning. It passed packaging/contract tests, was deployed through the guarded path, and post-install diagnostics report zero failures/warnings; it does not close the remaining hardware gates.
+**SHA-256:** `b219f1d524b746ea6ec65d39763728fa87bfa7e60e32cf193a74622d5c23bf7b`
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r108 is installed with the dedicated captive plane restored; r107, r106, r105, r104, r103, r102, r101, r100, r99, and r60 remain rollback checkpoints.
+**Decision:** r108 adds a read-only live DHCP inventory to the Devices tab, including network, IP, hostname, lease, and MAC. It does not mutate admission or quotas; target inventory returned nine DHCP records and post-install diagnostics report zero failures/warnings.
 
 The r103 package is the reproducible source and installed candidate. The r102 package is the
 previous reproducible field candidate. The r101 package is

@@ -243,11 +243,13 @@ function devices()
 		end
 	end
 	local result, err = ubus_call("device_list", {})
+	local network_result, network_error = ubus_call("network_client_list", {})
 	local accounts_result, accounts_error = ubus_call("account_list", {})
 	template.render("open-hotspot/devices", {
 		devices = result and result.devices or {},
+		network_clients = network_result and network_result.clients or {},
 		accounts = accounts_result and accounts_result.accounts or {},
-		page_error = err or accounts_error or "",
+		page_error = err or network_error or accounts_error or "",
 		page_message = message or "",
 		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "devices"),
 		token = dispatcher.context.authtoken

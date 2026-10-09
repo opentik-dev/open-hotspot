@@ -261,6 +261,33 @@ admin_device_list() {
 		  ORDER BY a.username,d.mac;'
 }
 
+# Read-only inventory of current DHCP leases.  This is intentionally separate
+# from the managed devices table: captive authentication creates managed
+# device records, while LAN/IoT clients may never pass through openNDS.
+admin_network_client_list() {
+	leases=$(ubus call luci-rpc getDHCPLeases 2>/dev/null) || return 1
+	printf '%s\n' "$leases" | jsonfilter -e '@.dhcp_leases[*]' 2>/dev/null |
+	while IFS= read -r object; do
+		[ -n "$object" ] || continue
+		mac=$(printf '%s\n' "$object" | sed -n 's/.*"macaddr"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+		ip=$(printf '%s\n' "$object" | sed -n 's/.*"ipaddr"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+		hostname=$(printf '%s\n' "$object" | sed -n 's/.*"hostname"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+		expires=$(printf '%s\n' "$object" | sed -n 's/.*"expires"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')
+		[ -n "$mac" ] && [ -n "$ip" ] || continue
+		case "$ip" in
+			192.168.1.*) network=br-lan ;;
+			192.168.50.*) network=br-guest ;;
+			192.168.60.*) network=br-hotspot ;;
+			192.168.70.*) network=br-iot ;;
+			*) network=other ;;
+		esac
+		# Keep the line protocol stable and prevent a client hostname from
+		# becoming a field delimiter or control line in the RPC response.
+		hostname=$(printf '%s' "${hostname:-Unknown device}" | tr '|\r\n' '   ')
+		printf '%s|%s|%s|%s|%s\n' "$network" "$mac" "$ip" "$hostname" "${expires:-0}"
+	done
+}
+
 admin_device_set_status() {
 	id="$1"; status="$2"
 	_valid_int "$id" || return 1
@@ -629,6 +656,7 @@ case "${1:-}" in
 	account-set-pin) shift; admin_account_set_pin "$@" ;;
 	account-delete) shift; admin_account_delete "$@" ;;
 	device-list) admin_device_list ;;
+	network-client-list) admin_network_client_list ;;
 	device-block) shift; admin_device_set_status "$1" blocked ;;
 	device-unblock) shift; admin_device_set_status "$1" active ;;
 	device-remove) shift; admin_device_remove "$1" ;;

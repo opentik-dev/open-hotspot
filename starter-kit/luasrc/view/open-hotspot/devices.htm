@@ -5,6 +5,18 @@
 <% if page_message ~= "" then %><div class="alert-message <%=page_message:match('^Error:') and 'danger' or 'success'%>"><%=pcdata(page_message)%></div><% end %>
 
 <p><%:A blocked device cannot authenticate. Removing is allowed only when no session or usage history references the device (for historical devices, use Reassign; for live sessions, Disconnect first).%></p>
+<p class="alert-message"><%:The managed-device list contains authenticated Open-HotSpot devices. The live network inventory below also includes DHCP clients on LAN, guest, hotspot, and IoT networks. Hostnames are supplied by the client; privacy MAC randomization or silent clients may remain unidentified.%></p>
+<h3><%:Live network clients%></h3>
+<div class="oh-table-wrap">
+<table class="table cbi-section-table oh-device-table">
+<tr class="tr table-titles"><th><%:Network%></th><th><%:Device / hostname%></th><th><%:IP address%></th><th><%:MAC address%></th><th><%:Lease remaining%></th></tr>
+<% for _, client in ipairs(network_clients or {}) do %>
+<tr class="tr"><td><%=pcdata(client.network)%></td><td><strong><%=pcdata(client.hostname or "Unknown device")%></strong></td><td><code><%=pcdata(client.ip)%></code></td><td><code><%=pcdata(client.mac)%></code></td><td><%=client.lease_seconds%> s</td></tr>
+<% end %>
+<% if #(network_clients or {}) == 0 then %><tr class="tr"><td class="oh-empty" colspan="5"><%:No DHCP clients reported.%></td></tr><% end %>
+</table>
+</div>
+<h3><%:Managed Open-HotSpot devices%></h3>
 <div class="oh-table-wrap">
 <table class="table cbi-section-table oh-device-table">
 <tr class="tr table-titles"><th><%:Device name%></th><th><%:Account%></th><th><%:MAC address%></th><th><%:Status%></th><th><%:First seen%></th><th><%:Last seen%></th><th><%:Live sessions%></th><th><%:Actions%></th></tr>

@@ -128,6 +128,29 @@ EOF
 	json_dump
 }
 
+rpc_network_client_list() {
+	rows=$($ADMIN network-client-list 2>/dev/null) || rpc_error network-inventory
+	json_init
+	json_add_array clients
+	old_ifs="$IFS"
+	IFS='|'
+	while read -r network mac ip hostname lease_seconds; do
+		[ -n "$mac" ] || continue
+		json_add_object
+		json_add_string network "$network"
+		json_add_string mac "$mac"
+		json_add_string ip "$ip"
+		json_add_string hostname "${hostname:-Unknown device}"
+		json_add_int lease_seconds "${lease_seconds:-0}"
+		json_close_object
+	done <<EOF
+$rows
+EOF
+	IFS="$old_ifs"
+	json_close_array
+	json_dump
+}
+
 rpc_voucher_list() {
 	rows=$($ADMIN voucher-list 2>/dev/null) || rpc_error database
 	json_init
@@ -461,7 +484,7 @@ rpc_dev_diagnose() {
 
 case "${1:-}" in
 	list)
-		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_renew":{"id":0},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"device_force_deauth":{"id":0},"device_reassign":{"id":0,"target_account_id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"account_status_list":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{},"router_access_set":{"mode":"deny","network":""},"session_restore_set":{"mode":"disabled"},"dev_events_list":{"category":"","severity":"","source":"","result":""},"dev_diagnose":{}}'
+		echo '{"profile_list":{},"profile_create":{"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_update":{"id":0,"name":"","period_type":"","time_limit_s":0,"upload_limit_b":0,"download_limit_b":0,"upload_rate_kbps":0,"download_rate_kbps":0,"max_devices":1},"profile_delete":{"id":0},"account_list":{},"account_create":{"username":"","profile_id":0,"expires_at":"","pin":""},"account_update":{"id":0,"username":"","profile_id":0,"status":"active","expires_at":""},"account_renew":{},"account_set_pin":{"id":0,"pin":""},"account_delete":{"id":0},"device_list":{},"network_client_list":{},"device_block":{"id":0},"device_unblock":{"id":0},"device_remove":{"id":0},"device_force_deauth":{"id":0},"device_reassign":{"id":0,"target_account_id":0},"voucher_list":{},"voucher_generate":{"count":1,"profile_id":0,"validity_seconds":3600},"voucher_revoke":{"id":0},"overview":{},"account_status_list":{},"history_list":{},"template_list":{},"template_apply":{"name":""},"setup_base":{},"router_access_set":{"mode":"deny","network":""},"session_restore_set":{"mode":"disabled"},"dev_events_list":{"category":"","severity":"","source":"","result":""},"dev_diagnose":{}}'
 		;;
 	call)
 		method="${2:-}"
@@ -471,6 +494,7 @@ case "${1:-}" in
 			profile_list) rpc_profile_list ;;
 			account_list) rpc_account_list ;;
 			device_list) rpc_device_list ;;
+			network_client_list) rpc_network_client_list ;;
 			voucher_list) rpc_voucher_list ;;
 			overview) rpc_overview ;;
 			account_status_list) rpc_account_status_list ;;

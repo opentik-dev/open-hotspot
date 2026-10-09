@@ -1,16 +1,15 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r100`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r101`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
-**SHA-256:** `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r100 installed for controlled UI trial; r99 and r60 remain rollback paths.
-**Decision:** r100 is the canonical UI candidate based on merged main/r99,
-adding distinct device identity presentation and responsive device actions;
-r100 is installed for controlled trial and r99 rollback evidence is preserved.
+**SHA-256:** `8b720d2c9ac54247c7a384e86903ca91b3b1b3b7085cd62dc4d426ca1c97de40`
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r100 is installed for controlled UI trial; r99 and r60 remain rollback paths.
+**Decision:** r101 adds a dedicated non-captive IoT egress policy and a read-only route/overlay diagnostic. It is a source artifact awaiting guarded field installation; r100 remains the installed checkpoint until that succeeds.
 
-The r100 package is the installed controlled-trial candidate and its checksum is
-recorded in the release ledger. The r99 package remains the rollback candidate.
+The r101 package is the reproducible source candidate. The r100 package remains
+the installed controlled-trial candidate and its checksum is recorded in the
+release ledger. The r99 package remains the rollback candidate.
 Its historical artifact checksum is recorded in the release ledger. The prior
 artifact checksum is recorded in the release ledger. The prior r98 package contains
 the device-lifecycle and failure-observability changes from the reviewed source

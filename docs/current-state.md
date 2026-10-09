@@ -9,7 +9,7 @@ for detailed acceptance decisions.
 ## Baselines
 
 The current installed field candidate is r100 in controlled trial. The source
-candidate and installed trial are the same r100 commit; r99 is the rollback
+candidate is r101; it has not yet changed the target. r99 is the rollback
 candidate.
 
 Controlled account switching is isolated on the source branch
@@ -20,7 +20,7 @@ hardware validation.
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
 | Installed field candidate | Open-HotSpot r100 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed for controlled UI trial; event taxonomy/account switching present; hardware acceptance pending |
-| Source candidate | Open-HotSpot r100 / openNDS 11.0.0 | Same reviewed candidate as trial | Device label separation and responsive action layout; production acceptance pending |
+| Source candidate | Open-HotSpot r101 / openNDS 11.0.0 | Guarded deployment candidate | IoT WAN-only egress and read-only route/overlay audit; production acceptance pending |
 | Previous candidate | Open-HotSpot r99 / openNDS 11.0.0 | Previous installed candidate and rollback | Superseded by r100 trial; preserve as rollback |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
@@ -87,16 +87,11 @@ authenticated beyond the reported 3–4 minute interval during this observation,
 so the user-facing eviction is not yet reproduced and must not be attributed
 to a timeout or quota without a controlled account-specific test.
 
-The installed r93 candidate provided implementation for
-session lifecycle stability, reproducible APK packaging (clean git archive build
-verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`),
-reconciled release metadata, separated read-only DEV/Events LuCI surfaces, and
-safe reconciliation/policy-refresh event reporting. Cycle stability tests in
-the test suite are simulation/contract tests of algorithm logic. Its artifact
-was installed on the target through the guarded deployment driver and passed
-post-install diagnostics. A real client remained authenticated beyond the
-reported 3–4 minute window; quota, restart, and failure-containment evidence
-remain pending.
+The historical r93 checkpoint is retained only in the release ledger; it is
+not an installed-target or current-source claim. The r100 target diagnostic is
+healthy, while the observed NAS, PBX, modem, IoT, and Tailscale reachability
+issues require the explicit route/zone evidence provided by r101 before any
+firewall exception is considered.
 
 ## 2026-10-03 deployment checkpoint
 

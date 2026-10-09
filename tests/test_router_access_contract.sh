@@ -9,6 +9,9 @@ test -x "$script"
 grep -F 'client_router_access' "$script" >/dev/null
 grep -F 'client_network' "$script" >/dev/null
 grep -F 'dest_port=22 80 443' "$script" >/dev/null
+grep -F 'open_hotspot_clients_to_wan' "$script" >/dev/null
+grep -F 'WAN firewall zone is not discoverable' "$script" >/dev/null
+grep -F 'unverified openNDS trusted-MAC bypass' "$script" >/dev/null
 grep -F 'gateway/management interface' "$script" >/dev/null
 grep -F 'if [ "$client_device" = "$gateway_device" ]; then' "$script" >/dev/null
 grep -F 'if network_is_already_zoned "$network" "$ZONE"; then' "$script" >/dev/null

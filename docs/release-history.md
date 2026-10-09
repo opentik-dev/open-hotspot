@@ -10,12 +10,12 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r100` is the current source candidate. Its local reproducible artifact
+`1.2.0-r101` is the current source candidate. Its local reproducible artifact
 checksum is
-`bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`.
-It adds distinct device identity presentation and responsive device actions on
-the merged r99 base. CI publication and hardware validation remain pending.
-The installed controlled-trial candidate is `1.2.0-r100` with artifact checksum
+`8b720d2c9ac54247c7a384e86903ca91b3b1b3b7085cd62dc4d426ca1c97de40`.
+It adds dedicated non-captive IoT WAN egress and a read-only route/overlay
+audit to the r100 base. CI publication and hardware validation remain pending.
+The installed controlled-trial candidate remains `1.2.0-r100` with artifact checksum
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
 guarded post-install diagnostic and `ndsctl status` were healthy.
 Physical acceptance gates remain open. r100 is the
@@ -123,6 +123,7 @@ final release freeze.
 | r98 | `7f44b04399dee35c0b59663bbdcaca64099a0526a65a9709c29c2d78fc184592` | Source candidate containing device lifecycle indicators, machine-readable removal failures, safe audit events, pending-session alignment, and transactional race/failure coverage. CI-built artifact; not installed; hardware validation remains open. |
 | r99 | `96320f33353858c695b2f83e2b12cdb91b42b3d2665e822ea9cf9c058991a672` | Source candidate containing schema v6, controlled account switching, bounded event taxonomy, storage-boundary redaction, and deterministic root:root SDK fakeroot packaging. CI-built artifact; hardware validation remains pending; not installed. |
 | r100 | `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a` | Device identity/UI candidate based on r99. Separates device label from account owner and groups device actions in responsive cards. CI passed and the artifact was installed for controlled UI trial; production hardware gates remain open. |
+| r101 | `8b720d2c9ac54247c7a384e86903ca91b3b1b3b7085cd62dc4d426ca1c97de40` | Adds dedicated non-captive IoT WAN egress without LAN forwarding or an unverified MAC bypass, plus the read-only route/overlay audit. Built twice with matching SDK-fakeroot output; guarded target installation pending. |
 
 ## Existing GitHub history
 

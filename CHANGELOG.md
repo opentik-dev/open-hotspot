@@ -3,6 +3,13 @@
 This file summarizes user-visible and engineering-significant changes. The
 release ledger and field checkpoints remain in [`docs/release-history.md`](docs/release-history.md).
 
+## 1.2.0-r101 (candidate; hardware acceptance pending)
+
+- Added a WAN-only forwarding policy for a dedicated non-captive IoT network.
+  It does not forward to the management LAN and does not create an openNDS MAC bypass.
+- Added `network-audit.sh`, a read-only route/Tailscale/IoT-path diagnostic for
+  field investigation before any NAS, PBX, modem, or overlay firewall exception.
+
 ## 1.2.0-r100 (candidate; hardware acceptance pending)
 
 - Devices UI clarity:

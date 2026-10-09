@@ -77,6 +77,11 @@
 .oh-page .oh-device-field > span:first-child { font-size: .82rem; font-weight: 600; opacity: .76; }
 .oh-page .oh-device-field strong, .oh-page .oh-device-field code { overflow-wrap: anywhere; }
 .oh-page .oh-device-primary strong { color: #2f80ed; }
+.oh-page .oh-status-dot { display: inline-block; width: .72rem; height: .72rem; margin-inline-end: .35rem; border-radius: 50%; vertical-align: .05em; background: #868e96; box-shadow: 0 0 0 2px rgba(134, 142, 150, .18); }
+.oh-page .oh-status-dot.is-authenticated { background: #2fb344; box-shadow: 0 0 0 2px rgba(47, 179, 68, .2); }
+.oh-page .oh-status-dot.is-connected { background: #f59f00; box-shadow: 0 0 0 2px rgba(245, 159, 0, .2); }
+.oh-page .oh-status-dot.is-blocked { background: #e03131; box-shadow: 0 0 0 2px rgba(224, 49, 49, .2); }
+.oh-page .oh-device-state { display: block; margin-top: .2rem; opacity: .76; font-weight: 500; }
 .oh-page .oh-device-actions { display: flex; flex-wrap: wrap; gap: .55rem .7rem; align-items: end; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid rgba(127, 127, 127, .25); }
 .oh-page .oh-device-actions .oh-action-row > form { display: inline-flex; flex: 0 0 auto; align-items: end; gap: .5rem; margin: 0; }
 .oh-page .oh-device-actions .oh-device-reassign { flex: 1 1 22rem; }

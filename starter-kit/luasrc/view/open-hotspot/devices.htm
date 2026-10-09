@@ -24,7 +24,7 @@
 <tr class="tr oh-device-card-row">
 <td colspan="8"><div class="oh-device-card">
 <div class="oh-device-grid">
-<div class="oh-device-field oh-device-primary"><span><%:Device name%></span><strong><%=pcdata(device.device_name or ("Device #" .. device.id))%></strong></div>
+<div class="oh-device-field oh-device-primary"><span><%:Device name%></span><strong><span class="oh-status-dot is-<%=pcdata(device.connection_state or "offline")%>" title="<%=pcdata(device.connection_label or "Offline")%>"></span><%=pcdata(device.device_name or ("Device #" .. device.id))%></strong><small class="oh-device-state"><%=pcdata(device.connection_label or "Offline")%></small></div>
 <div class="oh-device-field"><span><%:Account%></span><strong><%=pcdata(device.username)%></strong></div>
 <div class="oh-device-field"><span><%:MAC address%></span><code><%=pcdata(device.mac)%></code></div>
 <div class="oh-device-field"><span><%:Status%></span><strong><%=pcdata(device.status)%><% if device.has_history then %> <span class="badge" title="<%:Historical device retained for accounting; use Reassign. Archive is planned separately.%>">(<%:Historical%>)</span><% end %></strong></div>

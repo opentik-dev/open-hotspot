@@ -6,7 +6,7 @@
 # 2. deploy-r92.sh passes bash syntax validation.
 # 3. Strict bash error handling (set -euo pipefail) is enabled.
 # 4. No '|| true' exists in the backup workflow (Phase 4).
-# 5. Rollback taxonomy matches documentation (r60 baseline vs r90-r108 candidate).
+# 5. Rollback taxonomy matches documentation (r60 baseline vs r90-r109 candidate).
 # 6. opennds -v exit code is captured directly and non-zero output is validated.
 # 7. Failure count parsing handles arbitrary non-zero counts (e.g. failures=12).
 # 8. The embedded remote rollback archive command passes POSIX shell syntax.
@@ -84,7 +84,7 @@ else
 fi
 
 # 5. Verify rollback taxonomy matches documentation
-if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r108-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
+if grep -q "r60-opennds10.3-production-baseline" "$DEPLOY_SCRIPT" && grep -q "r90-r109-opennds11.0-field-candidate" "$DEPLOY_SCRIPT"; then
 	pass "Rollback taxonomy cross-verifies openNDS version with installed package"
 else
 	fail "Rollback taxonomy does not cross-verify openNDS version with package"

@@ -245,9 +245,36 @@ function devices()
 	local result, err = ubus_call("device_list", {})
 	local network_result, network_error = ubus_call("network_client_list", {})
 	local accounts_result, accounts_error = ubus_call("account_list", {})
+	local network_clients = network_result and network_result.clients or {}
+	local network_by_mac = {}
+	for _, client in ipairs(network_clients) do
+		local key = (client.mac or ""):lower():gsub(":", "")
+		if key ~= "" then network_by_mac[key] = client end
+	end
+	for _, device in ipairs(result and result.devices or {}) do
+		local key = (device.mac or ""):lower():gsub(":", "")
+		local client = network_by_mac[key]
+		local current_name = device.device_name or ("Device #" .. tostring(device.id))
+		if client and client.hostname and client.hostname ~= "" and client.hostname ~= "Unknown device" and current_name:match("^Device #") then
+			device.device_name = client.hostname
+		end
+		if device.status == "blocked" then
+			device.connection_state = "blocked"
+			device.connection_label = "Blocked"
+		elseif tonumber(device.live_sessions or 0) > 0 then
+			device.connection_state = "authenticated"
+			device.connection_label = "Authenticated"
+		elseif client then
+			device.connection_state = "connected"
+			device.connection_label = "Connected, not authenticated"
+		else
+			device.connection_state = "offline"
+			device.connection_label = "Offline"
+		end
+	end
 	template.render("open-hotspot/devices", {
 		devices = result and result.devices or {},
-		network_clients = network_result and network_result.clients or {},
+		network_clients = network_clients,
 		accounts = accounts_result and accounts_result.accounts or {},
 		page_error = err or network_error or accounts_error or "",
 		page_message = message or "",

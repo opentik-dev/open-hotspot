@@ -10,16 +10,16 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r108` is the current source candidate. Its local reproducible artifact
+`1.2.0-r109` is the current source candidate. Its local reproducible artifact
 checksum is
-`b219f1d524b746ea6ec65d39763728fa87bfa7e60e32cf193a74622d5c23bf7b`.
-It adds a read-only live DHCP inventory to the Devices tab and retains the
+`25c148db309c7af7151bf0739e0dacbabea2de8e8e39e79cf40824bd56c0e6b7`.
+It links managed devices to the live DHCP inventory, uses current hostnames where available, and retains the
 BusyBox counter handling fix in the diagnostic warning for bounded manager policies that are not reflected
 in native openNDS session limits, building on r103's activation readiness
 containment and r102's fail-closed service-plane guard.
 Dedicated-plane captive login/Internet validation is recorded, while broader
 hardware validation remains pending. The installed controlled-trial candidate
-is `1.2.0-r108`; its guarded deployment completed the checksum and rollback barriers, and the target inventory RPC returned nine DHCP records with zero diagnostic failures/warnings.
+is `1.2.0-r109`; its guarded deployment completed the checksum and rollback barriers, and target verification returned six managed records, nine DHCP records, and zero diagnostic failures/warnings.
 barriers, and its bounded post-install health probe passed. The prior
 `1.2.0-r102` candidate is retained. The previous `1.2.0-r100` artifact checksum is
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
@@ -137,6 +137,7 @@ final release freeze.
 | r106 | `bee1ebcddd13a3c18d823ae0914bf2f87197b85bde37b35784e91aa76ece15e2` | Adds upload/download policy-rate fields to the account-status RPC and LuCI dashboard. Guarded deployment completed; post-install diagnostics report zero failures/warnings. |
 | r107 | `8b53bd9af1fee4c9d7368c1718a408d51f99041afe8c85f6f48ebbd329083ecc` | Corrects the bounded-policy diagnostic to distinguish valid unlimited sessions from missing native limits. Locally built and contract-tested; guarded target deployment pending. |
 | r108 | `b219f1d524b746ea6ec65d39763728fa87bfa7e60e32cf193a74622d5c23bf7b` | Adds a read-only live DHCP client inventory to the Devices tab with network, hostname, IP, MAC, and lease remaining. Guarded deployment completed; target inventory returned nine records and diagnostics passed. |
+| r109 | `25c148db309c7af7151bf0739e0dacbabea2de8e8e39e79cf40824bd56c0e6b7` | Links managed devices to live DHCP clients by MAC, prefers current DHCP hostnames over generated labels, and adds explicit authenticated/connected/offline/blocked indicators. Guarded deployment completed; target verification passed. |
 
 ## Existing GitHub history
 

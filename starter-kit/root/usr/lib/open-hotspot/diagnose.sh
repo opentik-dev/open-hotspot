@@ -119,7 +119,11 @@ diag_nds_clients() {
 			        p.download_rate_kbps > 0);' 2>/dev/null || printf 0)
 		if [ "${bounded_sessions:-0}" -gt 0 ]; then
 			unset_rates=$(grep -c 'Rate Limit Threshold: not set' "$status_file" 2>/dev/null) || unset_rates=0
-			[ "${unset_rates:-0}" -lt 2 ] ||
+			# Each native client contributes two rate fields.  An unlimited
+			# client is valid alongside a bounded client, so only warn when
+			# every reported client is missing both native rate fields.
+			expected_unset_rates=$((clients * 2))
+			[ "${unset_rates:-0}" -lt "$expected_unset_rates" ] ||
 				diag_warn 'integration=bounded-policy-not-applied-to-opennds-session'
 		fi
 	fi

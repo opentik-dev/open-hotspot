@@ -8,9 +8,8 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current installed field candidate is r100 in controlled trial. The source
-candidate is r101; it has not yet changed the target. r99 is the rollback
-candidate.
+The current installed field candidate and source candidate are r101 in
+controlled trial. r99 is the rollback candidate.
 
 Controlled account switching is isolated on the source branch
 `codex/controlled-account-switching`, based on merged `main`. It is not part
@@ -19,8 +18,8 @@ hardware validation.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Installed field candidate | Open-HotSpot r100 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment completed | Installed for controlled UI trial; event taxonomy/account switching present; hardware acceptance pending |
-| Source candidate | Open-HotSpot r101 / openNDS 11.0.0 | Guarded deployment candidate | IoT WAN-only egress and read-only route/overlay audit; production acceptance pending |
+| Installed field candidate | Open-HotSpot r101 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment and bounded health probe completed | IoT WAN-only egress and read-only route/overlay audit; scenario acceptance pending |
+| Source candidate | Open-HotSpot r101 / openNDS 11.0.0 | Same reviewed candidate as trial | IoT WAN-only egress and read-only route/overlay audit; production acceptance pending |
 | Previous candidate | Open-HotSpot r99 / openNDS 11.0.0 | Previous installed candidate and rollback | Superseded by r100 trial; preserve as rollback |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 

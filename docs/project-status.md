@@ -1,7 +1,7 @@
 # Open-HotSpot project status
 
 **As of:** 2026-10-03
-**Installed field candidate:** Open-HotSpot 1.2.0-r100
+**Installed field candidate:** Open-HotSpot 1.2.0-r101
 **Current source candidate:** Open-HotSpot 1.2.0-r101 (guarded field candidate)
 **Previous candidate:** Open-HotSpot 1.2.0-r99
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0

@@ -1,9 +1,9 @@
 # Open-HotSpot project status
 
 **As of:** 2026-10-09
-**Installed field candidate:** Open-HotSpot 1.2.0-r102
-**Current source candidate:** Open-HotSpot 1.2.0-r102 (service-plane guard candidate)
-**Previous candidate:** Open-HotSpot 1.2.0-r101
+**Installed field candidate:** Open-HotSpot 1.2.0-r103
+**Current source candidate:** Open-HotSpot 1.2.0-r103 (activation-readiness candidate)
+**Previous candidate:** Open-HotSpot 1.2.0-r102
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -14,11 +14,10 @@ used as the openNDS captive gateway. The source now contains an activation and
 preflight service-plane guard: its default `protected` profile refuses that
 overlap, while an explicitly acknowledged and future-dated temporary profile
 is limited to controlled diagnosis. This is **Implemented** and **Tested** by
-local contract tests. r102 is installed with openNDS on the dedicated captive
-bridge and its captive login/Internet flow is **Verified** in OP-119. The
-remaining service-regression, guest-denial, and IoT gates remain **Pending
-Hardware Validation**. The shared-LAN alternative in ADR-008 has not been
-enabled.
+local contract tests. r103 is installed on the target and U1 has reached a
+ready openNDS state on `br-lan`; no service-port exception has been added. The
+remaining pre-auth denial, post-auth service, rollback, and IoT gates remain
+**Pending Hardware Validation**.
 
 ## What is established
 

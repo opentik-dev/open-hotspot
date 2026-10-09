@@ -10,15 +10,16 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r102` is the current source candidate. Its local reproducible artifact
+`1.2.0-r103` is the current source candidate. Its local reproducible artifact
 checksum is
-`0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe`.
-It adds a fail-closed service-plane guard to activation and preflight.
+`0283898e55f93f6335c02c3a6bae8bf148ce4cc5ee2c1085eff8fc1bcafd8e11`.
+It adds activation readiness containment to r102's fail-closed service-plane
+guard.
 Dedicated-plane captive login/Internet validation is recorded, while broader
 hardware validation remains pending. The installed controlled-trial candidate
-is `1.2.0-r102`; its guarded deployment completed the checksum and rollback
+is `1.2.0-r103`; its guarded deployment completed the checksum and rollback
 barriers, and its bounded post-install health probe passed. The prior
-`1.2.0-r101` candidate is retained. The previous `1.2.0-r100` artifact checksum is
+`1.2.0-r102` candidate is retained. The previous `1.2.0-r100` artifact checksum is
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
 guarded post-install diagnostic and `ndsctl status` were healthy.
 Physical acceptance gates remain open. r100 is the
@@ -128,6 +129,7 @@ final release freeze.
 | r100 | `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a` | Device identity/UI candidate based on r99. Separates device label from account owner and groups device actions in responsive cards. CI passed and the artifact was installed for controlled UI trial; production hardware gates remain open. |
 | r101 | `8b720d2c9ac54247c7a384e86903ca91b3b1b3b7085cd62dc4d426ca1c97de40` | Adds dedicated non-captive IoT WAN egress without LAN forwarding or an unverified MAC bypass, plus the read-only route/overlay audit. Built twice with matching SDK-fakeroot output; guarded target installation and post-install health verification passed; scenario gates remain open. |
 | r102 | `0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe` | Adds a fail-closed captive service-plane guard. It blocks activation and preflight when openNDS uses the management/service bridge; a time-limited shared-service profile requires explicit risk acknowledgement. Locally reproducible and contract-tested; not installed; hardware validation remains pending. |
+| r103 | `0283898e55f93f6335c02c3a6bae8bf148ce4cc5ee2c1085eff8fc1bcafd8e11` | Adds a pre-activation openNDS readiness check and bounded recovery after activation rollback, preventing configuration mutation while ndsctl is unavailable and avoiding a stopped captive daemon after a failed transition. Locally reproducible, contract-tested, and installed for bounded U1 staging; hardware validation remains pending. |
 
 ## Existing GitHub history
 

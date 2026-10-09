@@ -39,6 +39,9 @@ grep -F 'opennds.@opennds[0].custombinauth' "$postinstall" >/dev/null
 grep -F 'open-hotspot enable' "$postinstall" >/dev/null
 grep -F 'open-hotspot start' "$postinstall" >/dev/null
 grep -F 'pidof opennds' "$root/starter-kit/root/usr/lib/open-hotspot/opennds.sh" >/dev/null
+grep -F 'ensure_opennds_ready' "$root/starter-kit/root/usr/lib/open-hotspot/activate-local-fas.sh" >/dev/null
+grep -F 'activation stopped before mutation' "$root/starter-kit/root/usr/lib/open-hotspot/activate-local-fas.sh" >/dev/null
+grep -F 'recover_opennds' "$root/starter-kit/root/usr/lib/open-hotspot/activate-local-fas.sh" >/dev/null
 test -x "$service_plane"
 grep -F 'opennds_wait_ready' "$root/starter-kit/root/etc/init.d/open-hotspot" >/dev/null
 grep -F 'ensure_opennds_runtime' "$root/starter-kit/root/usr/lib/open-hotspot/cycle.sh" >/dev/null

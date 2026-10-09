@@ -3,7 +3,7 @@
 #
 # The historical filename is retained for compatibility. Set
 # CANDIDATE_RELEASE and CANDIDATE_SHA256 for a newer candidate; defaults remain
-# r102 so the newly built candidate is distinct from the installed r101 field artifact.
+# r103 so the newly built candidate is distinct from the installed r102 field artifact.
 #
 # Operational requirements:
 # 1. Strict bash error handling (set -euo pipefail).
@@ -23,7 +23,7 @@
 # 6. Strict fail-closed rollback taxonomy:
 #    - Cross-verifies installed Open-HotSpot package version with openNDS daemon version:
 #      r60 + openNDS 10.3.x -> r60-opennds10.3-production-baseline
-#      r90-r102 + openNDS 11.0.x -> r90-r102-opennds11.0-field-candidate
+#      r90-r103 + openNDS 11.0.x -> r90-r103-opennds11.0-field-candidate
 #    - Rejects and aborts on unknown package version or mismatched openNDS version.
 # 7. Exact local and remote SHA-256 validation against documented hash.
 # 8. Conditional installation: executed only after every single barrier passes.
@@ -34,8 +34,8 @@ set -euo pipefail
 
 PROJECT=$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CANDIDATE_VERSION="${CANDIDATE_VERSION:-1.2.0}"
-CANDIDATE_RELEASE="${CANDIDATE_RELEASE:-102}"
-EXPECTED_SHA="${CANDIDATE_SHA256:-0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe}"
+CANDIDATE_RELEASE="${CANDIDATE_RELEASE:-103}"
+EXPECTED_SHA="${CANDIDATE_SHA256:-0283898e55f93f6335c02c3a6bae8bf148ce4cc5ee2c1085eff8fc1bcafd8e11}"
 CANDIDATE_LABEL="${CANDIDATE_VERSION}-r${CANDIDATE_RELEASE}"
 DEFAULT_APK="$PROJECT/dist/luci-app-open-hotspot-${CANDIDATE_LABEL}.apk"
 APK_PATH="${APK_PATH:-}"
@@ -303,9 +303,9 @@ if echo "$INSTALLED_VERSION" | grep -qE "r60($|[^0-9])"; then
 		echo "FAIL: Rollback classification rejected: r60 installed but openNDS is not 10.3.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
-elif echo "$INSTALLED_VERSION" | grep -qE "r(9[0-9]|10[0-2])($|[^0-9])"; then
+elif echo "$INSTALLED_VERSION" | grep -qE "r(9[0-9]|10[0-3])($|[^0-9])"; then
 	if echo "$OPENNDS_VER" | grep -qE "11\.0(\.[0-9]+)?"; then
-		ROLLBACK_CLASSIFICATION="r90-r102-opennds11.0-field-candidate"
+		ROLLBACK_CLASSIFICATION="r90-r103-opennds11.0-field-candidate"
 	else
 		echo "FAIL: Rollback classification rejected: r90-r102 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
@@ -317,10 +317,10 @@ fi
 echo "  Rollback Classification:  $ROLLBACK_CLASSIFICATION"
 
 # r60 is the preserved rollback baseline and must never be upgraded in place.
-# Candidates may only be deployed over the isolated r90-r102/openNDS 11.0.x
+# Candidates may only be deployed over the isolated r90-r103/openNDS 11.0.x
 # candidate slot.
-if [ "$ROLLBACK_CLASSIFICATION" != "r90-r102-opennds11.0-field-candidate" ]; then
-	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90-r102/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
+if [ "$ROLLBACK_CLASSIFICATION" != "r90-r103-opennds11.0-field-candidate" ]; then
+	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90-r103/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
 	exit 1
 fi
 

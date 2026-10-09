@@ -8,8 +8,9 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current installed and source field candidate is r102. r101 is the prior
-candidate and r99 is a preserved rollback checkpoint.
+The current installed field candidate is r103. The current source candidate is
+r103, which adds activation readiness containment; r102, r101, and r99 remain
+preserved rollback checkpoints.
 
 Controlled account switching is isolated on the source branch
 `codex/controlled-account-switching`, based on merged `main`. It is not part
@@ -18,8 +19,8 @@ hardware validation.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Installed field candidate | Open-HotSpot r102 / openNDS 11.0.0 | EA8300 candidate; dedicated captive bridge and local FAS are active | Captive login/Internet field verification passed; service-regression and isolation tests remain pending |
-| Source candidate | Open-HotSpot r102 / openNDS 11.0.0 | Reproducible installed candidate | Fail-closed captive service-plane activation/preflight guard; production acceptance pending |
+| Installed field candidate | Open-HotSpot r103 / openNDS 11.0.0 | EA8300 candidate; U1 temporarily stages openNDS on `br-lan` | Readiness verified; pre-auth denial, post-auth service, and rollback acceptance pending |
+| Source candidate | Open-HotSpot r103 / openNDS 11.0.0 | Reproducible installed candidate | Fail-closed captive service-plane guard plus activation readiness containment; production acceptance pending |
 | Previous candidate | Open-HotSpot r99 / openNDS 11.0.0 | Previous installed candidate and rollback | Superseded by r100 trial; preserve as rollback |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 

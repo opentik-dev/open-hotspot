@@ -82,6 +82,25 @@ discover_gateway_interface() {
 	printf '%s\n' "$gateway_if"
 }
 
+ensure_opennds_ready() {
+	# Do not mutate gateway/FAS configuration while openNDS is stopped or its
+	# control socket is unavailable. This makes a failed transition fail before
+	# the first configuration mutation.
+	. /usr/lib/open-hotspot/opennds.sh
+	if opennds_validate_config; then
+		return 0
+	fi
+	"$OPENNDS_INIT" start >/dev/null 2>&1 || return 1
+	opennds_wait_ready
+}
+
+recover_opennds() {
+	# Bounded recovery after a failed activation or rollback.
+	"$OPENNDS_INIT" start >/dev/null 2>&1 || true
+	. /usr/lib/open-hotspot/opennds.sh
+	opennds_wait_ready || "$OPENNDS_INIT" restart >/dev/null 2>&1 || true
+}
+
 ensure_fas_key() {
 	fas_key=$($UCI_BIN -q get opennds.@opennds[0].faskey 2>/dev/null || true)
 	[ -n "$fas_key" ] && return 0
@@ -107,6 +126,7 @@ activate() {
 	require_file "$SERVICE_PLANE_GUARD" || return 1
 	"$UCI_BIN" -q get opennds.@opennds[0] >/dev/null || die 'openNDS UCI section missing'
 	"$SERVICE_PLANE_GUARD" check || return 1
+	ensure_opennds_ready || die 'openNDS is not ready; activation stopped before mutation'
 	gateway_if=$(discover_gateway_interface) || die 'LAN gateway interface is not discoverable'
 	ensure_fas_key || return 1
 
@@ -191,8 +211,7 @@ activate() {
 	# Fail closed: restore both services and the previous BinAuth.
 	restore_backup "$dir" || true
 	"$UHTTPD_INIT" restart >/dev/null 2>&1 || true
-	. /usr/lib/open-hotspot/opennds.sh
-	opennds_reload || "$OPENNDS_INIT" restart >/dev/null 2>&1 || true
+	recover_opennds
 	return 1
 }
 
@@ -202,7 +221,10 @@ rollback() {
 	restore_backup "$dir" || return 1
 	"$UHTTPD_INIT" restart >/dev/null 2>&1 || return 1
 	. /usr/lib/open-hotspot/opennds.sh
-	opennds_reload || return 1
+	opennds_reload || {
+		recover_opennds
+		opennds_validate_config || return 1
+	}
 	"$UCI_BIN" set open-hotspot.global.local_fas_enabled='0' || return 1
 	"$UCI_BIN" commit open-hotspot || return 1
 	printf 'local_fas_enabled=0\nrestored=%s\n' "$dir"

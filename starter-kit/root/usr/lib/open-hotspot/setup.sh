@@ -18,6 +18,10 @@ setup_uci_set() {
 	"$SETUP_UCI_BIN" set "open-hotspot.global.$1=$2"
 }
 
+setup_secure_config() {
+	[ ! -e /etc/config/open-hotspot ] || chmod 600 /etc/config/open-hotspot
+}
+
 setup_uci_has() {
 	"$SETUP_UCI_BIN" -q show open-hotspot.global 2>/dev/null |
 		grep -F ".${1}=" >/dev/null
@@ -31,14 +35,14 @@ setup_record() {
 	state="$1"; detail="${2:-}"
 	setup_uci_set setup_state "$state" || return 1
 	setup_uci_set setup_last_error "$detail" || return 1
-	"$SETUP_UCI_BIN" commit open-hotspot
+	"$SETUP_UCI_BIN" commit open-hotspot && setup_secure_config
 }
 
 setup_ensure_policy_defaults() {
 	setup_uci_has client_network || setup_uci_set client_network '' || return 1
 	setup_uci_has client_router_access || setup_uci_set client_router_access deny || return 1
 	setup_uci_has session_restore || setup_uci_set session_restore disabled || return 1
-	"$SETUP_UCI_BIN" commit open-hotspot
+	"$SETUP_UCI_BIN" commit open-hotspot && setup_secure_config
 }
 
 setup_base() {

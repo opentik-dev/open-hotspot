@@ -1,0 +1,15 @@
+{
+  "version": "delegate-fleet.v1",
+  "lanes": {
+    "feature": {
+      "implementer": "codex"
+    },
+    "tests": {
+      "implementer": "copilot"
+    },
+    "review": {
+      "implementer": "agy",
+      "readOnly": true
+    }
+  }
+}

@@ -17,6 +17,9 @@ grep -F 'session-restore.sh restore' "$cycle" >/dev/null
 grep -F 'session-restore.sh reconcile' "$cycle" >/dev/null
 grep -F 'reconcile_stale' "$script" >/dev/null
 grep -F 'opennds_current_clients' "$script" >/dev/null
+grep -F 'native_restore_reconciled' "$script" >/dev/null
+grep -F 'db_active_session_count_by_mac' "$script" >/dev/null
+grep -F 'opennds_live_macs' "$root/starter-kit/root/usr/lib/open-hotspot/opennds.sh" >/dev/null
 ! grep -Eq '192\.168\.|gatewayaddress|client_ip' "$script"
 
 printf '%s\n' 'session-restore-contract-ok'

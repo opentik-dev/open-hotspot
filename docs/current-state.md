@@ -1,6 +1,6 @@
 # Open-HotSpot current state
 
-**As of:** 2026-09-22
+**As of:** 2026-10-02
 
 This is the short operational truth for agents and release reviewers. The
 specification, release-gate register, and field evidence remain authoritative
@@ -10,7 +10,8 @@ for detailed acceptance decisions.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Current acceptance candidate | Open-HotSpot r79 / openNDS 11.0.0 | EA8300 `boot_part=2` field validation | r79 installed; service/cron and automatic restore verified; remaining gates open |
+| Current acceptance candidate | Open-HotSpot r90 / openNDS 11.0.0 | EA8300 candidate slot 02 field validation | r90 adds target-observed native quota-deauth aliases; r89 source-compatible reauth bridge and r88 native-restore/database fixes remain in the base |
+| Unpublished working-tree candidate | Open-HotSpot r93 / openNDS 11.0.0 | Session lifecycle stability, release metadata reconciliation, DEV diagnostics, IoT WAN-only egress, and network-path diagnostics | r93 is not field-tested or published; does not close any hardware gate |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1
@@ -58,6 +59,39 @@ close-callback reconciliation issue under T011, not as a healthy session.
 | T052/T087 | Open | Interrupted setup/upgrade rerun and service health proof |
 | T088/T090 | Open | Full clean-hardware acceptance and release freeze |
 
+## 2026-10-02 audit checkpoint
+
+The supplied read-only target probe reached the EA8300 at the operator's
+management address and confirmed OpenWrt 25.12.5, openNDS 11.0.0, local FAS,
+the versioned adapter, and a current `preflight.sh` result of `topology=ok`.
+The UCI `setup_state=PREFLIGHT_FAILED` value is stale state from an earlier
+attempt; it was not edited by hand and must be reconciled only through the
+bounded setup/status path after backup approval.
+
+The packaged diagnostic reported zero failures and warnings, but raw target
+logs still contain `Dnsmasq reload failed`, a `preemptivemac quiet` failure,
+routing-configuration retries, and a missing temporary client-state file. The
+target also records recurring `session_reconcile_failed` and
+`policy_refresh_failed` events. A live authenticated session remained
+authenticated beyond the reported 3–4 minute interval during this observation,
+so the user-facing eviction is not yet reproduced and must not be attributed
+to a timeout or quota without a controlled account-specific test.
+
+The working tree declares r93, which stabilizes the session lifecycle,
+reconciles release metadata, adds a read-only DEV diagnostics page, and improves
+cycle event detail, and adds a WAN-only IoT policy plus read-only network diagnostics.
+r93 has no field artifact, build checksum, or hardware evidence
+and remains an unpublished working-tree candidate. r90 remains the last field-tested
+acceptance candidate.
+
+## Backup evidence
+
+The supplied manager archive was checked locally and on the EA8300 without
+importing it: gzip/tar structure, exact member set, SQLite integrity, and
+schema version all passed. The archive is now documented and exported with
+private file permissions. Target import/rollback remains an open field gate;
+this evidence does not make it a full-router backup.
+
 ## Known operating paths
 
 - Target transport: SSH plus `tar`; do not retry `scp` when `sftp-server` is
@@ -67,7 +101,20 @@ close-callback reconciliation issue under T011, not as a healthy session.
   close callback is observed.
 - Any displayed LAN address is field evidence only. No package contract uses a
   fixed router address.
+- The router-side Wi-Fi board-definition repair is verified. The packaged
+  preflight now detects malformed `/etc/board.json`; phone visibility remains
+  a physical acceptance check.
 - The report-driven r74/r75/r76/r77/r78 changes are target-tested; r79
-  contains the service-enable correction and remains pending installation:
+  contains the service-enable correction, r81 adds backup/state hardening, and
+  r82 adds the dependency/Wi-Fi boundary checks:
   the period helper is now the single boundary source, renewal state is used by
   every policy path, and manager SQLite calls share timeout/foreign-key rules.
+r86 includes an executable openNDS 11 reauthentication compatibility bridge,
+r87 contains native restores that are not backed by manager SQLite when
+Restore is disabled, r88 corrected the optional-file success return in the
+database hardening path, r89 fixes the source-compatible reauth bridge, and r90 accepts the target's explicit quota-deauth callback names. An intermediate probe found rollback slot 01 with
+r60/openNDS 10.3.1; the official Advanced Reboot path then returned the target
+to candidate slot 02, which was jointly verified as the openNDS 11.0.0 candidate. A
+later read-only probe has one pending-auth integration warning and still needs
+a fresh phone login. Quota, restart, failure-containment, and
+factory-acceptance evidence remain required.

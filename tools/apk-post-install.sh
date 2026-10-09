@@ -57,6 +57,27 @@ patch_opennds_custom_binauth() {
 
 patch_opennds_custom_binauth
 
+# openNDS 11.0.0 ships a known shell typo in the reauthentication helper
+# (`If` instead of POSIX `if`).  The stock binauth dispatcher sources this
+# helper before it sources the manager callback, so the typo aborts admission
+# and sends a valid FAS login back to the portal.  Apply only this exact,
+# version-independent compatibility correction and keep the vendor file's
+# original contents for rollback.  The helper remains the policy authority.
+patch_opennds_reauth_helper() {
+	helper=/usr/lib/opennds/check_reauth_interval.sh
+	backup=/etc/open-hotspot/check_reauth_interval.before-compat
+	[ -r "$helper" ] || return 0
+	grep -F 'If [ -z "$reauth_interval" ]' "$helper" >/dev/null 2>&1 || return 0
+	mkdir -p /etc/open-hotspot || return 0
+	[ -e "$backup" ] || cp -p "$helper" "$backup" || return 0
+	sed -i 's/^If \[ -z "\$reauth_interval" \]/if [ -z "\$reauth_interval" ]/' "$helper"
+	if ! sh -n "$helper" >/dev/null 2>&1; then
+		cp -p "$backup" "$helper" 2>/dev/null || true
+	fi
+}
+
+patch_opennds_reauth_helper
+
 # A live upgrade can find a router where local FAS is already enabled but the
 # manager init service was never enabled (for example, an older package or a
 # factory-reset image). Repair that operational boundary without enabling the

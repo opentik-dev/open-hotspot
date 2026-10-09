@@ -46,6 +46,7 @@ ensure_opennds_ready() {
 }
 
 start_service() {
+	chmod 600 /etc/config/open-hotspot 2>/dev/null || true
 	[ -f /etc/open-hotspot/hotspot.db ] || /etc/uci-defaults/40-open-hotspot
 	# Always run the versioned DB boundary, including package upgrades. A
 	# migration failure must stop cron registration instead of running against

@@ -3,7 +3,8 @@
 <h2><%:Open-HotSpot backup%></h2>
 <% if page_error ~= "" then %><div class="alert-message"><%=pcdata(page_error)%></div><% end %>
 
-<p><%:Exports contain the manager SQLite database and UCI configuration. Imports are validated before replacement and create a rollback archive.%></p>
+<p><%:This is a manager-state backup only: it contains the Open-HotSpot SQLite database and its UCI policy. It is not a full router backup and does not contain network settings, openNDS/uhttpd/FAS configuration, FAS keys, SSH keys, or LuCI credentials.%></p>
+<p><%:Archives contain sensitive account and device data. Keep the downloaded file private. Imports are validated before replacement and create a rollback archive; after importing on another router, run base setup and the documented FAS activation/validation steps.%></p>
 <form method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" />
 <input type="hidden" name="action" value="export" />

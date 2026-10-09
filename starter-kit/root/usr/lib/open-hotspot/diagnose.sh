@@ -135,6 +135,27 @@ diag_fas() {
 	fi
 }
 
+diag_dnsmasq() {
+	if [ -x /usr/lib/open-hotspot/dnsmasq-capability.sh ]; then
+		if ! /usr/lib/open-hotspot/dnsmasq-capability.sh check; then
+			diag_fail 'dnsmasq=feature-capability-check-failed'
+		fi
+	else
+		diag_fail 'dnsmasq=capability-helper-missing'
+	fi
+}
+
+diag_wifi_board() {
+	if [ -e /etc/board.json ] && diag_have jsonfilter; then
+		jsonfilter -i /etc/board.json -e '@' >/dev/null 2>&1 ||
+			diag_fail 'wifi=board-json-invalid'
+	elif [ -e /etc/board.json ]; then
+		diag_fail 'wifi=jsonfilter-missing'
+	else
+		diag_warn 'wifi=board-json-absent'
+	fi
+}
+
 diag_uhttpd() {
 	mkdir -p "$DIAG_TMP"
 	if diag_service_running uhttpd; then
@@ -181,6 +202,8 @@ open_hotspot_diagnose() {
 		diag_fail 'opennds=not-running'
 	fi
 	diag_fas
+	diag_dnsmasq
+	diag_wifi_board
 	diag_uhttpd
 	diag_nds_clients
 	diag_db_counts

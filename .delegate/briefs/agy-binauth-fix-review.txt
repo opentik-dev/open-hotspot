@@ -1,0 +1,16 @@
+Review only the current working-tree fix for the Open-HotSpot r88 login/session defect.
+
+Read AGENTS.md, .delegate/shared-context.md, starter-kit/root/usr/check_reauth_interval.sh,
+tests/test_install_contract.sh, docs/integration-gap-register.md, and the diff.
+
+Known target evidence: the official openNDS dispatcher sources
+/usr/check_reauth_interval.sh; the previous bridge used exec and prevented the
+dispatcher from reaching custombinauth.sh. The target then accumulated pending
+auth_transactions, openNDS briefly authenticated clients, and the manager had
+no devices/live sessions. The fix changes the bridge to source the official
+helper and adds a negative contract assertion against exec.
+
+Return a concise decision: GO FOR TARGET RETEST or HOLD. Check that the fix is
+minimal, source-compatible, address-independent, has no credentials or raw
+client identifiers, and that tests/docs are coherent. Do not edit, commit,
+push, or access the router. Run only the focused local tests needed for review.

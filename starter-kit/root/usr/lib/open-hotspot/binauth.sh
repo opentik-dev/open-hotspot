@@ -222,7 +222,7 @@ open_hotspot_binauth_close() {
 	method="$1"; mac="$2"; incoming="$3"; outgoing="$4"
 	started="$5"; ended="$6"; token="$7"; custom="$8"
 	case "$method" in
-		client_deauth|idle_deauth|timeout_deauth|downquota_deauth|upquota_deauth|ndsctl_deauth|shutdown_deauth) ;;
+		client_deauth|idle_deauth|timeout_deauth|downquota_deauth|upquota_deauth|download_quota_deauth|upload_quota_deauth|ndsctl_deauth|shutdown_deauth) ;;
 		*) return 1 ;;
 	esac
 	_oh_binauth_mac "$mac" || return 1
@@ -288,7 +288,7 @@ open_hotspot_binauth_apply() {
 			[ "$#" -eq 8 ] || { exitlevel=1; return 1; }
 			exitlevel=0
 			;;
-		client_deauth|idle_deauth|timeout_deauth|downquota_deauth|upquota_deauth|ndsctl_deauth|shutdown_deauth)
+		client_deauth|idle_deauth|timeout_deauth|downquota_deauth|upquota_deauth|download_quota_deauth|upload_quota_deauth|ndsctl_deauth|shutdown_deauth)
 			[ "$#" -eq 8 ] || { exitlevel=1; return 1; }
 			if [ "$method" = shutdown_deauth ] &&
 				[ "$(uci -q get open-hotspot.global.session_restore 2>/dev/null || true)" = enabled ]; then

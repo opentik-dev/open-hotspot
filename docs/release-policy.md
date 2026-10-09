@@ -1,10 +1,13 @@
 # Release and version policy
 
-The package version is the pair declared in `starter-kit/Makefile`:
+The package version is the pair declared in `starter-kit/Makefile`. The
+unpublished working tree currently declares r93; r90 remains the last
+documented acceptance candidate until the new source changes and gates are
+reviewed:
 
 ```text
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=79
+PKG_RELEASE:=93
 ```
 
 The installable artifact is named:
@@ -22,9 +25,12 @@ luci-app-open-hotspot-${PKG_VERSION}-r${PKG_RELEASE}.apk
 3. Tags are created only from a commit that passed CI. The release workflow
    rebuilds the APK from source and never publishes a committed APK as the
    build input.
-4. The release workflow checks `tools/check-release-gates.sh`; T003, T006, T011,
-   T012, T052, T086, T087, T088, and T090 must be checked off in `tasks.md`.
-   An open physical-acceptance gate makes the release fail.
+4. `docs/acceptance-state.json` is the machine-readable release authority.
+   `tools/check-release-gates.sh` verifies it against the package version,
+   schema version, packaged version file, and `tasks.md`; a task checkbox alone
+   can never close a physical-acceptance gate. T003, T006, T011, T012, T052,
+   T086, T087, T088, and T090 must each be `accepted`, and
+   `production_approved` must be true before a production tag can publish.
 5. The release body links the exact commit SHA, APK SHA-256, acceptance matrix,
    delivery manifest, and all open release gates.
 6. A release is not production-approved while a Critical or Release-stop gate

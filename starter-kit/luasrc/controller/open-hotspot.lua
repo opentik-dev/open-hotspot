@@ -44,6 +44,55 @@ local function integer(name, default)
 	return tonumber(value(name)) or default
 end
 
+local function scaled_integer(value_name, unit_name, multipliers, legacy_name, default)
+	local raw = value(value_name)
+	if raw == "" and legacy_name then
+		return integer(legacy_name, default)
+	end
+	local number = tonumber(raw)
+	if not number or number < 0 then
+		return default
+	end
+	local multiplier = multipliers[value(unit_name)] or 1
+	return math.floor(number * multiplier + 0.5)
+end
+
+local function display_scaled(number, units)
+	number = tonumber(number) or 0
+	if number == 0 then
+		return 0, units[1].name
+	end
+	for i = #units, 1, -1 do
+		local unit = units[i]
+		if number % unit.factor == 0 then
+			return number / unit.factor, unit.name
+		end
+	end
+	return number, units[1].name
+end
+
+local time_units = {
+	{ name = "seconds", factor = 1 }, { name = "minutes", factor = 60 },
+	{ name = "hours", factor = 3600 }, { name = "days", factor = 86400 },
+	{ name = "weeks", factor = 604800 }
+}
+local data_units = {
+	{ name = "B", factor = 1 }, { name = "KiB", factor = 1024 },
+	{ name = "MiB", factor = 1048576 }, { name = "GiB", factor = 1073741824 }
+}
+local rate_units = {
+	{ name = "kbit/s", factor = 1 }, { name = "Mbit/s", factor = 1000 },
+	{ name = "Gbit/s", factor = 1000000 }
+}
+
+local function decorate_profile(profile)
+	profile.time_value, profile.time_unit = display_scaled(profile.time_limit_s, time_units)
+	profile.upload_value, profile.upload_unit = display_scaled(profile.upload_limit_b, data_units)
+	profile.download_value, profile.download_unit = display_scaled(profile.download_limit_b, data_units)
+	profile.upload_rate_value, profile.upload_rate_unit = display_scaled(profile.upload_rate_kbps, rate_units)
+	profile.download_rate_value, profile.download_rate_unit = display_scaled(profile.download_rate_kbps, rate_units)
+end
+
 local function run_backup(action, path)
 	os.remove(path)
 	local command = "/usr/lib/open-hotspot/backup.sh " .. action .. " " .. path .. " >/dev/null 2>&1"
@@ -74,11 +123,11 @@ function profiles()
 		if not csrf_ok() then return end
 		local args = {
 			name = value("name"), period_type = value("period_type"),
-			time_limit_s = integer("time_limit_s", 0),
-			upload_limit_b = integer("upload_limit_b", 0),
-			download_limit_b = integer("download_limit_b", 0),
-			upload_rate_kbps = integer("upload_rate_kbps", 0),
-			download_rate_kbps = integer("download_rate_kbps", 0),
+			time_limit_s = scaled_integer("time_value", "time_unit", { seconds = 1, minutes = 60, hours = 3600, days = 86400, weeks = 604800 }, "time_limit_s", 0),
+			upload_limit_b = scaled_integer("upload_value", "upload_unit", { B = 1, KiB = 1024, MiB = 1048576, GiB = 1073741824 }, "upload_limit_b", 0),
+			download_limit_b = scaled_integer("download_value", "download_unit", { B = 1, KiB = 1024, MiB = 1048576, GiB = 1073741824 }, "download_limit_b", 0),
+			upload_rate_kbps = scaled_integer("upload_rate_value", "upload_rate_unit", { ["kbit/s"] = 1, ["Mbit/s"] = 1000, ["Gbit/s"] = 1000000 }, "upload_rate_kbps", 0),
+			download_rate_kbps = scaled_integer("download_rate_value", "download_rate_unit", { ["kbit/s"] = 1, ["Mbit/s"] = 1000, ["Gbit/s"] = 1000000 }, "download_rate_kbps", 0),
 			max_devices = integer("max_devices", 1)
 		}
 		local result, err
@@ -95,8 +144,14 @@ function profiles()
 		message = err and ("Error: " .. err) or "Saved"
 	end
 	local result, err = ubus_call("profile_list", {})
+	for _, profile in ipairs((result and result.profiles) or {}) do
+		decorate_profile(profile)
+	end
 	template.render("open-hotspot/profiles", {
 		profiles = result and result.profiles or {},
+		time_units = time_units,
+		data_units = data_units,
+		rate_units = rate_units,
 		page_error = err or "",
 		page_message = message or "",
 		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "profiles"),
@@ -191,7 +246,7 @@ function vouchers()
 		if action == "generate" then
 			result, err = ubus_call("voucher_generate", {
 				count = integer("count", 1), profile_id = integer("profile_id", 0),
-				validity_seconds = integer("validity_seconds", 3600)
+				validity_seconds = scaled_integer("validity_value", "validity_unit", { seconds = 1, minutes = 60, hours = 3600, days = 86400, weeks = 604800 }, "validity_seconds", 3600)
 			})
 			if not err and result and result.codes then
 				message = "Generated: " .. table.concat(result.codes, ", ")
@@ -308,6 +363,19 @@ function templates()
 	})
 end
 
+function dev_events()
+	local events_result, events_err = ubus_call("dev_events_list", {})
+	local diagnose_result, diagnose_err = ubus_call("dev_diagnose", {})
+	template.render("open-hotspot/dev", {
+		events = events_result and events_result.events or {},
+		diagnose_output = diagnose_result and diagnose_result.output or "",
+		diagnose_exit = diagnose_result and diagnose_result.exit_code or -1,
+		pkg_version = diagnose_result and diagnose_result.pkg_version or "unknown",
+		page_error = events_err or diagnose_err or "",
+		page_url = dispatcher.build_url("admin", "services", "open-hotspot", "dev")
+	})
+end
+
 function index()
 	if not nixio.fs.access("/etc/config/open-hotspot") then
 		return
@@ -362,4 +430,9 @@ function index()
 		call("templates"), translate("Portal templates"), 45)
 	templates.leaf = true
 	templates.acl_depends = { "luci-app-open-hotspot" }
+
+	local dev = entry({"admin", "services", "open-hotspot", "dev"},
+		call("dev_events"), translate("DEV"), 90)
+	dev.leaf = true
+	dev.acl_depends = { "luci-app-open-hotspot" }
 end

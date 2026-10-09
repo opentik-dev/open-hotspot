@@ -1,0 +1,34 @@
+<task>
+Implement one bounded, source-only feature in the Open-HotSpot repository: add an explicitly experimental LuCI "DEV" page that is read-only and exposes the existing operational evidence needed to troubleshoot the service. It must show a bounded recent admin/event log from the existing SQLite `admin_events` table and a bounded output of the existing read-only `/usr/lib/open-hotspot/diagnose.sh`, with clear labels that this is a developer/diagnostic surface and not a production release gate.
+
+Current facts:
+- The repository already has `admin_events`, `db_log_event`, `diagnose.sh`, the rpcd boundary, LuCI controller/views, and ACLs.
+- The current UI exposes usage history but not `admin_events` or the packaged diagnostic, which is why operators cannot inspect what happened from LuCI.
+- The working tree is intentionally dirty with pre-existing user changes. Preserve all unrelated staged/unstaged changes; inspect `git diff`/`git diff --cached` before editing and touch only files needed for this feature plus a focused contract test.
+- The target is OpenWrt 25.12.5/openNDS 11.0.0. Do not connect to or mutate the router; this task is repository-only.
+</task>
+
+<required_behavior>
+- Add a LuCI route/menu item named `DEV` under Services → Open-HotSpot.
+- Add a read-only page that renders recent `admin_events` and the read-only diagnostic report. Bound output size and row count so the page cannot grow without limit.
+- Add the smallest safe rpcd methods and ACL read permissions required to retrieve the data. Diagnostic execution must not accept user-supplied shell text or paths, must not mutate UCI/firewall/services, and must still return a useful report when `diagnose.sh` exits non-zero.
+- Reuse existing helpers and conventions. Do not create a second logging system or a long-running daemon. Do not expose PINs, FAS keys, credentials, session tokens, or unbounded raw command output. If event details can contain device identifiers, mask or safely bound them for the UI rather than adding new sensitive logging.
+- Keep the page clearly experimental/read-only. Do not add a MAC-based IoT bypass, trusted-device bypass, router-admin allow rule, or any change to openNDS/BinAuth semantics. IoT bypass is explicitly out of scope until the verified openNDS v11 contract and field evidence exist.
+</required_behavior>
+
+<verification_loop>
+Run and make green before finishing:
+  python3 -m unittest discover -s tests -v
+  sh tests/test_shell_syntax.sh
+  sh tests/test_quota.sh
+  for t in tests/test_*.sh; do sh "$t"; done
+Add or extend a focused contract test for the DEV route, RPC methods, ACL read boundary, bounded diagnostic/event output, and absence of destructive or secret-bearing behavior. Do not weaken existing assertions or skip tests.
+</verification_loop>
+
+<action_safety>
+No git add, no git commit, no branch switching, no reset/checkout/clean, no router access, and no unrelated refactor. Leave the intended edits uncommitted for orchestrator review. Do not change release status to Accepted or claim that field gates are closed.
+</action_safety>
+
+<structured_output_contract>
+End with exactly: (1) root cause and implementation summary, (2) files touched, (3) complete gate commands and outcomes, (4) security/scope decisions and any remaining blockers.
+</structured_output_contract>

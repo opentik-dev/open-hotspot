@@ -260,26 +260,61 @@ admin_device_remove() {
 # audited, and only allowed after the old live session has been observed closed.
 admin_device_reassign() {
 	id="$1"; target_account="$2"
-	_valid_int "$id" && _valid_int "$target_account" || return 1
+	_valid_int "$id" && _valid_int "$target_account" || {
+		printf '%s\n' invalid-id
+		return 1
+	}
 	row=$(sqlite3 -batch -noheader -separator '|' "$DB_PATH" \
-		"SELECT account_id,mac,status FROM devices WHERE id=$id LIMIT 1;") || return 1
-	[ -n "$row" ] || return 1
+		"SELECT account_id,mac,status FROM devices WHERE id=$id LIMIT 1;") || {
+		printf '%s\n' database
+		return 1
+	}
+	[ -n "$row" ] || {
+		printf '%s\n' device-not-found
+		return 1
+	}
 	old_ifs="$IFS"; IFS='|'
 	read -r old_account mac status <<EOF
 $row
 EOF
 	IFS="$old_ifs"
-	_valid_int "$old_account" && _valid_mac "$mac" || return 1
-	[ "$old_account" -ne "$target_account" ] || return 1
-	[ "$status" = active ] || return 1
-	[ "$(sqlite3 -batch -noheader "$DB_PATH" \
-		"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state='active';")" = 0 ] || return 1
-	[ "$(sqlite3 -batch -noheader "$DB_PATH" \
-		"SELECT count(*) FROM accounts WHERE id=$target_account AND status='active' AND deleted_at IS NULL;")" = 1 ] || return 1
+	_valid_int "$old_account" && _valid_mac "$mac" || {
+		printf '%s\n' device-invalid
+		return 1
+	}
+	[ "$old_account" -ne "$target_account" ] || {
+		printf '%s\n' same-account
+		return 1
+	}
+	[ "$status" = active ] || {
+		printf '%s\n' device-inactive
+		return 1
+	}
+	active_sessions=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT count(*) FROM active_sessions WHERE device_id=$id AND state='active';") || {
+		printf '%s\n' database
+		return 1
+	}
+	[ "$active_sessions" = 0 ] || {
+		printf '%s\n' live-session
+		return 1
+	}
+	target_active=$(sqlite3 -batch -noheader "$DB_PATH" \
+		"SELECT count(*) FROM accounts WHERE id=$target_account AND status='active' AND deleted_at IS NULL;") || {
+		printf '%s\n' database
+		return 1
+	}
+	[ "$target_active" = 1 ] || {
+		printf '%s\n' target-account-invalid
+		return 1
+	}
 	sqlite3 -batch "$DB_PATH" "BEGIN IMMEDIATE;
 	UPDATE devices SET account_id=$target_account, updated_at=datetime('now')
 	 WHERE id=$id AND account_id=$old_account AND status='active';
-	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null || return 1
+	SELECT changes(); COMMIT;" | tail -n 1 | grep -Fx 1 >/dev/null || {
+		printf '%s\n' reassign-conflict
+		return 1
+	}
 	db_log_event device_reassign "$target_account" "$id:$mac:from=$old_account" || true
 }
 

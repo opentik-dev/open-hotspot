@@ -1,9 +1,15 @@
 # Open-HotSpot project status
 
-**As of:** 2026-09-22
-**Product candidate:** Open-HotSpot 1.2.0-r79
+**As of:** 2026-10-02
+**Last documented acceptance candidate:** Open-HotSpot 1.2.0-r90
+**Working-tree candidate (unpublished):** Open-HotSpot 1.2.0-r93
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
+
+**Machine-readable release authority:**
+[`acceptance-state.json`](acceptance-state.json). It is checked against the
+package and schema source in CI; human-readable task checkboxes are only a
+projection of its gate state.
 
 ## What is established
 
@@ -29,12 +35,31 @@
   transactions during cycle/maintenance; r77 resolves target-specific live
   deauthentication through IP lookup; r78 correlates the target's empty
   deauth custom marker to the active session; r79 enables the manager service
-  when local FAS is activated or an enabled installation is upgraded.
+  when local FAS is activated or an enabled installation is upgraded; r81
+  hardens manager-state backup and live-state file permissions; r82 adds the
+  conditional dnsmasq-full capability gate and detects/repairs malformed
+  OpenWrt Wi-Fi board metadata without embedding a router address; r84 adds
+  the executable compatibility bridge for the openNDS 11 reauth-helper path
+  mismatch; r85 adds bounded Reassign error reasons instead of flattening all
+  safety/database failures to `validation`; r86 applies the exact upstream
+  openNDS 11 reauth syntax correction with rollback; r87 contains native
+  openNDS `auth_restore` clients that have no manager SQLite session when
+  manager Restore is disabled; r88 corrected the optional-file success return in
+  the database permission hardening path, and r89 fixes the source-compatible
+  reauth bridge that previously bypassed custombinauth on the target; r90
+  accepts the explicit native quota-deauth names emitted by the target
+  openNDS 11 dispatcher. The working tree declares r93 (unpublished),
+  which stabilizes the authenticated session lifecycle (case-insensitive MAC queries,
+  authenticated-only client reconciliation, policy_period_start initialization, non-disruptive
+  daemon readiness check), reconciles release metadata, adds a read-only DEV diagnostics
+  LuCI page, adds regression and consistency tests, and adds IoT WAN-only egress plus
+  read-only network-path diagnostics; r93 remains an unpublished working-tree
+  candidate and does not close any hardware gate without field proof.
 
 ## What is not accepted yet
 
-The following are the current release-gate states after the r78 physical
-acceptance run:
+The following are the current release-gate states after the r90 repository and
+candidate-slot verification run; the remaining physical gates are still open:
 
 | Gate | Current state | Required proof |
 |---|---|---|
@@ -50,15 +75,34 @@ acceptance run:
 register is [`release-gates.md`](release-gates.md); the evidence workflow is in
 [`factory-reset-acceptance-runbook.md`](factory-reset-acceptance-runbook.md).
 
+The target-side Wi-Fi repair is verified at the router boundary; it does not
+close the phone captive-portal or clean-hardware gates until a phone sees the
+SSID and completes the recorded acceptance flow.
+
+The 2026-10-02 read-only audit reached the supplied EA8300 management path and
+found a current preflight pass but a stale UCI `setup_state=PREFLIGHT_FAILED`.
+The target log still contains dnsmasq reload, preemptive-MAC, and routing
+configuration errors, while the recurring reconciliation and policy-refresh
+events are not exposed in LuCI. The observed authenticated client remained
+authenticated past four minutes, so the reported eviction is not yet
+reproduced under a controlled account/profile test. The release gates remain
+open.
+
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the r79 candidate while
-   preserving r60/openNDS 10.3.1 as the documented rollback baseline.
+1. Close the remaining physical-router gates against the r90 field candidate
+   while preserving r60/openNDS 10.3.1 as the documented rollback baseline.
+   The working tree (r93) adds session stability, diagnostics, metadata
+   reconciliation but remains unpublished until its artifact and gates are reviewed.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-  baseline; r79 is installed on the disposable acceptance slot, but it is
-   not production-accepted until the physical gates close.
+  baseline; r90 belongs on the disposable acceptance slot and remains a
+  controlled candidate, not a frozen release. The current read-only probe found
+  the official Advanced Reboot path has returned the target to candidate slot
+  02; the current joint probe confirms the candidate slot and openNDS 11.0.0;
+  r90 still requires a fresh quota callback retest after the target spelling
+  fix.
 
 ## Decision rule
 

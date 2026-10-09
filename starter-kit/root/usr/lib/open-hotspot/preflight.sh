@@ -22,6 +22,22 @@ _preflight_check_php() {
 		| grep -Fx 'hash' >/dev/null || return 1
 }
 
+_preflight_check_wifi_board() {
+	# OpenWrt's boot path uses board.json to derive radio PHY settings. A
+	# present but malformed file leaves Wi-Fi invisible while the rest of the
+	# router appears healthy, so fail with a repairable, explicit blocker.
+	if [ -e /etc/board.json ]; then
+		_preflight_have jsonfilter || return 1
+		jsonfilter -i /etc/board.json -e '@' >/dev/null 2>&1 || {
+			echo 'wifi_error=board-json-invalid' >&2
+			return 1
+		}
+		printf 'wifi_board_json=ok\n'
+	else
+		printf 'wifi_board_json=absent\n'
+	fi
+}
+
 _preflight_topology() {
 	gateway_if=$($OPEN_HOTSPOT_UCI_BIN -q get opennds.@opennds[0].gatewayinterface 2>/dev/null || true)
 	[ -n "$gateway_if" ] || gateway_if='br-lan'
@@ -80,12 +96,17 @@ open_hotspot_preflight() {
 	version=$($OPEN_HOTSPOT_NDS_BIN -v 2>&1 | sed -n '1p') || return 1
 	[ -n "$version" ] || return 1
 	_preflight_topology || failed="$failed topology"
+	_preflight_check_wifi_board || failed="$failed wifi-board-json"
+	if [ -x /usr/lib/open-hotspot/dnsmasq-capability.sh ]; then
+		/usr/lib/open-hotspot/dnsmasq-capability.sh check || failed="$failed dnsmasq-capability"
+	else
+		failed="$failed dnsmasq-capability-helper"
+	fi
 	[ -z "$failed" ] || {
 		printf 'preflight_error=%s\n' "$failed" >&2
 		return 1
 	}
 	printf 'opennds_version=%s\n' "$version"
-	printf 'dnsmasq_full=not-required-by-core-plan\n'
 	printf 'fas_mode=local-level1\n'
 	printf 'fas_port=2080\n'
 }

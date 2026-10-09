@@ -10,7 +10,7 @@
   `research.md` and `quickstart.md`.
 - [x] **T002 [GATE]** Capture the exact BinAuth method list, `auth_client`
   arguments/return semantics, and deauth/session-close argument contracts.
-- [x] **T003 [GATE]** Verify the local FAS authentication flow and exact redirect/
+- [ ] **T003 [GATE]** Verify the local FAS authentication flow and exact redirect/
   custom-variable contract, including secure FAS options available on target.
   Evidence: `docs/field-evidence-20260922.md` (r78 physical FAS 200/handoff 307).
 - [x] **T004 [GATE]** Verify the supported native path for returning session length,
@@ -26,12 +26,14 @@
 - [x] **T009 [GATE]** Benchmark the verified KDF on representative hardware and
   select/document the iteration count.
 - [x] **T010 [GATE]** Determine whether the selected v1.2 feature set requires
-  `dnsmasq-full`; do not install it by default.
+  `dnsmasq-full`; do not install it by default. The packaged capability check
+  now fails closed only for selected autonomous blocklist/walled-garden
+  features that lack `dnsmasq-full` set support.
 - [ ] **T011 [GATE]** Test reboot and openNDS restart separately; record whether
   live sessions restore and distinguish that from SQLite usage persistence.
   The LuCI session-restore policy must be tested in both enabled and disabled
   modes, including account suspension/expiry fail-closed behavior.
-- [x] **T012 [GATE]** Build a disposable end-to-end PoC proving portal → FAS →
+- [ ] **T012 [GATE]** Build a disposable end-to-end PoC proving portal → FAS →
   openNDS authorization → BinAuth → session close → SQLite accounting.
   Evidence: `docs/field-evidence-20260922.md`; duplicate-event idempotency is
   covered by `tests/test_schema.py` and the BinAuth contract suite.

@@ -99,6 +99,12 @@ open_hotspot_binauth_apply ndsctl_deauth AA:BB:CC:DD:EE:FF 100 200 \
 	1789257600 1789257660 token ZW1wdHk=
 [ "$exitlevel" = 0 ]
 
+# openNDS 11 target builds may spell the native quota callbacks with the
+# explicit direction. The adapter accepts both documented spellings.
+open_hotspot_binauth_apply download_quota_deauth AA:BB:CC:DD:EE:FF 100 200 \
+	1789257600 1789257660 token ZW1wdHk=
+[ "$exitlevel" = 0 ]
+
 # Restore/authmon observation uses the same documented eight-field layout as
 # other non-auth_client callbacks and must not be treated as a new login.
 exitlevel=1

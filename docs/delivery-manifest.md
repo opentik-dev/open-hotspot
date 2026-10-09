@@ -1,8 +1,8 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r79`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r90`
 **Artifact:** CI-generated APK attached to the matching GitHub Release
-**SHA-256:** `d443169ed707f55d6412392ce666f96f9fe44f295731466da1937d05725eb1e2`
+**SHA-256:** `1fe185ee21849742eb526bdc73d4480146d57c7a39d4c9284eb3053453174ccc`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r60/openNDS 10.3.1-r3 remains the rollback baseline.
 **Decision:** Controlled pilot / factory-reset acceptance candidate; not yet a production baseline.
 
@@ -19,11 +19,29 @@
   automatic BinAuth close, and SQLite usage event.
 - r79 target proof: manager service enabled/active with two cron entries and
   automatic session restore after reboot and first client traffic.
+- r81 target proof: manager-state backup validation passed locally and on the
+  target; live database/UCI state is forced to `0600`; setup state is
+  `BASE_READY`; preflight and the packaged diagnostic report zero failures and
+  zero warnings.
+- r82 adds a conditional `dnsmasq-full`/nftset capability gate and an explicit
+  recovery helper for malformed OpenWrt `/etc/board.json`; target-side Wi-Fi
+  repair and capability checks were verified without changing the
+  address-independent FAS contract.
+- r84 adds the executable openNDS 11 reauth-helper compatibility bridge.
+- r85 adds bounded, safe Reassign error reasons so the LuCI operator can
+  distinguish an already-owned device, live-session lock, invalid target, or
+  database failure from generic input validation.
+- r86 applies the exact openNDS 11 reauth-helper syntax correction with a
+  rollback copy; r87 contains native openNDS restore clients without manager
+  sessions when manager restore is disabled; r88 makes optional permission
+  hardening return success when the host-only UCI path is absent. r89 makes
+  the reauth-helper bridge source-compatible with the stock dispatcher so
+  `custombinauth.sh` is reached after local FAS authentication.
 - The LuCI CSRF fix for the target dispatcher (`context.authtoken`) is included in r39.
 - The Linksys EA8300 two-slot layout can be used as an A/B rollback boundary;
-  the factory-reset runbook now treats slot 01 as candidate and slot 02 as
-  protected recovery, with separate SSH identities and known-hosts files for
-  each slot's currently discovered management address.
+  the current acceptance runbook treats slot 02 as the disposable r90
+  candidate and slot 01 as the protected r60 rollback baseline, with separate
+  SSH identities and known-hosts files for each slot's discovered address.
 - r40 adds a local-FAS dynamic-address guard, r41 adds a preflight guard,
   r42 preserves the guard as a directly executable preflight command, r44
   discovers the live LAN interface, and r45 waits for the observed openNDS
@@ -58,7 +76,7 @@
 
 The release artifact is built from source by CI and its SHA-256 is published
 next to the APK in the matching GitHub Release; generated `dist/` output is
-not a release input. The r67 source checkpoint includes the target-specific
+not a release input. The r89 source candidate includes the target-specific
 procd stdout compatibility fix: the target reports stable `ndsctl` readiness
 and a preauthenticated client is rejected by the openNDS nftables chain.
 Schema migration
@@ -113,12 +131,12 @@ local FAS configuration and report this runtime blocker explicitly.
 
 Run [`factory-reset-acceptance-runbook.md`](factory-reset-acceptance-runbook.md)
 on a disposable router. Only after its evidence is attached to
-`docs/release-gates.md` should the tasks be changed to `[x]` and r67 be
+`docs/release-gates.md` should the tasks be changed to `[x]` and r90 be
 declared the v1.2 production baseline. r60 remains the rollback baseline.
 
 The first live A/B attempt is recorded in
 [`field-evidence-20260918.md`](field-evidence-20260918.md). It proved the
 partition discovery, backup, boot selection, and management-address transition.
 The follow-up run restored SSH on the current slot and installed earlier
-checkpoints; r67 is the source-built candidate, and live client gates remain
+checkpoints; r90 is the source-built candidate, and live client gates remain
 open until the acceptance matrix is completed.

@@ -1,6 +1,6 @@
 # ADR-003: Isolated openNDS 11 migration
 
-**Status:** Proposed — not approved for target installation  
+**Status:** Experimental pilot — approved only for the isolated acceptance slot; not production accepted
 **Date:** 2026-09-20  
 **Owners:** Open-HotSpot maintainers
 
@@ -24,8 +24,9 @@ An `aarch64_cortex-a53` APK is not a valid substitute for this target.
 ## Decision
 
 Treat openNDS 11 as a separate compatibility track, provisionally named
-**Open-HotSpot 1.3 integration**. Do not replace the r60/openNDS 10 baseline
-on the acceptance router until every contract in
+**Open-HotSpot 1.3 integration**. It may be installed only on the isolated
+acceptance slot; do not replace the r60/openNDS 10 rollback baseline or call
+the v11 track production-ready until every contract in
 [`opennds-v11-contract.md`](../opennds-v11-contract.md) is verified.
 
 The existing Open-HotSpot layers remain valid in principle:

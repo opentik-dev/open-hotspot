@@ -7,6 +7,10 @@
 
 set -eu
 
+# Backups contain credential hashes, account history, and device metadata.
+# Keep temporary files and newly-created archives private by default.
+umask 077
+
 . "${OPEN_HOTSPOT_DB_HELPER:-/usr/lib/open-hotspot/db.sh}"
 
 BACKUP_CONFIG="${OPEN_HOTSPOT_CONFIG_PATH:-/etc/config/open-hotspot}"
@@ -23,6 +27,8 @@ _backup_archive() {
 
 _backup_validate_members() {
 	list="$1"
+	[ "$(printf '%s\n' "$list" | awk 'END { print NR }')" -eq 2 ] || return 1
+	[ "$(printf '%s\n' "$list" | sort -u | awk 'END { print NR }')" -eq 2 ] || return 1
 	while IFS= read -r member; do
 		case "$member" in
 			hotspot.db|open-hotspot) ;;
@@ -60,6 +66,7 @@ backup_export() {
 	sqlite3 -batch "$DB_PATH" ".backup '$tmp/hotspot.db'"
 	cp "$BACKUP_CONFIG" "$tmp/open-hotspot"
 	tar -czf "$archive" -C "$tmp" hotspot.db open-hotspot
+	chmod 600 "$archive"
 	printf '%s\n' "$archive"
 }
 

@@ -47,7 +47,11 @@ openNDS integration, installs a selected portal template, and reports the
 result of every step.
 
 The wizard must not blindly replace `dnsmasq`; `dnsmasq-full` is optional and
-is installed only when a selected feature actually requires it.
+is installed only when a selected feature actually requires it. The packaged
+`dnsmasq-capability.sh` check is the source of the decision: autonomous
+blocklist/walled-garden features fail closed without the required
+`dnsmasq-full` set support, while local FAS/BinAuth/SQLite setup does not swap
+a working base dnsmasq.
 
 ### US-2 — Account login (P1)
 Administrator creates account `ahmed` and assigns a profile such as

@@ -11,6 +11,8 @@ APK="$SDK/staging_dir/host/bin/apk"
 MKHASH="$SDK/staging_dir/host/bin/mkhash"
 RELEASE=$(sed -n 's/^PKG_RELEASE:=//p' "$PROJECT/starter-kit/Makefile")
 VERSION=$(sed -n 's/^PKG_VERSION:=//p' "$PROJECT/starter-kit/Makefile")
+SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-$(git -C "$PROJECT" log -1 --format=%ct 2>/dev/null || stat -c '%Y' "$PROJECT/starter-kit/Makefile" 2>/dev/null || printf '0')}
+export SOURCE_DATE_EPOCH TZ=UTC
 [ -n "$RELEASE" ] && [ -n "$VERSION" ]
 [ -x "$APK" ] && [ -x "$MKHASH" ]
 
@@ -23,6 +25,7 @@ trap 'rm -rf "$root"' EXIT
 mkdir -p "$root/usr/lib/lua/luci" "$root/lib/apk/packages"
 cp -a "$PROJECT/starter-kit/luasrc/." "$root/usr/lib/lua/luci/"
 cp -a "$PROJECT/starter-kit/root/." "$root/"
+find "$root" -exec touch -hcd "@$SOURCE_DATE_EPOCH" {} +
 printf '%s\n' '/etc/config/open-hotspot' > "$root/lib/apk/packages/luci-app-open-hotspot.conffiles"
 "$MKHASH" sha256 "$root/etc/config/open-hotspot" |
 	awk '{print "/etc/config/open-hotspot " $1}' > "$root/lib/apk/packages/luci-app-open-hotspot.conffiles_static"

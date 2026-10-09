@@ -1,0 +1,11 @@
+You are an independent agy review lane for Open-HotSpot. Review only; do not
+commit, push, access a router, or read credentials.
+
+Use model-specific independent reasoning to inspect the current working tree and
+the official openNDS v11 quota contract. Focus on T006: quota units, upload vs
+download direction, BinAuth variable mapping, native downquota_deauth and
+upquota_deauth handling, and whether LuCI can expose enough evidence. Compare
+the implementation to docs/factory-reset-acceptance-runbook.md and the existing
+tests. You may run tests and inspect files; do not modify files. Return a short
+report with concrete findings, exact paths, and a safe next hardware procedure.
+Do not claim T006 closed without physical traffic evidence.

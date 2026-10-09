@@ -1,0 +1,28 @@
+You are the delegated Copilot implementation agent for one bounded Open-HotSpot defect.
+
+Read AGENTS.md, .delegate/shared-context.md, the openNDS v11 contract, and the
+current reauth bridge/post-install tests before editing.
+
+Root cause already reproduced on the EA8300 candidate: the official
+/usr/lib/opennds/binauth_log.sh SOURCES /usr/check_reauth_interval.sh with `.`,
+but the packaged bridge currently contains `exec
+/usr/lib/opennds/check_reauth_interval.sh "$@"`. When sourced, exec replaces
+the dispatcher process, so custombinauth.sh is never reached. FAS inserts
+auth_transactions, openNDS temporarily authenticates, and the manager later
+deauthenticates the client because no SQLite device/session exists.
+
+Task:
+1. Change the bridge to be source-compatible and preserve the official helper
+as the policy implementation. It must source the official helper without
+terminating the parent dispatcher. Do not copy or rewrite upstream policy.
+2. Update the narrow install contract test so it rejects the source-time exec
+   trap and asserts the source-compatible bridge.
+3. Add or adjust the smallest contract test proving that sourcing the bridge
+   returns to the caller and leaves the official helper variables available.
+4. Update the operational/integration documentation and release ledger with
+   the root cause and the fix, without credentials, FAS keys, PINs, raw MACs,
+   or router addresses.
+
+Do not contact the router. Do not commit or push. Do not modify unrelated
+features. Run the focused tests and the required repository checks, then
+report Implemented/Tested/Remaining Hardware Validation and every file changed.

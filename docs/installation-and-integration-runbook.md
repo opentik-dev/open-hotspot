@@ -24,8 +24,44 @@ Discover the management address from the current DHCP/SSH session. Then run:
 ```
 
 The preflight must pass PHP/PDO-SQLite/hash, SQLite, uhttpd, UCI, openNDS,
-topology, and readiness checks. It does not replace dnsmasq or edit an
-existing FAS.
+topology, Wi-Fi board JSON, dnsmasq capability, and readiness checks. It does
+not replace dnsmasq or edit an existing FAS.
+
+The core package plan deliberately does not remove a working base `dnsmasq`.
+For openNDS autonomous blocklist or autonomous walled-garden features, run:
+
+```sh
+/usr/lib/open-hotspot/dnsmasq-capability.sh check
+```
+
+If a selected feature needs it and the gate reports a missing capability, use
+the explicit package path and verify the daemon before re-running preflight:
+
+```sh
+/usr/lib/open-hotspot/dnsmasq-capability.sh install
+dnsmasq --test
+/etc/init.d/dnsmasq status
+/usr/lib/open-hotspot/preflight.sh
+```
+
+The helper never runs `apk del dnsmasq`, rewrites `/etc/config/dnsmasq`, or
+restarts the service implicitly. This keeps the previous dnsmasq
+reload/respawn failure visible instead of turning it into a false setup
+success.
+
+If preflight reports `wifi_error=board-json-invalid`, run the explicit repair
+and verify the radios:
+
+```sh
+/usr/lib/open-hotspot/wifi-board-recover.sh
+jsonfilter -i /etc/board.json -e '@' >/dev/null
+wifi status
+```
+
+The helper preserves the invalid file as
+`/etc/board.json.open-hotspot.invalid`, regenerates it with OpenWrt's
+`board_detect`, and reloads Wi-Fi. It is not run automatically during package
+installation.
 
 ## 2. Install the base package
 
@@ -39,6 +75,18 @@ apk add --allow-untrusted /tmp/luci-app-open-hotspot-<version>-r<release>.apk
 
 The base stage initializes SQLite and records a retryable state. It must not
 silently replace dnsmasq, overwrite an external FAS, or create credentials.
+
+### 2.1 Upgrade boundary for openNDS 10.3 → 11
+
+On an existing router, package installation may leave the previous modified
+`/etc/config/opennds` in place and write the v11 package default as
+`/etc/config/opennds.apk-new`. Do not start v11 with the old anonymous section:
+first preserve the current file in the target backup, stop the daemon, adopt
+the package-provided named `config opennds 'setup'` section, and verify
+`opennds -v` plus `/etc/init.d/opennds status`. Then continue with the explicit
+local-FAS activation below. If the existing manager database has no supported
+schema marker, quarantine it as a rollback artifact and initialize a fresh
+database; never perform an implicit schema migration.
 
 ## 3. Activate local FAS deliberately
 

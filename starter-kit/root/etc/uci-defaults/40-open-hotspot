@@ -34,6 +34,7 @@ uci -q get open-hotspot.global.client_router_access >/dev/null ||
 uci -q get open-hotspot.global.session_restore >/dev/null ||
 	uci set open-hotspot.global.session_restore='disabled'
 uci commit open-hotspot
+chmod 600 /etc/config/open-hotspot 2>/dev/null || true
 
 # The base setup is safe to retry and records blockers for the LuCI setup
 # screen. It never activates local FAS or rewrites an existing openNDS FAS.

@@ -9,13 +9,14 @@
 <form class="oh-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" />
 <input type="hidden" name="action" value="create" />
+<p class="oh-help"><%:Limits are per account period. Choose a human-friendly unit; values are normalized internally to seconds, bytes, and kbit/s. Enter 0 for unlimited.%></p>
 <div class="cbi-value"><label><%:Name%></label><input name="name" required maxlength="64" /></div>
 <div class="cbi-value"><label><%:Period%></label><select name="period_type"><option>none</option><option>hourly</option><option>daily</option><option>monthly</option><option>yearly</option></select></div>
-<div class="cbi-value"><label><%:Time limit (seconds)%></label><input name="time_limit_s" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Upload limit (bytes)%></label><input name="upload_limit_b" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Download limit (bytes)%></label><input name="download_limit_b" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Upload rate (kbit/s)%></label><input name="upload_rate_kbps" type="number" min="0" value="0" /></div>
-<div class="cbi-value"><label><%:Download rate (kbit/s)%></label><input name="download_rate_kbps" type="number" min="0" value="0" /></div>
+<div class="cbi-value"><label><%:Time limit%></label><input name="time_value" type="number" min="0" step="1" value="0" /><select name="time_unit"><% for _, unit in ipairs(time_units) do %><option value="<%=unit.name%>"><%=unit.name%></option><% end %></select></div>
+<div class="cbi-value"><label><%:Upload limit%></label><input name="upload_value" type="number" min="0" step="1" value="0" /><select name="upload_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=unit.name%>"><%=unit.name%></option><% end %></select></div>
+<div class="cbi-value"><label><%:Download limit%></label><input name="download_value" type="number" min="0" step="1" value="0" /><select name="download_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=unit.name%>"><%=unit.name%></option><% end %></select></div>
+<div class="cbi-value"><label><%:Upload rate%></label><input name="upload_rate_value" type="number" min="0" step="1" value="0" /><select name="upload_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=unit.name%>"><%=unit.name%></option><% end %></select></div>
+<div class="cbi-value"><label><%:Download rate%></label><input name="download_rate_value" type="number" min="0" step="1" value="0" /><select name="download_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=unit.name%>"><%=unit.name%></option><% end %></select></div>
 <div class="cbi-value"><label><%:Maximum simultaneous devices%></label><input name="max_devices" type="number" min="1" value="1" /></div>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Create%>" />
 </form>
@@ -28,13 +29,14 @@
 <tr class="tr">
 <td colspan="6"><form class="oh-record-form" method="post" action="<%=page_url%>">
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="update" /><input type="hidden" name="id" value="<%=p.id%>" />
+<p class="oh-help"><%:Rate fields limit each authenticated session; data fields consume the account period. Values are shown using a suitable unit and stored canonically.%></p>
 <label><%:Name%> <input name="name" value="<%=pcdata(p.name)%>" maxlength="64" /></label>
 <label><%:Period%> <select name="period_type"><% for _, period in ipairs({"none","hourly","daily","monthly","yearly"}) do %><option value="<%=period%>"<% if p.period_type == period then %> selected<% end %>><%=period%></option><% end %></select></label>
-<label><%:Time%> <input name="time_limit_s" type="number" min="0" value="<%=p.time_limit_s%>" /></label>
-<label><%:Upload bytes%> <input name="upload_limit_b" type="number" min="0" value="<%=p.upload_limit_b%>" /></label>
-<label><%:Download bytes%> <input name="download_limit_b" type="number" min="0" value="<%=p.download_limit_b%>" /></label>
-<label><%:Upload kbit/s%> <input name="upload_rate_kbps" type="number" min="0" value="<%=p.upload_rate_kbps%>" /></label>
-<label><%:Download kbit/s%> <input name="download_rate_kbps" type="number" min="0" value="<%=p.download_rate_kbps%>" /></label>
+<label><%:Time%> <input name="time_value" type="number" min="0" step="1" value="<%=p.time_value%>" /><select name="time_unit"><% for _, unit in ipairs(time_units) do %><option value="<%=unit.name%>"<% if p.time_unit == unit.name then %> selected<% end %>><%=unit.name%></option><% end %></select></label>
+<label><%:Upload%> <input name="upload_value" type="number" min="0" step="1" value="<%=p.upload_value%>" /><select name="upload_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=unit.name%>"<% if p.upload_unit == unit.name then %> selected<% end %>><%=unit.name%></option><% end %></select></label>
+<label><%:Download%> <input name="download_value" type="number" min="0" step="1" value="<%=p.download_value%>" /><select name="download_unit"><% for _, unit in ipairs(data_units) do %><option value="<%=unit.name%>"<% if p.download_unit == unit.name then %> selected<% end %>><%=unit.name%></option><% end %></select></label>
+<label><%:Upload rate%> <input name="upload_rate_value" type="number" min="0" step="1" value="<%=p.upload_rate_value%>" /><select name="upload_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=unit.name%>"<% if p.upload_rate_unit == unit.name then %> selected<% end %>><%=unit.name%></option><% end %></select></label>
+<label><%:Download rate%> <input name="download_rate_value" type="number" min="0" step="1" value="<%=p.download_rate_value%>" /><select name="download_rate_unit"><% for _, unit in ipairs(rate_units) do %><option value="<%=unit.name%>"<% if p.download_rate_unit == unit.name then %> selected<% end %>><%=unit.name%></option><% end %></select></label>
 <label><%:Devices%> <input name="max_devices" type="number" min="1" value="<%=p.max_devices%>" /></label>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
 </form>

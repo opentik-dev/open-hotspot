@@ -20,6 +20,9 @@ and the difference must be recorded in `docs/integration-gap-register.md`.
 - [Traffic and quota behavior — openNDS](https://opennds.readthedocs.io/en/stable/traffic.html):
   upload/download direction, rate units, quota units, and the fact that the
   FAS/BinAuth custom variable has no universal payload format.
+- [openNDS configuration — autonomous lists](https://opennds.readthedocs.io/en/latest/config.html):
+  `dnsmasq-full` is required for autonomous blocklist/walled-garden set
+  handling; it is not a prerequisite for every local-FAS deployment.
 
 ## OpenWrt
 
@@ -31,6 +34,11 @@ and the difference must be recorded in `docs/integration-gap-register.md`.
   configuration ownership and scriptable UCI changes.
 - [LuCI essentials](https://openwrt.org/docs/guide-user/luci/luci.essentials):
   LuCI/uHTTPd package relationships and service reload expectations.
+- [OpenWrt dnsmasq-full package](https://openwrt.org/packages/pkgdata/dnsmasq-full):
+  the target-feed full variant and its nftset capability.
+- [OpenWrt boot script](https://github.com/openwrt/openwrt/blob/main/package/base-files/files/etc/init.d/boot):
+  the boot-time board-definition path that makes malformed `/etc/board.json`
+  a Wi-Fi startup failure rather than an Open-HotSpot networking assumption.
 
 ## Review rule
 

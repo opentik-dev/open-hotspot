@@ -1,0 +1,19 @@
+You are the delegated Copilot test/report agent for the Open-HotSpot repository.
+
+Read these first: AGENTS.md, .delegate/shared-context.md,
+docs/operational-ledger.md, docs/project-status.md, docs/current-state.md,
+docs/release-gates.md, docs/factory-reset-acceptance-runbook.md.
+
+Task: perform an independent repository validation of the current r88 working
+tree and produce a concise report for the orchestrator. Run the required
+automated checks from the shared context, inspect the r88 build/install scripts,
+and verify that the documentation does not claim T006, T011, T052/T087, T086,
+or T088/T090 are closed without physical evidence. Check for secret leakage in
+tracked files and for any attempt to use SCP/SFTP or fixed router addresses in
+the new operational material.
+
+Do not modify files, do not commit, do not push, do not contact the router, and
+do not invent hardware results. If a test fails, report the exact command and
+classify it as implementation, contract, environment, or evidence. Return a
+report with: commands run, pass/fail summary, suspicious findings, gate status,
+and the smallest recommended next action.

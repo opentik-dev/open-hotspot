@@ -1,0 +1,17 @@
+You are the delegated implementation agent for one narrowly scoped build issue.
+
+Read AGENTS.md and .delegate/shared-context.md, then inspect tools/build-apk.sh,
+starter-kit/Makefile, and the current APK build contract.
+
+Observed failure: running `sh tools/build-apk.sh` twice on the same working tree
+produced different SHA-256 values for the r88 APK. Fix only the build
+reproducibility problem. Identify the source of nondeterminism, make the
+architecture-neutral APK build deterministic without weakening package
+security or changing runtime behavior, and add or update the smallest contract
+test needed to prove two consecutive builds have the same checksum.
+
+Do not touch router files, credentials, FAS keys, release gates, or unrelated
+documentation. Do not commit or push. Run the focused build/contract checks
+and report the root cause, files changed, commands, and checksum result. If a
+safe deterministic fix cannot be made without changing the package format,
+stop and report the blocker instead of guessing.

@@ -11,6 +11,8 @@ grep -F 'topology_error=lan-ip-equals-default-gateway' "$preflight" >/dev/null
 grep -F 'topology_error=duplicate-local-ip:' "$preflight" >/dev/null
 grep -F 'topology_error=lan-wan-overlap:' "$preflight" >/dev/null
 grep -F "printf 'topology=ok" "$preflight" >/dev/null
+grep -F '_preflight_check_wifi_board' "$preflight" >/dev/null
+grep -F 'dnsmasq-capability.sh check' "$preflight" >/dev/null
 grep -F 'preflight.sh) OPEN_HOTSPOT_PREFLIGHT_EXEC=1' "$preflight" >/dev/null
 ! grep -Eq '192\.168\.1\.1|192\.168\.70\.1' "$preflight"
 

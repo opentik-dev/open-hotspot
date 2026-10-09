@@ -1,0 +1,25 @@
+You are the delegated agy release-review agent for the Open-HotSpot repository.
+
+Read AGENTS.md, .delegate/shared-context.md, docs/operational-ledger.md,
+docs/integration-gap-register.md, docs/release-gates.md,
+docs/delivery-manifest.md, and docs/factory-reset-acceptance-runbook.md.
+
+Perform a read-only release-readiness review of the current working tree. Check
+that r88 is identified consistently, that r60 remains the rollback baseline,
+that the known no-SFTP transport rule and address-independent design are
+preserved, that the reproducible APK build contract is present, and that the
+remaining physical gates are honestly marked open. Note that the latest router
+probe found rollback slot 01 active with r60/openNDS 10.3.1; this is an
+environment boundary, not evidence for r88.
+The latest bounded router probe is now r88/openNDS 11.0.0 on candidate slot 02,
+with failures=0 but one warning: pending authentication without a manager
+session; both observed clients are Preauthenticated and there are zero active
+SQLite sessions. Treat that as a field prerequisite, not a successful login.
+
+Review the diff for unsafe credentials, raw live-client identifiers, generated
+artifacts, or unsupported claims. Do not edit files, commit, push, access the
+router, or propose closing a hardware gate without the required field evidence.
+
+Return a concise release decision, exact inconsistencies with file/line
+references, and a prioritized correction list. The decision must be one of:
+GO FOR LOCAL VALIDATION, HOLD FOR HARDWARE EVIDENCE, or BLOCKED.

@@ -21,6 +21,9 @@ for a target/runtime gate.
 
 ## Status rule
 
-The authoritative status is `docs/release-gates.md`. This matrix is updated in
-the same change as a gate decision, and the delivery manifest must link the
-matching evidence. A release tag does not override an open gate.
+`docs/acceptance-state.json` is the machine-readable authority for the active
+working tree. `docs/release-gates.md` and this matrix explain the decision and
+link the evidence, but they cannot override the manifest. The CI checker also
+requires the task checkbox to agree with the manifest: `[x]` means
+`accepted`, never merely implemented, tested, or verified. A release tag does
+not override an open gate.

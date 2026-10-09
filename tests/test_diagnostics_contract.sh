@@ -13,6 +13,8 @@ grep -F 'manager-active-session-without-opennds-client' "$script" >/dev/null
 grep -F 'versioned-opennds-contract' "$script" >/dev/null
 grep -F 'fas=http-local-listener-responds' "$script" >/dev/null
 grep -F 'fasremoteip=' "$script" >/dev/null
+grep -F 'dnsmasq=feature-capability-check-failed' "$script" >/dev/null
+grep -F 'wifi=board-json-invalid' "$script" >/dev/null
 ! grep -Eq '192\.168\.[0-9]+\.[0-9]+' "$script"
 ! grep -Eq '(^|[^A-Za-z])(faskey|fas_key|PIN|pin)([^A-Za-z]|$)' "$script"
 

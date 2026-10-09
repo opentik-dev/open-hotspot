@@ -175,6 +175,7 @@ activate() {
 	if opennds_reload; then
 		"$UCI_BIN" set open-hotspot.global.local_fas_enabled='1' || return 1
 		"$UCI_BIN" commit open-hotspot || return 1
+		chmod 600 /etc/config/open-hotspot || return 1
 		# Local FAS activation is the point at which the manager's cycle and
 		# optional reboot-restore service become operational requirements.
 		[ -x /etc/init.d/open-hotspot ] &&
@@ -202,6 +203,7 @@ rollback() {
 	opennds_reload || return 1
 	"$UCI_BIN" set open-hotspot.global.local_fas_enabled='0' || return 1
 	"$UCI_BIN" commit open-hotspot || return 1
+	chmod 600 /etc/config/open-hotspot || return 1
 	printf 'local_fas_enabled=0\nrestored=%s\n' "$dir"
 }
 

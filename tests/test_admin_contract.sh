@@ -19,6 +19,9 @@ grep -F 'admin_device_force_deauth' "$admin" >/dev/null
 grep -F 'admin_account_status_list' "$admin" >/dev/null
 grep -F 'admin_account_renew' "$admin" >/dev/null
 grep -F 'admin_device_reassign' "$admin" >/dev/null
+grep -F 'same-account' "$admin" >/dev/null
+grep -F 'live-session' "$admin" >/dev/null
+grep -F 'target-account-invalid' "$admin" >/dev/null
 grep -F 'admin_voucher_list' "$admin" >/dev/null
 grep -F 'admin_voucher_generate' "$admin" >/dev/null
 grep -F 'admin_voucher_revoke' "$admin" >/dev/null

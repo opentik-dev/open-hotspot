@@ -5,6 +5,37 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 
 ## Unreleased
 
+## 1.2.0-r93 (unpublished working-tree candidate)
+
+- Added a WAN-only forwarding path for the dedicated non-captive IoT zone;
+  router administration and the management LAN remain outside that path.
+- Added read-only network-path diagnostics for WAN, Tailscale, NAS, and PBX
+  triage, plus an operator runbook that forbids unverified openNDS MAC bypasses.
+- Added a machine-readable acceptance-state gate so production publication
+  cannot be authorized by task checkboxes alone.
+
+## 1.2.0-r92 (unpublished working-tree candidate)
+
+- Stabilized authenticated session lifecycle:
+  - Replaced indiscriminate client iteration in `session-restore.sh reconcile_stale` with `opennds_authenticated_macs` parser, preventing Preauthenticated discovery probes from triggering invalid deauthentications or aborting the reconciliation cycle.
+  - Added `COLLATE NOCASE` to MAC address comparisons in `db.sh` (`db_device_get_by_mac`, `db_active_session_count_by_mac`, `db_session_key_by_mac`, `db_session_period_type`, and `db_session_close`), eliminating session drops caused by casing mismatches between openNDS (lowercase) and SQLite (uppercase).
+  - Populated `policy_period_start` in `active_sessions` upon session consumption in `db_auth_consume`, preventing redundant and disruptive `opennds_apply_session_policy` invocations on every cron cycle tick.
+  - Added retry guard in `ensure_opennds_runtime` before restarting the openNDS service if the daemon process is actively running, preventing transient socket checks from resetting live client connections.
+- Hardened DEV diagnostics:
+  - Added pure-shell watchdog timer in `rpc_dev_diagnose` for platforms where external `timeout` binary is unavailable.
+  - Added on-target package version discovery via `/usr/lib/open-hotspot/open-hotspot.version` and packaging metadata.
+- Reconciled release metadata: r90 remains the last field-tested acceptance candidate; r92 is explicitly marked as unpublished working-tree state in all active documentation.
+- Added regression test `tests/test_session_stability.sh` and release consistency contract `tests/test_release_consistency.sh`.
+- Read-only DEV diagnostics LuCI page (Services → Open-HotSpot → DEV) and RPC methods (`dev_events_list`, `dev_diagnose`).
+- Improved diagnostic detail in `cycle.sh` events with safe exit code capture and non-secret context.
+- No changes to authentication fail-closed semantics or openNDS contracts. All hardware gates remain open.
+
+## 1.2.0-r91 (superseded)
+
+- Pre-release iteration: added DEV diagnostics page and consistency test, but lacked session stability fixes and commit was not self-contained. Superseded by r92.
+
+### Previous governance changes (included in r91 working tree)
+
 - Added a shared agent working agreement and a project-status model that
   distinguishes implemented, tested, verified, and accepted behavior.
 - Separated public product documentation from Spec-Kit and target-debugging

@@ -2,11 +2,12 @@
 
 **Owner:** Release engineer  | **Frequency:** Once per candidate router reset
 
-**Last Updated:** 2026-09-18  | **Last Run:** Not yet run on a factory-reset target
+**Last Updated:** 2026-10-09  | **Last Run:** Historical r88 run; physical acceptance remains pending
 
 ## Purpose
 
-Install the r60 candidate on a disposable factory-reset OpenWrt router and
+Install the exact field-candidate artifact recorded in
+[`acceptance-state.json`](acceptance-state.json) on a disposable factory-reset OpenWrt router and
 collect the evidence required to close the remaining spec-kit gates. This is a
 pilot/acceptance procedure, not a production deployment procedure.
 
@@ -17,7 +18,7 @@ pilot/acceptance procedure, not a production deployment procedure.
 - [ ] Preserve any required configuration backup before pressing reset.
 - [ ] Have an Ethernet admin laptop, a separate Wi-Fi/LAN client, and a WAN
       uplink available.
-- [ ] Download the r60 APK and `SHA256SUMS` from the matching GitHub Release.
+- [ ] Download the recorded field-candidate APK and `SHA256SUMS` from the matching GitHub Release.
 - [ ] Have a traffic test endpoint available for both upload and download. If
       `iperf3` is used, place the server outside the router's management plane.
 - [ ] Use a new root password before any client test.
@@ -28,12 +29,12 @@ Use the two Linksys EA8300 slots as an A/B acceptance environment:
 
 | Slot | Current role from the operator's inventory | Test role |
 |---|---|---|
-| 02 | Current | Recovery slot: keep untouched as the known-good return path. |
-| 01 | Alternative | Candidate slot: factory-reset, install, and test r42 here. |
+| 01 | Current rollback baseline | Protected r60/openNDS 10.3.1-r3 return path; do not overwrite. |
+| 02 | Candidate | Factory-reset, install the recorded field candidate/openNDS 11.0.0, and run acceptance here. |
 
-The table shows the same OpenWrt firmware in both slots, so slot 01 is not
-automatically a clean factory image. Treat slot 02 as the protected recovery
-baseline and record slot 01's state before resetting it. The two slots have
+The table shows the same OpenWrt firmware in both slots, so slot 02 is not
+automatically a clean factory image. Treat slot 01 as the protected rollback
+baseline and record slot 02's state before resetting it. The two slots have
 independent overlay filesystems:
 SQLite data, UCI settings, portal activation, and Dropbear keys do not migrate
 between them. Move application state with the project's backup/export flow,
@@ -70,7 +71,7 @@ address or subnet. Use this separation during the test:
 The Ethernet cable to the Open-HotSpot router is a management path only unless
 it is connected to the router's WAN/uplink interface. A separate test client
 must join the Open-HotSpot SSID or LAN to traverse openNDS; a client that stays
-on the primary Wi-Fi will bypass the captive portal. The r60 preflight reports
+on the primary Wi-Fi will bypass the captive portal. The candidate preflight reports
 and blocks duplicate local addresses, LAN equal to the default gateway, and
 LAN/WAN subnet overlap; it does not rewrite network settings automatically.
 
@@ -107,6 +108,8 @@ matching GitHub Release:
 
 ```sh
 RELEASE_DIR="${RELEASE_DIR:?Set RELEASE_DIR to the downloaded release directory}"
+CANDIDATE_APK="${CANDIDATE_APK:?Set CANDIDATE_APK to the checksum-listed APK filename}"
+test -f "$RELEASE_DIR/$CANDIDATE_APK"
 sha256sum -c "$RELEASE_DIR/SHA256SUMS"
 python3 -m unittest discover -s tests -v
 sh tests/test_shell_syntax.sh
@@ -116,14 +119,14 @@ sh tests/test_quota.sh
 **Expected result:** the checksum is `OK` and all checks pass. Record the
 terminal output with the test evidence.
 
-**If it fails:** stop. Do not install a rebuilt or unverified APK under the r60
-name.
+**If it fails:** stop. Do not install a rebuilt, unverified, or differently
+named APK.
 
-### 2. Factory reset and establish admin access on candidate slot 01
+### 2. Factory reset and establish admin access on candidate slot 02
 
-While slot 02 is still current, record its identity and install/verify
-`admin-slot-02.pub` through the existing administrator access. Then use
-**System → Advanced Reboot** to boot alternative slot 01. Only after slot 01
+While slot 01 is still current, record its identity and install/verify
+`admin-slot-01.pub` through the existing administrator access. Then use
+**System → Advanced Reboot** to boot alternative slot 02. Only after slot 02
 is current may you physically reset the disposable candidate using its
 vendor/OpenWrt procedure. Connect the admin laptop by Ethernet to the LAN
 port, wait for the stock OpenWrt recovery window, and identify the LAN address
@@ -140,55 +143,56 @@ router is reachable by the admin plane only; no client is connected yet.
 **If it fails:** stop and recover Ethernet/IP access before installing. Do not
 change the package or reset again without recording the failure.
 
-After the first login, verify the boot identity before installing r60. Capture
-the Advanced Reboot page showing slot 01 as the current candidate and slot 02
-as the protected recovery slot. Install `admin-slot-01.pub` and confirm that
-key-only access works with the slot-01 known-hosts file.
+After the first login, verify the boot identity before installing the recorded
+candidate. Capture
+the Advanced Reboot page showing slot 02 as the current candidate and slot 01
+as the protected rollback slot. Install `admin-slot-02.pub` and confirm that
+key-only access works with the slot-02 known-hosts file.
 
-For the remainder of the candidate test, define the slot-01 SSH command once
+For the remainder of the candidate test, define the slot-02 SSH command once
 and use it for every router command:
 
 ```sh
-SLOT01_SSH="ssh -i $SSH_STATE_DIR/admin-slot-01 -o IdentitiesOnly=yes -o UserKnownHostsFile=$SSH_STATE_DIR/known_hosts.slot-01 -o StrictHostKeyChecking=yes"
+SLOT02_SSH="ssh -i $SSH_STATE_DIR/admin-slot-02 -o IdentitiesOnly=yes -o UserKnownHostsFile=$SSH_STATE_DIR/known_hosts.slot-02 -o StrictHostKeyChecking=yes"
 ```
 
 ### 3. Prove the recovery slot and SSH separation
 
 From the current slot's LuCI, open **System → Advanced Reboot**, select the
-protected slot 02, confirm the reboot, and wait for the router to return.
+protected slot 01, confirm the reboot, and wait for the router to return.
 Renew the admin laptop's DHCP lease if necessary; the expected management
 address is again discovered from the current LAN/DHCP state.
 
 ```sh
-ssh -i "$SSH_STATE_DIR/admin-slot-02" \
+ssh -i "$SSH_STATE_DIR/admin-slot-01" \
   -o IdentitiesOnly=yes \
   -o UserKnownHostsFile="$SSH_STATE_DIR/known_hosts.slot-02" \
   -o StrictHostKeyChecking=yes root@"$TARGET_IP" 'ubus call system board'
 ```
 
-**Expected result:** the router boots slot 02, the board identity and firmware
-are recorded, and the slot-02 key works while the slot-01 key is not used. If
+**Expected result:** the router boots slot 01, the board identity and firmware
+are recorded, and the slot-01 key works while the slot-02 key is not used. If
 the two slots report the same firmware, record that fact; it does not prove the
 filesystems or application state are shared.
 
-Switch back to slot 01 through Advanced Reboot and verify the slot-01 key and
-known-hosts file again. This is the candidate path; slot 02 is the rollback
-path to use if slot 01 becomes unreachable after a reversible change.
+Switch back to slot 02 through Advanced Reboot and verify the slot-02 key and
+known-hosts file again. This is the candidate path; slot 01 is the rollback
+path to use if slot 02 becomes unreachable after a reversible change.
 
 **If it fails:** do not invent `fw_setenv` or partition commands. Use the
 router's documented recovery/boot-selector procedure and keep the candidate
 slot unchanged until access is restored.
 
-### 4. Preflight the target and install r60 on candidate slot 01
+### 4. Preflight the target and install the recorded candidate on slot 02
 
 Copy and install the exact artifact:
 
 ```sh
-tar -C "$RELEASE_DIR" -cf - luci-app-open-hotspot-1.2.0-r60.apk | \
-$SLOT01_SSH root@"$TARGET_IP" 'tar -xf - -C /tmp'
-$SLOT01_SSH root@"$TARGET_IP" 'apk add --allow-untrusted /tmp/luci-app-open-hotspot-1.2.0-r60.apk'
-$SLOT01_SSH root@"$TARGET_IP" 'uci set system.@system[0].hostname=open-hotspot-test; uci commit system'
-$SLOT01_SSH -tt root@"$TARGET_IP" 'passwd'
+tar -C "$RELEASE_DIR" -cf - "$CANDIDATE_APK" | \
+$SLOT02_SSH root@"$TARGET_IP" 'tar -xf - -C /tmp'
+$SLOT02_SSH root@"$TARGET_IP" "apk add --allow-untrusted /tmp/$CANDIDATE_APK"
+$SLOT02_SSH root@"$TARGET_IP" 'uci set system.@system[0].hostname=open-hotspot-test; uci commit system'
+$SLOT02_SSH -tt root@"$TARGET_IP" 'passwd'
 ```
 
 **Expected result:** package installation completes without removing a base
@@ -200,12 +204,12 @@ continue to client acceptance.
 ### 5. Run base setup and verify dependencies
 
 ```sh
-$SLOT01_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/setup.sh base'
-$SLOT01_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/setup.sh status'
-$SLOT01_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/preflight.sh'
-$SLOT01_SSH root@"$TARGET_IP" 'sh -c ". /usr/lib/open-hotspot/db.sh; db_init; db_schema_version"'
-$SLOT01_SSH root@"$TARGET_IP" 'ubus -v list open_hotspot'
-$SLOT01_SSH root@"$TARGET_IP" 'php-cgi -l /www/nds/fas.php'
+$SLOT02_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/setup.sh base'
+$SLOT02_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/setup.sh status'
+$SLOT02_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/preflight.sh'
+$SLOT02_SSH root@"$TARGET_IP" 'sh -c ". /usr/lib/open-hotspot/db.sh; db_init; db_schema_version"'
+$SLOT02_SSH root@"$TARGET_IP" 'ubus -v list open_hotspot'
+$SLOT02_SSH root@"$TARGET_IP" 'php-cgi -l /www/nds/fas.php'
 ```
 
 **Expected result:** setup reaches `BASE_READY`, schema is `4`, the required
@@ -221,9 +225,9 @@ Use LuCI **Services → Open-HotSpot → Setup** to confirm the planned FAS
 settings, then activate the local FAS only after the base checks pass:
 
 ```sh
-$SLOT01_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh enable'
-$SLOT01_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh status'
-$SLOT01_SSH root@"$TARGET_IP" 'uci show opennds; netstat -lnt 2>/dev/null | grep 2080 || true'
+$SLOT02_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh enable'
+$SLOT02_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh status'
+$SLOT02_SSH root@"$TARGET_IP" 'uci show opennds; netstat -lnt 2>/dev/null | grep 2080 || true'
 ```
 
 **Expected result:** local FAS is enabled on the documented port and the
@@ -247,9 +251,9 @@ Record, in order:
 Router evidence commands:
 
 ```sh
-$SLOT01_SSH root@"$TARGET_IP" 'ndsctl status'
-$SLOT01_SSH root@"$TARGET_IP" 'logread | tail -120'
-$SLOT01_SSH root@"$TARGET_IP" 'sqlite3 /etc/open-hotspot/hotspot.db ".headers on" ".mode column" "select username,status from accounts; select mac,account_id from devices; select account_id,device_id,started_at,closed_at,state from active_sessions; select event_key,bytes_incoming,bytes_outgoing from usage_events order by id desc limit 10;"'
+$SLOT02_SSH root@"$TARGET_IP" 'ndsctl status'
+$SLOT02_SSH root@"$TARGET_IP" 'logread | tail -120'
+$SLOT02_SSH root@"$TARGET_IP" 'sqlite3 /etc/open-hotspot/hotspot.db ".headers on" ".mode column" "select username,status from accounts; select mac,account_id from devices; select account_id,device_id,started_at,closed_at,state from active_sessions; select event_key,bytes_incoming,bytes_outgoing from usage_events order by id desc limit 10;"'
 ```
 
 **Expected result:** the complete portal → FAS → openNDS → BinAuth → close
@@ -279,11 +283,11 @@ With a disposable client authenticated, collect the database and live state,
 then run:
 
 ```sh
-$SLOT01_SSH root@"$TARGET_IP" 'ndsctl status'
-$SLOT01_SSH root@"$TARGET_IP" '/etc/init.d/opennds restart'
-$SLOT01_SSH root@"$TARGET_IP" 'sleep 30; ndsctl status'
-$SLOT01_SSH root@"$TARGET_IP" 'sh -c ". /usr/lib/open-hotspot/db.sh; db_init; sqlite3 \"$DB_PATH\" \"select count(*) from usage_events;\""'
-$SLOT01_SSH root@"$TARGET_IP" 'reboot'
+$SLOT02_SSH root@"$TARGET_IP" 'ndsctl status'
+$SLOT02_SSH root@"$TARGET_IP" '/etc/init.d/opennds restart'
+$SLOT02_SSH root@"$TARGET_IP" 'sleep 30; ndsctl status'
+$SLOT02_SSH root@"$TARGET_IP" 'sh -c ". /usr/lib/open-hotspot/db.sh; db_init; sqlite3 \"$DB_PATH\" \"select count(*) from usage_events;\""'
+$SLOT02_SSH root@"$TARGET_IP" 'reboot'
 ```
 
 After the router returns, repeat the state queries and client check. Record
@@ -295,23 +299,23 @@ match the observed behavior.
 ### 10. Test A/B rollback after candidate acceptance
 
 After collecting the candidate evidence, use Advanced Reboot to switch from
-slot 01 to the protected recovery slot 02. Discover the new management address
+slot 02 to the protected rollback slot 01. Discover the new management address
 and verify all of the following there:
 
-1. The slot-02 host fingerprint is accepted only by `known_hosts.slot-02`.
-2. The slot-02 administrator key works; the slot-01 identity is not silently
+1. The slot-01 host fingerprint is accepted only by `known_hosts.slot-01`.
+2. The slot-01 administrator key works; the slot-02 identity is not silently
    substituted.
 3. The expected recovery firmware and management plane are available.
-4. Slot 02 does not show slot-01's SQLite accounts unless an explicit backup
+4. Slot 01 does not show slot-02's SQLite accounts unless an explicit backup
    import was performed.
 
-Switch back to slot 01 and verify the r60 package, schema, and evidence are
+Switch back to slot 02 and verify the recorded candidate package, schema, and evidence are
 still present. This demonstrates rollback availability without claiming that
 an active client session survives a partition switch. A partition switch is a
 router reboot and must be accounted for separately in T011.
 
-If slot 01 is unhealthy but LuCI is still reachable, use Advanced Reboot to
-select slot 02. If slot 01 is not reachable, use the vendor/OpenWrt recovery
+If slot 02 is unhealthy but LuCI is still reachable, use Advanced Reboot to
+select slot 01. If slot 02 is not reachable, use the vendor/OpenWrt recovery
 procedure; do not send unverified bootloader commands.
 
 ### 11. Test failure containment (T086)
@@ -352,8 +356,8 @@ operator records the final decision as either `GO` or `NO-GO`.
 On a disposable target, first disable the deliberate local FAS activation:
 
 ```sh
-$SLOT01_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh rollback'
-$SLOT01_SSH root@"$TARGET_IP" 'apk del luci-app-open-hotspot'
+$SLOT02_SSH root@"$TARGET_IP" '/usr/lib/open-hotspot/activate-local-fas.sh rollback'
+$SLOT02_SSH root@"$TARGET_IP" 'apk del luci-app-open-hotspot'
 ```
 
 If the target is being returned to a known factory state, use the vendor/OpenWrt
@@ -376,4 +380,4 @@ paths as a substitute for the documented backup/restore process.
 
 | Date | Run By | Notes |
 |---|---|---|
-| 2026-09-18 | Open-HotSpot release process | Runbook created for r39 factory-reset acceptance; execution pending. |
+| 2026-09-23 | Open-HotSpot release process | Runbook aligned with the current A/B assignment: slot 02 is r88 candidate, slot 01 is r60 rollback; physical acceptance remains pending. |

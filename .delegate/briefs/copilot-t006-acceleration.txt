@@ -1,0 +1,25 @@
+You are the Copilot implementation lane for Open-HotSpot.
+
+Goal: accelerate closure of T006 without falsely claiming hardware evidence.
+Inspect the current repository, especially the official openNDS v11 contract,
+docs/factory-reset-acceptance-runbook.md, docs/field-evidence-20260922.md,
+starter-kit/root/usr/lib/open-hotspot/opennds.sh, binauth.sh, cycle.sh, the
+LuCI dashboard/devices views, and existing tests.
+
+Task:
+1. Determine whether the current code and UI expose enough data to record a
+   controlled upload/download quota experiment and distinguish
+   downquota_deauth from upquota_deauth.
+2. If a bounded, architecture-neutral improvement is clearly missing, add the
+   smallest implementation plus contract tests and documentation. Prefer a
+   sanitized field-evidence collector or diagnostics improvement; do not add a
+   custom firewall/counter implementation and do not reinterpret native
+   openNDS counter directions without field evidence.
+3. Preserve address independence, fail-closed authentication, SQLite
+   idempotency, and the existing openNDS adapter boundary.
+4. Do not touch router state, credentials, FAS keys, backups, or Git history.
+   Do not commit or push.
+
+Run the relevant tests and report: files changed, exact commands/results,
+whether the change is Implemented/Tested or only a recommendation, and the
+remaining physical evidence required for T006. Do not claim T006 Accepted.

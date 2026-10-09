@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-open-hotspot
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=79
+PKG_RELEASE:=93
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_MAINTAINER:=Mohammed Al-Haddad <mohammed@example.com>
 
@@ -11,7 +11,9 @@ LUCI_DEPENDS:=+opennds +sqlite3-cli +php8-cgi +php8-mod-pdo-sqlite +luci-base +l
 LUCI_PKGARCH:=all
 
 include $(TOPDIR)/feeds/luci/luci.mk
-# dnsmasq-full is intentionally not a core dependency. Phase 0/T010 must
-# establish whether a selected feature needs it before setup stages a swap.
+# dnsmasq-full is a feature dependency, not a core dependency. The packaged
+# dnsmasq-capability.sh check/install path is used only for autonomous
+# walled-garden/blocklist features; base FAS/BinAuth/SQLite does not replace a
+# working dnsmasq during installation.
 
 # call BuildPackage - OpenWrt buildroot signature

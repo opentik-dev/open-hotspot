@@ -78,8 +78,8 @@ function session_restore.write(_, section, value)
 	end
 end
 
-local client_network = s:option(Value, "client_network", translate("Managed client network"),
-	translate("UCI network name for the dedicated client/IoT LAN or SSID. It must not use the openNDS gateway device."))
+local client_network = s:option(Value, "client_network", translate("Dedicated IoT network"),
+	translate("UCI network name for a non-captive IoT LAN or SSID. It must not use the openNDS gateway device. Applying isolation permits forwarding only to the discovered WAN zone, never to the management LAN."))
 client_network.rmempty = true
 
 local client_router_access = s:option(ListValue, "client_router_access", translate("Router admin access"),
@@ -88,7 +88,7 @@ client_router_access:value("deny", translate("Deny client access"))
 client_router_access:value("allow", translate("Allow client access"))
 
 local router_access = s:option(Button, "apply_router_access", translate("Apply client isolation"),
-	translate("Save the network and policy first, then apply. The operation refuses the shared br-lan/management device to prevent lockout."))
+	translate("Save the network and policy first, then apply. The operation refuses the shared br-lan/management device, permits IoT egress only to WAN, and does not create a MAC bypass through openNDS."))
 router_access.inputtitle = translate("Apply router access policy")
 router_access.inputstyle = "apply"
 function router_access.write()
@@ -122,6 +122,12 @@ function plan.cfgvalue()
 		"luci-base",
 		"luci-compat"
 	}, "\n")
+end
+
+local dep_note = p:option(DummyValue, "dnsmasq_capability", translate("Optional dnsmasq capability"),
+	translate("dnsmasq-full is required only for openNDS autonomous blocklists or walled gardens; preflight checks this without silently replacing dnsmasq."))
+function dep_note.cfgvalue()
+	return translate("Checked by /usr/lib/open-hotspot/dnsmasq-capability.sh when a selected openNDS feature needs nftset or ipset support.")
 end
 
 local note = p:option(DummyValue, "next_step", translate("Next step"))

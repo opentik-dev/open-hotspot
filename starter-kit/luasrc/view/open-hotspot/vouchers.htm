@@ -10,7 +10,7 @@
 <input type="hidden" name="token" value="<%=pcdata(token)%>" /><input type="hidden" name="action" value="generate" />
 <div class="cbi-value"><label><%:Count%></label><input name="count" type="number" min="1" max="1000" value="1" /></div>
 <div class="cbi-value"><label><%:Profile%></label><select name="profile_id"><% for _, p in ipairs(profiles) do %><option value="<%=p.id%>"><%=pcdata(p.name)%></option><% end %></select></div>
-<div class="cbi-value"><label><%:Validity (seconds)%></label><input name="validity_seconds" type="number" min="1" value="3600" /></div>
+<div class="cbi-value"><label><%:Validity%></label><input name="validity_value" type="number" min="1" step="1" value="1" /><select name="validity_unit"><option value="seconds"><%:seconds%></option><option value="minutes" selected><%:minutes%></option><option value="hours"><%:hours%></option><option value="days"><%:days%></option><option value="weeks"><%:weeks%></option></select></div>
 <input class="cbi-button cbi-button-save" type="submit" value="<%:Generate%>" />
 </form>
 </fieldset>

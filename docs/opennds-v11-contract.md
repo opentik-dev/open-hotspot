@@ -1,6 +1,6 @@
 # openNDS 11 adapter contract
 
-This is the current v11 compatibility contract for the r79 acceptance
+This is the current v11 compatibility contract for the r88 acceptance
 candidate. A row marked by the release gates as open remains a release blocker;
 this document does not convert source or screenshot evidence into acceptance.
 
@@ -39,3 +39,15 @@ An unresolved row is a release blocker for the v11 track. The adapter must fail
 closed for new authentication when the row is required for identity or policy;
 it must preserve existing authorization when a manager-side maintenance action
 fails.
+
+## LuCI rate-control decision
+
+Rate control is already part of the profile model and LuCI workflow; it is not
+deferred as an unimplemented second product. The profile editor exposes
+`upload_rate_kbps` and `download_rate_kbps`, stores them transactionally, and
+the FAS/BinAuth adapter forwards them as openNDS native per-session limits.
+They are separate from `upload_limit_b` and `download_limit_b`, which are
+aggregate period budgets. A value of `0` means unlimited. The product should
+stabilize quota and session admission first, then accept rate control with a
+separate measured upload/download throughput test; changing a rate must not be
+used as evidence that quota enforcement works.

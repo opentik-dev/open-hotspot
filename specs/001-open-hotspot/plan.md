@@ -303,7 +303,10 @@ luci-app-open-hotspot/
 │   │   ├── period.sh
 │   │   ├── cycle.sh
 │   │   ├── maintenance.sh
-│   │   └── validate.sh
+│   │   ├── session-restore.sh
+│   │   ├── diagnose.sh
+│   │   ├── backup.sh
+│   │   └── adapters/opennds-v*.sh
 │   ├── www/cgi-bin/hotspot-login
 │   ├── usr/share/open-hotspot/templates/
 │   ├── usr/libexec/rpcd/open_hotspot
@@ -311,15 +314,17 @@ luci-app-open-hotspot/
 └── luasrc/
     ├── controller/open-hotspot.lua
     ├── model/cbi/open-hotspot/
-    │   ├── setup.lua
-    │   ├── accounts.lua
-    │   ├── devices.lua
-    │   ├── profiles.lua
-    │   ├── vouchers.lua
-    │   ├── status.lua
-    │   └── history.lua
-    └── view/open-hotspot/
+    │   └── setup.lua
+    └── view/open-hotspot/ (server-rendered RPC-backed pages)
+        ├── accounts.htm, devices.htm, profiles.htm, vouchers.htm
+        ├── status.htm, history.htm, backup.htm, templates.htm
+        └── dev.htm (read-only diagnostics)
 ```
+
+The planned `validate.sh` and per-page CBI models are not package interfaces in
+the current implementation. Validation lives at the bounded shell/RPC
+boundaries; the package layout above is the source-facing contract and is
+guarded by the package-layout contract test.
 
 ## 11. Dependency Strategy
 

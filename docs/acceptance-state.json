@@ -1,0 +1,38 @@
+{
+  "format_version": 1,
+  "working_tree": {
+    "package": "luci-app-open-hotspot",
+    "version": "1.2.0",
+    "release": 93,
+    "schema_version": 4,
+    "opennds_contract": "11.0.0",
+    "status": "unpublished-candidate"
+  },
+  "field_candidate": {
+    "release": 90,
+    "opennds_contract": "11.0.0",
+    "status": "controlled-pilot"
+  },
+  "production_approved": false,
+  "gates": {
+    "T003": { "status": "verified", "requires_hardware": true },
+    "T006": { "status": "pending-hardware-validation", "requires_hardware": true },
+    "T011": { "status": "partial", "requires_hardware": true },
+    "T012": { "status": "verified", "requires_hardware": true },
+    "T052": { "status": "pending-hardware-validation", "requires_hardware": true },
+    "T086": { "status": "pending-hardware-validation", "requires_hardware": true },
+    "T087": { "status": "pending-hardware-validation", "requires_hardware": true },
+    "T088": { "status": "pending-hardware-validation", "requires_hardware": true },
+    "T090": { "status": "pending-hardware-validation", "requires_hardware": true }
+  },
+  "status_vocabulary": [
+    "implemented",
+    "tested",
+    "verified",
+    "partial",
+    "pending-hardware-validation",
+    "accepted",
+    "blocked",
+    "superseded"
+  ]
+}

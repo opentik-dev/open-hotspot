@@ -60,8 +60,9 @@ and SSID first; do not apply the policy to the existing shared `br-lan`.
 
 Tapo plugs/bulbs, the D-Link plug, and an Android TV managed with atvtools are
 not treated as authenticated portal users by default. They must be placed on a
-dedicated client/IoT network and given only the minimum explicitly required
-local access. The default policy remains captive and router-admin access denied.
+dedicated **non-captive** IoT network and given only WAN egress. Applying the
+package policy creates a single IoT-zone-to-WAN forwarding path; it creates no
+forwarding path to the management/LAN zone and keeps router-admin access denied.
 
 Do not add these devices to a router-admin allow rule or make them trusted by
 MAC as an implicit workaround; that would bypass the account and audit model.
@@ -80,12 +81,18 @@ attach one or more of the following to that network:
 - a VLAN-backed LAN port;
 - an isolated bridge containing the chosen wired devices.
 
-Use the network's UCI name in LuCI, save, then apply the policy. The package
-does not invent an address, VLAN ID, SSID, or bridge; it consumes the live UCI
-network definition and therefore remains valid when the router LAN address
-changes. A multi-network deployment must attach the client network to the
-openNDS-managed client path or provide a separately configured openNDS
-instance; simply creating a second firewall zone does not make it captive.
+Use the network's UCI name in LuCI, save, then apply the policy from a separate
+management path. The package does not invent an address, VLAN ID, SSID, or
+bridge; it consumes the live UCI network definition and therefore remains
+valid when the router LAN address changes. This IoT policy is intentionally
+non-captive. A separate captive SSID requires an explicitly configured
+openNDS-managed path or its own openNDS instance; simply creating a second
+firewall zone does not make it captive.
+
+After applying, use
+[`network-service-access-runbook.md`](network-service-access-runbook.md) and
+`/usr/lib/open-hotspot/network-audit.sh summary` to confirm that the only new
+forwarding destination is WAN.
 
 ## Rollback
 

@@ -71,9 +71,15 @@ Router:       Linksys EA8300
 OpenWrt:      25.12.5
 Target:       ipq40xx/generic
 openNDS:      11.0.0
-Open-HotSpot: 1.2.0-r76
+Open-HotSpot: 1.2.0-r93 (unpublished working-tree candidate)
 ```
 
+The current checkout declares Open-HotSpot 1.2.0-r93 with openNDS 11.0.0. It
+is an unpublished working-tree candidate and has no new field-acceptance
+claim. The recorded r90 field candidate remains a controlled pilot only;
+production acceptance remains gated by physical evidence. The authoritative
+machine-readable state is
+[`docs/acceptance-state.json`](docs/acceptance-state.json).
 The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS
 10.3.1-r3. These are separate compatibility tracks; see
 [`docs/current-state.md`](docs/current-state.md) before operating a target.
@@ -103,9 +109,19 @@ plane and client/IoT plane on non-overlapping networks.
 
 ## Screenshots
 
-The repository includes LuCI screenshots for [accounts](docs/screenshots/accounts.jpg),
-[devices](docs/screenshots/devices.jpg), [profiles](docs/screenshots/profiles.jpg),
-[setup](docs/screenshots/setup.jpg), and [vouchers](docs/screenshots/vouchers.jpg).
+The repository includes updated live router LuCI screenshots for all active tabs:
+
+- [Setup](docs/screenshots/setup.jpg) — Service initialization, state, and FAS activation.
+- [Dashboard](docs/screenshots/dashboard.jpg) — Active sessions, live quota usage, and account period overview.
+- [Profiles](docs/screenshots/profiles.jpg) — Bandwidth tiers, rate limits, period quotas, and device limits.
+- [Accounts](docs/screenshots/accounts.jpg) — User credentials, period renewal, PIN assignment, and expiry.
+- [Devices](docs/screenshots/devices.jpg) — Distinct device labels, responsive action cards (Block, Disconnect, Remove, Reassign).
+- [Vouchers](docs/screenshots/vouchers.jpg) — One-time voucher generation, rate profiles, and redemption status.
+- [Portal templates](docs/screenshots/templates.jpg) — Arabic and English responsive captive portal design switch.
+- [History](docs/screenshots/history.jpg) — Bounded audit history and persistent usage records.
+- [Backup](docs/screenshots/backup.jpg) — Atomic SQLite and configuration archive export and restore.
+- [Events](docs/screenshots/events.jpg) — Bounded read-only event log with taxonomy filters (category, severity, source, result).
+- [DEV Feature Lab](docs/screenshots/dev.jpg) — Experimental workbench and future feature registry.
 
 ## Development
 
@@ -118,6 +134,7 @@ users.
 - [Acceptance runbook](docs/factory-reset-acceptance-runbook.md)
 - [Release gate register](docs/release-gates.md)
 - [Release history](docs/release-history.md)
+- [Current release notes](CHANGELOG.md)
 - [OpenNDS 11 migration decision](docs/decisions/ADR-003-opennds-v11-migration.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

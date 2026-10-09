@@ -4,11 +4,11 @@
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
 **SHA-256:** `0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r101 remains installed for the controlled network-policy trial; r100, r99, and r60 remain rollback checkpoints.
-**Decision:** r102 adds a fail-closed service-plane guard to activation and preflight. It has passed local reproducible packaging and contract tests; it is not installed and does not close a hardware gate.
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r102 is installed on the dedicated captive-plane trial; r101, r100, r99, and r60 remain rollback checkpoints.
+**Decision:** r102 adds a fail-closed service-plane guard to activation and preflight. It has passed local reproducible packaging and contract tests and the dedicated-plane captive login/Internet field check; it does not close the remaining hardware gates.
 
-The r102 package is the reproducible source candidate. The r101 package is the
-reproducible installed candidate. The r100 package is
+The r102 package is the reproducible source and installed candidate. The r101 package is the
+previous reproducible field candidate. The r100 package is
 the previous controlled-trial checkpoint and its checksum is recorded in the
 release ledger. The r99 package remains a rollback candidate.
 Its historical artifact checksum is recorded in the release ledger. The prior

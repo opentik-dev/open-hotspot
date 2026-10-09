@@ -1,6 +1,6 @@
 # Open-HotSpot current state
 
-**As of:** 2026-10-03
+**As of:** 2026-10-09
 
 This is the short operational truth for agents and release reviewers. The
 specification, release-gate register, and field evidence remain authoritative
@@ -8,8 +8,8 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current installed field candidate is r101; the current source candidate is r102 in
-controlled trial. r99 is the rollback candidate.
+The current installed and source field candidate is r102. r101 is the prior
+candidate and r99 is a preserved rollback checkpoint.
 
 Controlled account switching is isolated on the source branch
 `codex/controlled-account-switching`, based on merged `main`. It is not part
@@ -18,8 +18,8 @@ hardware validation.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Installed field candidate | Open-HotSpot r101 / openNDS 11.0.0 | EA8300 candidate slot 02; guarded deployment and bounded health probe completed | IoT WAN-only egress and read-only route/overlay audit; scenario acceptance pending |
-| Source candidate | Open-HotSpot r102 / openNDS 11.0.0 | Local reproducible candidate; not installed | Fail-closed captive service-plane activation/preflight guard; production acceptance pending |
+| Installed field candidate | Open-HotSpot r102 / openNDS 11.0.0 | EA8300 candidate; dedicated captive bridge and local FAS are active | Captive login/Internet field verification passed; service-regression and isolation tests remain pending |
+| Source candidate | Open-HotSpot r102 / openNDS 11.0.0 | Reproducible installed candidate | Fail-closed captive service-plane activation/preflight guard; production acceptance pending |
 | Previous candidate | Open-HotSpot r99 / openNDS 11.0.0 | Previous installed candidate and rollback | Superseded by r100 trial; preserve as rollback |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 

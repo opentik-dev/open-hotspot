@@ -14,10 +14,11 @@ as a fabricated commit history.
 checksum is
 `0a0cc39b9051edfbb25c4391e1b8ccc26663f87cb97469a9962e6bd240fd24fe`.
 It adds a fail-closed service-plane guard to activation and preflight.
-Hardware validation remains pending. The installed controlled-trial candidate
-is `1.2.0-r101`; its guarded
-deployment completed the checksum and rollback barriers, and its bounded
-post-install health probe passed. The previous `1.2.0-r100` artifact checksum is
+Dedicated-plane captive login/Internet validation is recorded, while broader
+hardware validation remains pending. The installed controlled-trial candidate
+is `1.2.0-r102`; its guarded deployment completed the checksum and rollback
+barriers, and its bounded post-install health probe passed. The prior
+`1.2.0-r101` candidate is retained. The previous `1.2.0-r100` artifact checksum is
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
 guarded post-install diagnostic and `ndsctl status` were healthy.
 Physical acceptance gates remain open. r100 is the

@@ -2,20 +2,24 @@
 guest.device=br-hotspot
 guest.runtime_dir=/tmp/opennds-guest
 guest.ndsctlsocket=opennds-guest/ndsctl.sock
+guest.ndsctl_wrapper=/usr/lib/open-hotspot/adapters/guest-ndsctl.sh
 guest.pid_file=/tmp/opennds-guest/opennds.pid
 guest.log_file=/tmp/opennds-guest/opennds.log
 guest.gateway_name=OpenTik-Guest
+guest.gateway_address=192.0.2.10
 guest.fas_plane=guest
+guest.fas_listener_port=2080
 guest.nft_chain=opennds_guest_auth
 guest.procd_service=opennds-guest
 family.device=br-family
 family.runtime_dir=/tmp/opennds-family
 family.ndsctlsocket=opennds-family/ndsctl.sock
+family.ndsctl_wrapper=/usr/lib/open-hotspot/adapters/family-ndsctl.sh
 family.pid_file=/tmp/opennds-family/opennds.pid
 family.log_file=/tmp/opennds-family/opennds.log
 family.gateway_name=OpenTik-Family
+family.gateway_address=192.0.2.11
 family.fas_plane=family
+family.fas_listener_port=2081
 family.nft_chain=opennds_family_auth
 family.procd_service=opennds-family
-# A shared listener needs the explicit, distinct plane identities above.
-shared.fas_listener_port=2080

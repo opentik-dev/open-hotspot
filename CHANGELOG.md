@@ -3,6 +3,14 @@
 This file summarizes user-visible and engineering-significant changes. The
 release ledger and field checkpoints remain in [`docs/release-history.md`](docs/release-history.md).
 
+## 1.2.0-r112 (installed field candidate; hardware acceptance pending)
+
+- Corrected the service-plane guard to read the openNDS 11 `setup` section
+  before the legacy configuration fallback.
+- Guarded target deployment and bounded post-install health validation passed;
+  physical acceptance remains pending.
+- This is a current controlled candidate, not a published production release.
+
 ## 1.2.0-r101 (candidate; hardware acceptance pending)
 
 - Added a WAN-only forwarding policy for a dedicated non-captive IoT network.

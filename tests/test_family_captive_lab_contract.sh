@@ -46,4 +46,32 @@ if "$validator" "$tmp/service-collision" > /dev/null 2> "$tmp/service-collision.
 fi
 grep -Fx 'family-captive-lab: procd-service-collision' "$tmp/service-collision.err" >/dev/null
 
+sed 's|family.ndsctl_wrapper=/usr/lib/open-hotspot/adapters/family-ndsctl.sh|family.ndsctl_wrapper=/usr/lib/open-hotspot/adapters/guest-ndsctl.sh|' "$fixture" > "$tmp/wrapper-collision"
+if "$validator" "$tmp/wrapper-collision" > /dev/null 2> "$tmp/wrapper-collision.err"; then
+	echo 'expected ndsctl wrapper collision to fail' >&2
+	exit 1
+fi
+grep -Fx 'family-captive-lab: ndsctl-wrapper-collision' "$tmp/wrapper-collision.err" >/dev/null
+
+sed 's|family.gateway_address=192.0.2.11|family.gateway_address=192.0.2.10|' "$fixture" > "$tmp/address-collision"
+if "$validator" "$tmp/address-collision" > /dev/null 2> "$tmp/address-collision.err"; then
+	echo 'expected gateway address collision to fail' >&2
+	exit 1
+fi
+grep -Fx 'family-captive-lab: gateway-address-collision' "$tmp/address-collision.err" >/dev/null
+
+sed 's|family.fas_listener_port=2081|family.fas_listener_port=2080|' "$fixture" > "$tmp/fas-port-collision"
+if "$validator" "$tmp/fas-port-collision" > /dev/null 2> "$tmp/fas-port-collision.err"; then
+	echo 'expected FAS listener port collision to fail' >&2
+	exit 1
+fi
+grep -Fx 'family-captive-lab: fas-listener-port-collision' "$tmp/fas-port-collision.err" >/dev/null
+
+sed 's|family.gateway_address=192.0.2.11|family.gateway_address=192.0.2.999|' "$fixture" > "$tmp/invalid-address"
+if "$validator" "$tmp/invalid-address" > /dev/null 2> "$tmp/invalid-address.err"; then
+	echo 'expected invalid gateway address to fail' >&2
+	exit 1
+fi
+grep -Fx 'family-captive-lab: family-address-invalid' "$tmp/invalid-address.err" >/dev/null
+
 printf '%s\n' 'family-captive-lab-contract-ok'

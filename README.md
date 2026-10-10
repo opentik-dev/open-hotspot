@@ -124,11 +124,43 @@ After installing the verified APK on the candidate router:
 Never use a fixed router address in scripts or documentation. Keep the admin
 plane and client/IoT plane on non-overlapping networks.
 
-## Screenshots
+## Product tour
 
-The repository includes LuCI screenshots for [accounts](docs/screenshots/accounts.jpg),
-[devices](docs/screenshots/devices.jpg), [profiles](docs/screenshots/profiles.jpg),
-[setup](docs/screenshots/setup.jpg), and [vouchers](docs/screenshots/vouchers.jpg).
+The current LuCI experience is shown below. These screenshots document the
+administration surface only; they are not field-acceptance evidence or a
+production-release claim.
+
+### Dashboard
+
+![Open-HotSpot dashboard](docs/screenshots/dashboard.png)
+
+Persistent account, session, quota, and rate counters in one overview.
+
+### Profiles
+
+![Open-HotSpot profiles](docs/screenshots/profiles.png)
+
+Define time, data, rate, period, and device limits using explicit units.
+
+### Accounts
+
+![Open-HotSpot accounts](docs/screenshots/accounts.png)
+
+Create and manage account identity, profile assignment, status, and expiry.
+
+### Devices
+
+![Open-HotSpot devices](docs/screenshots/devices.png)
+
+Review device identity, ownership, lifecycle state, live sessions, and safe
+reassignment actions.
+
+### Portal templates
+
+![Open-HotSpot portal templates](docs/screenshots/portal-templates.png)
+
+Choose the locally installed captive-portal language without downloading
+templates from a URL.
 
 ## Development
 

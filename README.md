@@ -1,5 +1,7 @@
 # Open-HotSpot
 
+[English](README.md) · [العربية](README.ar.md) · [简体中文](README.zh-CN.md) · [한국어](README.ko.md) · [Deutsch](README.de.md) · [日本語](README.ja.md)
+
 Open-HotSpot is a local captive-portal and hotspot management system for
 OpenWrt, built around [openNDS](https://opennds.readthedocs.io/) and managed
 through LuCI.
@@ -130,37 +132,40 @@ The current LuCI experience is shown below. These screenshots document the
 administration surface only; they are not field-acceptance evidence or a
 production-release claim.
 
-### Dashboard
+| Dashboard | Profiles |
+|---|---|
+| ![Open-HotSpot dashboard](docs/screenshots/dashboard.png) | ![Open-HotSpot profiles](docs/screenshots/profiles.png) |
+| Persistent counters, sessions, quotas, and rates. | Time, data, rate, period, and device-limit policies. |
 
-![Open-HotSpot dashboard](docs/screenshots/dashboard.png)
+| Accounts | Devices |
+|---|---|
+| ![Open-HotSpot accounts](docs/screenshots/accounts.png) | ![Open-HotSpot devices](docs/screenshots/devices.png) |
+| Local identity, profile assignment, status, and expiry. | Ownership, lifecycle state, live sessions, and reassignment. |
 
-Persistent account, session, quota, and rate counters in one overview.
+| Portal templates |
+|---|
+| ![Open-HotSpot portal templates](docs/screenshots/portal-templates.png) |
+| Select a locally installed captive-portal language without downloading templates from a URL. |
 
-### Profiles
+## Contribution priorities
 
-![Open-HotSpot profiles](docs/screenshots/profiles.png)
+The implementation is substantial, but the project is not yet a production
+baseline. Contributors can help close the remaining evidence and engineering
+gates:
 
-Define time, data, rate, period, and device limits using explicit units.
+- T006: measure upload/download direction and native quota cutoffs on a real
+  client.
+- T011/T086: verify restart, restore, duplicate-callback, and failure-containment
+  behavior on the target router.
+- T052/T087: test interrupted setup and repeatable recovery on a clean target.
+- T088/T090: complete the reset-router quickstart and release acceptance matrix.
+- Boundary 1/2: implement and field-validate the Family Captive multi-instance
+  adapter; the current OP-203 contract only proves identifier non-collision.
 
-### Accounts
-
-![Open-HotSpot accounts](docs/screenshots/accounts.png)
-
-Create and manage account identity, profile assignment, status, and expiry.
-
-### Devices
-
-![Open-HotSpot devices](docs/screenshots/devices.png)
-
-Review device identity, ownership, lifecycle state, live sessions, and safe
-reassignment actions.
-
-### Portal templates
-
-![Open-HotSpot portal templates](docs/screenshots/portal-templates.png)
-
-Choose the locally installed captive-portal language without downloading
-templates from a URL.
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), the
+[`source of truth`](docs/source-of-truth.md), and the
+[`release gates`](docs/release-gates.md). Do not turn a mock, screenshot, or
+local contract test into hardware acceptance.
 
 ## Development
 

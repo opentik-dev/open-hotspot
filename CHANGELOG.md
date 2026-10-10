@@ -10,6 +10,8 @@ historical release ledger remains in
   before the legacy configuration fallback.
 - Guarded target deployment and bounded post-install health validation passed;
   physical acceptance remains pending.
+- Refreshed the repository product tour with current Dashboard, Profiles,
+  Accounts, Devices, and Portal templates screenshots.
 - This is a current controlled candidate, not a published production release.
 
 ## 1.2.0-r101 (candidate; hardware acceptance pending)

@@ -7,7 +7,7 @@ solution, and acceptance evidence.
 
 | ID | Boundary / symptom | Root cause or decision | Package protection | Current evidence / state |
 |---|---|---|---|---|
-| INT-001 | Browser reaches openNDS port 2050 then `/nds/fas.php` returns 404. | Port 2050 is the openNDS return server; PHP FAS is the separate local uhttpd listener. | Local FAS uses `fasport=2080`, `faspath=/nds/fas.php`, and an explicit HTTP probe. | Fixed in r63; retest recorded in `field-evidence-20260920.md`. |
+| INT-001 | Browser reaches openNDS port 2050 then `/nds/fas.php` returns 404. | Port 2050 is the openNDS return server; PHP FAS is the separate local uhttpd listener. | Local FAS uses `fasport=2080`, `faspath=/nds/fas.php`, and an explicit HTTP probe. | Fixed in r63; retest recorded in `archive/evidence/field-evidence-20260920.md`. |
 | INT-002 | Built-in Welcome/Continue page appears instead of username/PIN. | openNDS preauth/login mode overrides configured FAS. | Activation sets `login_option_enabled=0`; FAS contract test guards it. | Fixed in r61; hardware retest remains part of T003. |
 | INT-003 | Changing upstream router breaks the portal. | FAS/gateway depended on a stored LAN/WAN address. | `fasremoteip` remains unset; `status.client` is used for FAS and gateway FQDN. | Fixed in r63; address-independent field proof remains open. |
 | INT-004 | FAS page is absent or uhttpd serves 404. | Named uhttpd FAS instance, listener, PHP interpreter, or `/www/nds/fas.php` is missing. | Activation configures instance `open_hotspot_fas`; `diagnose.sh` checks listener and local response. | Diagnostic implemented; fresh-router proof pending. |

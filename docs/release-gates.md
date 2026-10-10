@@ -60,4 +60,5 @@ them. The observed authenticated client did not disconnect during a controlled
 4-minute observation, so the reported 3–4 minute eviction still requires a
 reproducible account-specific field trace.
 The partial A/B execution, including the SCP/SFTP and SSH-access failures, is
-recorded in [`field-evidence-20260918.md`](field-evidence-20260918.md).
+recorded in
+[`archive/evidence/field-evidence-20260918.md`](archive/evidence/field-evidence-20260918.md).

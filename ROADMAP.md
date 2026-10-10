@@ -3,6 +3,9 @@
 This roadmap describes the next verifiable outcomes. It does not replace the
 release-gate register, field evidence, or the implementation task list.
 
+The current build and decision anchor is
+[`docs/source-of-truth.md`](docs/source-of-truth.md).
+
 ## Current baseline
 
 `1.2.0-r112` is the current installed/source field candidate for OpenWrt

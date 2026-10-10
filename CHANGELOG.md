@@ -1,7 +1,8 @@
 # Changelog
 
 This file summarizes user-visible and engineering-significant changes. The
-release ledger and field checkpoints remain in [`docs/release-history.md`](docs/release-history.md).
+historical release ledger remains in
+[`docs/archive/releases/release-history.md`](docs/archive/releases/release-history.md).
 
 ## 1.2.0-r112 (installed field candidate; hardware acceptance pending)
 
@@ -184,5 +185,5 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 ## Historical checkpoints
 
 Detailed r16–r60 package checkpoints and target evidence are preserved in
-[`docs/release-history.md`](docs/release-history.md) and
-[`docs/field-evidence-20260918.md`](docs/field-evidence-20260918.md).
+[`docs/archive/releases/release-history.md`](docs/archive/releases/release-history.md) and
+[`docs/archive/evidence/field-evidence-20260918.md`](docs/archive/evidence/field-evidence-20260918.md).

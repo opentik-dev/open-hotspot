@@ -15,6 +15,8 @@ dashboard without RADIUS, cloud services, or an external database.
 > are not all accepted yet. Do not treat the current candidate as a production
 > baseline until the release gates are closed.
 
+For the one current build/status anchor, see [`docs/source-of-truth.md`](docs/source-of-truth.md).
+
 ## Why Open-HotSpot?
 
 Small hotspot networks should not need a cloud subscription or a separate
@@ -142,7 +144,7 @@ users.
 - [Project status and open gates](docs/project-status.md)
 - [Acceptance runbook](docs/factory-reset-acceptance-runbook.md)
 - [Release gate register](docs/release-gates.md)
-- [Release history](docs/release-history.md)
+- [Release history archive](docs/archive/releases/release-history.md)
 - [Current release notes](CHANGELOG.md)
 - [OpenNDS 11 migration decision](docs/decisions/ADR-003-opennds-v11-migration.md)
 - [Contributing](CONTRIBUTING.md)

@@ -3,6 +3,10 @@
 Use this page as the entry point into the repository. The project separates
 product behavior, engineering design, field operations, and release evidence.
 
+The single current decision anchor is [`source-of-truth.md`](source-of-truth.md).
+Start there before reading historical evidence or release notes. Archived
+material is under [`archive/`](archive/) and is outside the active decision path.
+
 ## Choose a path
 
 | If you want to… | Start here |
@@ -16,7 +20,7 @@ product behavior, engineering design, field operations, and release evidence.
 | Review architecture decisions | [`decisions/`](decisions/) and [`../specs/001-open-hotspot/`](../specs/001-open-hotspot/) |
 | Inspect release readiness | [`release-gates.md`](release-gates.md), [`release-acceptance-matrix.md`](release-acceptance-matrix.md), and [`delivery-manifest.md`](delivery-manifest.md) |
 | Trace a claim to its proof | [`release-acceptance-matrix.md`](release-acceptance-matrix.md) |
-| Review target evidence | [`field-evidence-20261003.md`](field-evidence-20261003.md) and [`operational-ledger.md`](operational-ledger.md) |
+| Review target evidence | [`operational-ledger.md`](operational-ledger.md) and [`archive/evidence/`](archive/evidence/) |
 
 ## Source-of-truth rule
 

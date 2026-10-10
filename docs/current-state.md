@@ -13,10 +13,9 @@ openNDS 11 `setup`-section lookup used by the service-plane guard and is
 verified on the dedicated `br-hotspot` plane. r111 remains the immediate
 rollback checkpoint; r60 remains the protected cross-version rollback baseline.
 
-Controlled account switching is isolated on the source branch
-`codex/controlled-account-switching`, based on merged `main`. It is not part
-of the installed r100 target state and remains pending CI, packaging, and
-hardware validation.
+Account switching and device lifecycle behavior are governed by the source
+contracts and automated tests. They do not close any physical release gate by
+themselves; target evidence remains tracked in the release matrix and ledger.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
@@ -70,39 +69,11 @@ close-callback reconciliation issue under T011, not as a healthy session.
 | T052/T087 | Open | Interrupted setup/upgrade rerun and service health proof |
 | T088/T090 | Open | Full clean-hardware acceptance and release freeze |
 
-## 2026-10-02 audit checkpoint
+## Historical audit evidence
 
-The supplied read-only target probe reached the EA8300 at the operator's
-management address and confirmed OpenWrt 25.12.5, openNDS 11.0.0, local FAS,
-the versioned adapter, and a current `preflight.sh` result of `topology=ok`.
-The UCI `setup_state=PREFLIGHT_FAILED` value is stale state from an earlier
-attempt; it was not edited by hand and must be reconciled only through the
-bounded setup/status path after backup approval.
-
-The packaged diagnostic reported zero failures and warnings, but raw target
-logs still contain `Dnsmasq reload failed`, a `preemptivemac quiet` failure,
-routing-configuration retries, and a missing temporary client-state file. The
-target also records recurring `session_reconcile_failed` and
-`policy_refresh_failed` events. A live authenticated session remained
-authenticated beyond the reported 3–4 minute interval during this observation,
-so the user-facing eviction is not yet reproduced and must not be attributed
-to a timeout or quota without a controlled account-specific test.
-
-The historical r93 checkpoint is retained only in the release ledger; it is
-not an installed-target or current-source claim. The r100 target diagnostic is
-healthy, while the observed NAS, PBX, modem, IoT, and Tailscale reachability
-issues require the explicit route/zone evidence provided by r101 before any
-firewall exception is considered.
-
-## 2026-10-03 deployment checkpoint
-
-The guarded driver upgraded the target from r92 to r93 after creating the
-SQLite export and complete rollback archive. The remote checksum matched the
-local artifact `bd63507327ec167dc01075a71ab3d963beb77f09c9b69f797cd6818d9a11bd8a`.
-Post-install diagnostics reported `failures=0 warnings=0`, and
-`ndsctl status` reported a healthy openNDS 11.0.0 service. The 3–4 minute
-client-eviction observation remained stable beyond 35 minutes, so the specific
-reported eviction was not reproduced; remaining release gates are still open.
+Earlier r90–r111 probes, deployments, and failures remain preserved in the
+dated field evidence and operational ledger. They are evidence of past states,
+not current candidate status. Use the current gate table above for decisions.
 
 ## Backup evidence
 
@@ -124,17 +95,7 @@ this evidence does not make it a full-router backup.
 - The router-side Wi-Fi board-definition repair is verified. The packaged
   preflight now detects malformed `/etc/board.json`; phone visibility remains
   a physical acceptance check.
-- The report-driven r74/r75/r76/r77/r78 changes are target-tested; r79
-  contains the service-enable correction, r81 adds backup/state hardening, and
-  r82 adds the dependency/Wi-Fi boundary checks:
-  the period helper is now the single boundary source, renewal state is used by
-  every policy path, and manager SQLite calls share timeout/foreign-key rules.
-r86 includes an executable openNDS 11 reauthentication compatibility bridge,
-r87 contains native restores that are not backed by manager SQLite when
-Restore is disabled, r88 corrected the optional-file success return in the
-database hardening path, r89 fixes the source-compatible reauth bridge, and r90 accepts the target's explicit quota-deauth callback names. An intermediate probe found rollback slot 01 with
-r60/openNDS 10.3.1; the official Advanced Reboot path then returned the target
-to candidate slot 02, which was jointly verified as the openNDS 11.0.0 candidate. A
-later read-only probe has one pending-auth integration warning and still needs
-a fresh phone login. Quota, restart, failure-containment, and
-factory-acceptance evidence remain required.
+- Historical implementation and target checkpoints are retained in the
+  release history and operational ledger; they are not repeated here.
+- Quota, restart, failure-containment, and factory-acceptance evidence remain
+  required for r112.

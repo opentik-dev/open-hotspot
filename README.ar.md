@@ -13,6 +13,9 @@ RADIUS أو خادم خارجي أو خدمة سحابية.
 > ما تزال مفتوحة. راجع [`docs/project-status.md`](docs/project-status.md)، ولا
 > تعتبر الإصدار الحالي خط أساس إنتاجياً قبل إغلاق بوابات الإصدار.
 
+مرجع البناء والحالة الوحيد الحالي هو
+[`docs/source-of-truth.md`](docs/source-of-truth.md).
+
 ## لماذا Open-HotSpot؟
 
 إدارة شبكة hotspot صغيرة لا ينبغي أن تتطلب اشتراكاً سحابياً أو خادم مصادقة
@@ -65,7 +68,7 @@ FAS المحلي في Open-HotSpot ── تحقق الحساب/PIN ── SQLit
 OpenWrt:       25.12.5
 الهدف:         ipq40xx/generic
 openNDS:       11.0.0
-Open-HotSpot:  1.2.0-r92 (مثبتة؛ قبول العتاد ما زال مفتوحاً)
+Open-HotSpot:  1.2.0-r112 (مرشح مثبت؛ قبول العتاد ما زال مفتوحاً)
 ```
 
 يُكتشف عنوان الإدارة من إعداد LAN الحالي، ولا يدخل عنوان ثابت في عقد FAS.
@@ -100,7 +103,7 @@ Open-HotSpot:  1.2.0-r92 (مثبتة؛ قبول العتاد ما زال مفت�
 - [حالة المشروع والبوابات المفتوحة](docs/project-status.md)
 - [دليل القبول](docs/factory-reset-acceptance-runbook.md)
 - [سجل بوابات الإصدار](docs/release-gates.md)
-- [سجل الإصدارات](docs/release-history.md)
+- [أرشيف سجل الإصدارات](docs/archive/releases/release-history.md)
 - [قرار ترقية openNDS 11](docs/decisions/ADR-003-opennds-v11-migration.md)
 - [المساهمة](CONTRIBUTING.md)
 - [سياسة الأمان](SECURITY.md)

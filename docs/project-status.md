@@ -33,47 +33,15 @@ rollback, and IoT gates remain **Pending Hardware Validation**.
   `specs/001-open-hotspot/research.md` and `quickstart.md`.
 - The two-slot router layout is treated as rollback capability, not shared
   application state.
-- The installation, integration, and troubleshooting chain is centralized in
-  [`installation-and-integration-runbook.md`](installation-and-integration-runbook.md),
-  [`integration-gap-register.md`](integration-gap-register.md), and the
-  read-only `/usr/lib/open-hotspot/diagnose.sh` command shipped in r70; r71
-  adds versioned openNDS adapter contracts and stale-session diagnostics. r74
-  unifies period/renewal handling across FAS, BinAuth, cycle, and restore and
-  hardens manager-side SQLite invocation defaults; r75 adds zero-client stale
-  manager-session reconciliation; r76 expires abandoned pending FAS
-  transactions during cycle/maintenance; r77 resolves target-specific live
-  deauthentication through IP lookup; r78 correlates the target's empty
-  deauth custom marker to the active session; r79 enables the manager service
-  when local FAS is activated or an enabled installation is upgraded; r81
-  hardens manager-state backup and live-state file permissions; r82 adds the
-  conditional dnsmasq-full capability gate and detects/repairs malformed
-  OpenWrt Wi-Fi board metadata without embedding a router address; r84 adds
-  the executable compatibility bridge for the openNDS 11 reauth-helper path
-  mismatch; r85 adds bounded Reassign error reasons instead of flattening all
-  safety/database failures to `validation`; r86 applies the exact upstream
-  openNDS 11 reauth syntax correction with rollback; r87 contains native
-  openNDS `auth_restore` clients that have no manager SQLite session when
-  manager Restore is disabled; r88 corrected the optional-file success return in
-  the database permission hardening path, and r89 fixes the source-compatible
-  reauth bridge that previously bypassed custombinauth on the target; r90
-  accepts the explicit native quota-deauth names emitted by the target
-  openNDS 11 dispatcher. The installed r92 field candidate (hardware
-  validation pending) provides candidate implementation and
-  automated regression tests for the reported 3-4 minute client eviction
-  (case-insensitive MAC queries, authenticated-only client reconciliation,
-  policy_period_start initialization, non-disruptive daemon readiness check;
-  cycle stability tests are simulation/contract tests of algorithm logic),
-  reproducible APK packaging via deterministic SOURCE_DATE_EPOCH (clean git archive build
-  verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), safe
-  reconciliation error reporting, reconciled release metadata, and a read-only
-  DEV diagnostics LuCI page. r100 is now installed on the target and passed
-  guarded post-install preflight/diagnostics, but it does not close any
-  hardware gate without the required client-session evidence.
+  The installation, integration, and troubleshooting chain is centralized in
+  the runbooks, release matrix, and operational ledger. Historical r70–r111
+  implementation details remain in the release history and are not repeated
+  in the current status page.
 
 ## What is not accepted yet
 
-The following are the current release-gate states after the r99 guarded
-deployment; the remaining physical gates are still open:
+The following are the current release-gate states for r112; the remaining
+physical gates are still open:
 
 | Gate | Current state | Required proof |
 |---|---|---|

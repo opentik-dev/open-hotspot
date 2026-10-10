@@ -110,7 +110,7 @@ These are deliberately not marked closed from source inspection alone:
 | T088/T090 | The complete quickstart passes on the reset target and the evidence is recorded. |
 
 The historical target evidence is recorded in E-009 through E-012 of
-[`field-evidence-20260918.md`](field-evidence-20260918.md). Do not mark the
+[`archive/evidence/field-evidence-20260918.md`](archive/evidence/field-evidence-20260918.md). Do not mark the
 candidate as a production baseline while the openNDS service gate is open.
 
 r59/r60 add the restore policy and target-specific live-client resolution. The
@@ -141,7 +141,7 @@ on a disposable router. Only after its evidence is attached to
 declared the v1.2 production baseline. r60 remains the rollback baseline.
 
 The first live A/B attempt is recorded in
-[`field-evidence-20260918.md`](field-evidence-20260918.md). It proved the
+[`archive/evidence/field-evidence-20260918.md`](archive/evidence/field-evidence-20260918.md). It proved the
 partition discovery, backup, boot selection, and management-address transition.
 The follow-up run restored SSH on the current slot and installed earlier
 checkpoints; r67 is the source-built candidate, and live client gates remain

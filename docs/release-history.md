@@ -10,16 +10,16 @@ as a fabricated commit history.
 
 ## Current publish checkpoint
 
-`1.2.0-r110` is the current source candidate. Its local reproducible artifact
+`1.2.0-r111` is the current controlled-trial release. Its local reproducible artifact
 checksum is
-`2b716003abf2fae050e03c9a4c85f77c367dcc8cd1e2eada9290bb8ebc1e04c0`.
-It makes the managed-device state indicator a visible colored badge, retains the
+`da4b37a84e8b4175dc15f6b4f039394258117f70f2bcc500935f7b624d86c021`.
+It cache-busts the Devices stylesheet for the managed-device state badge, retains the
 BusyBox counter handling fix in the diagnostic warning for bounded manager policies that are not reflected
 in native openNDS session limits, building on r103's activation readiness
 containment and r102's fail-closed service-plane guard.
 Dedicated-plane captive login/Internet validation is recorded, while broader
 hardware validation remains pending. The installed controlled-trial candidate
-is `1.2.0-r110`; its guarded deployment completed the checksum and rollback barriers, and the final target diagnostic returned zero failures/warnings.
+is `1.2.0-r111`; its guarded deployment completed and the final diagnostic passed.
 barriers, and its bounded post-install health probe passed. The prior
 `1.2.0-r102` candidate is retained. The previous `1.2.0-r100` artifact checksum is
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
@@ -139,6 +139,7 @@ final release freeze.
 | r108 | `b219f1d524b746ea6ec65d39763728fa87bfa7e60e32cf193a74622d5c23bf7b` | Adds a read-only live DHCP client inventory to the Devices tab with network, hostname, IP, MAC, and lease remaining. Guarded deployment completed; target inventory returned nine records and diagnostics passed. |
 | r109 | `25c148db309c7af7151bf0739e0dacbabea2de8e8e39e79cf40824bd56c0e6b7` | Links managed devices to live DHCP clients by MAC, prefers current DHCP hostnames over generated labels, and adds explicit authenticated/connected/offline/blocked indicators. Guarded deployment completed; target verification passed. |
 | r110 | `2b716003abf2fae050e03c9a4c85f77c367dcc8cd1e2eada9290bb8ebc1e04c0` | Makes managed-device state a visible colored badge with explicit text, preserving the MAC-linked hostname and state logic. Guarded deployment completed; final target diagnostic passed. |
+| r111 | `da4b37a84e8b4175dc15f6b4f039394258117f70f2bcc500935f7b624d86c021` | Cache-busts the Devices stylesheet so state badge colors load after upgrades. Guarded deployment completed on the EA8300; final diagnostic passed. |
 
 ## Existing GitHub history
 

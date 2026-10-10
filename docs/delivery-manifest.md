@@ -3,7 +3,7 @@
 **Candidate:** `luci-app-open-hotspot 1.2.0-r112`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
-**SHA-256:** `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5`
+**SHA-256:** `c2b0c6a5fbe7de36286a0731234f856c1c5aeef9c1140d036a8f304ae4c0ea30`
 **Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r112 is installed with the dedicated captive plane restored; r111 is the immediate rollback checkpoint, followed by r110, r109, r108, r107, r106, r105, r104, r103, r102, r101, r100, r99, and r60.
 **Decision:** r112 corrects the openNDS 11 UCI section lookup used by the service-plane guard. Guarded target deployment and post-install health validation completed; physical acceptance remains pending.
 

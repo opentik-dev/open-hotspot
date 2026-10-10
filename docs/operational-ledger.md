@@ -9,7 +9,7 @@ and must not be used as current instructions.
 ## Current deployment truth — 2026-10-10
 
 - Candidate: Open-HotSpot `1.2.0-r112` on Linksys EA8300 / openNDS 11.0.0.
-- Artifact r112 reproducible SHA-256 `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5`.
+- Artifact r112 reproducible SHA-256 `c2b0c6a5fbe7de36286a0731234f856c1c5aeef9c1140d036a8f304ae4c0ea30`.
 - Captive plane: dedicated `br-hotspot`; service-plane lookup correction is
   implemented and tested.
 - Release state: physical acceptance gates remain open; no production claim.

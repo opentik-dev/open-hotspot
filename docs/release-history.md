@@ -9,12 +9,12 @@ and are outside the current decision path.
 The current source candidate is `1.2.0-r112`. It is not published or
 production-accepted; physical release gates remain open.
 
-Artifact checksum: `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5`.
+Artifact checksum: `c2b0c6a5fbe7de36286a0731234f856c1c5aeef9c1140d036a8f304ae4c0ea30`.
 
 ## Historical releases
 
 | Release | SHA-256 | Status |
 |---|---|---|
-| r112 | `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5` | Current controlled candidate; acceptance pending |
+| r112 | `c2b0c6a5fbe7de36286a0731234f856c1c5aeef9c1140d036a8f304ae4c0ea30` | Current controlled candidate; acceptance pending |
 
 See the archive only when investigating a historical checkpoint or rollback.

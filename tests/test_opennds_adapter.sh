@@ -13,7 +13,7 @@ printf '%s\n' '#!/bin/sh' \
 chmod +x "$mock"
 
 init="$tmp/opennds-init"
-printf '%s\n' '#!/bin/sh' 'case "$1" in stop|start|restart) exit 0;; esac' >"$init"
+printf '%s\n' '#!/bin/sh' 'case "$1" in stop) exit 0;; start) exit 1;; esac' >"$init"
 chmod +x "$init"
 
 export OPEN_HOTSPOT_NDSCTL_BIN="$mock"

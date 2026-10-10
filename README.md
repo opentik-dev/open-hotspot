@@ -15,6 +15,8 @@ dashboard without RADIUS, cloud services, or an external database.
 > are not all accepted yet. Do not treat the current candidate as a production
 > baseline until the release gates are closed.
 
+For the one current build/status anchor, see [`docs/source-of-truth.md`](docs/source-of-truth.md).
+
 ## Why Open-HotSpot?
 
 Small hotspot networks should not need a cloud subscription or a separate
@@ -36,6 +38,22 @@ traffic enforcement to openNDS.
 | Local authentication | No RADIUS, cloud, or external auth service |
 | LuCI | Native OpenWrt administration interface |
 | Arabic portal | Bundled Arabic RTL and English templates |
+
+## What is verified today?
+
+| Area | Current status |
+|---|---|
+| Database, quota arithmetic, vouchers, and domain contracts | Tested locally |
+| Primary portal → FAS → openNDS → BinAuth session path | Verified on the target path |
+| Duplicate callback protection and period-aware accounting | Tested locally; broader target matrix pending |
+| Quota direction and native cutoff measurement | Pending Hardware Validation (T006) |
+| Restart/restore and failure-containment matrix | Partial / Pending Hardware Validation (T011/T086) |
+| Production release freeze | Blocked until the release gates are complete (T090) |
+
+The detailed requirement-to-test-to-evidence mapping is in the
+[release acceptance matrix](docs/release-acceptance-matrix.md). `Tested` and
+`Verified` do not mean `Accepted`; the exact target evidence and release gates
+remain authoritative.
 
 ## How it works
 
@@ -71,14 +89,14 @@ Router:       Linksys EA8300
 OpenWrt:      25.12.5
 Target:       ipq40xx/generic
 openNDS:      11.0.0
-Open-HotSpot: 1.2.0-r100 (installed trial; hardware acceptance pending)
+Open-HotSpot: 1.2.0-r112 (installed field candidate; hardware acceptance pending)
 ```
 
-The current field candidate is Open-HotSpot 1.2.0-r100 with openNDS 11.0.0.
-The r100 candidate adds a distinct device identity label in the
-Devices page, keeps the account owner separate for safe Reassign operations,
-and groups device actions in responsive cards. It is installed for controlled
-UI trial only; production acceptance remains gated by the physical evidence.
+The current field candidate is Open-HotSpot 1.2.0-r112 with openNDS 11.0.0.
+r112 corrects the service-plane guard to read the openNDS 11 `setup` section
+before its legacy configuration fallback. It is installed as a controlled
+candidate with post-install health validation completed; production acceptance
+remains gated by the physical evidence and release gates.
 The preserved rollback baseline is Open-HotSpot 1.2.0-r60 with openNDS
 10.3.1-r3. These are separate compatibility tracks; see
 [`docs/current-state.md`](docs/current-state.md) before operating a target.
@@ -118,11 +136,15 @@ The project uses specification-driven development. Spec-Kit documents
 requirements and engineering decisions; it is not the product identity shown to
 users.
 
+- [Documentation index](docs/index.md)
+- [Architecture overview](docs/architecture/overview.md)
+- [Administrator getting started](docs/user/getting-started.md)
+- [Roadmap](ROADMAP.md)
 - [Development guide](docs/development.md)
 - [Project status and open gates](docs/project-status.md)
 - [Acceptance runbook](docs/factory-reset-acceptance-runbook.md)
 - [Release gate register](docs/release-gates.md)
-- [Release history](docs/release-history.md)
+- [Release history archive](docs/archive/releases/release-history.md)
 - [Current release notes](CHANGELOG.md)
 - [OpenNDS 11 migration decision](docs/decisions/ADR-003-opennds-v11-migration.md)
 - [Contributing](CONTRIBUTING.md)

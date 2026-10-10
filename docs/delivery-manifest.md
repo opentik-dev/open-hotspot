@@ -1,16 +1,16 @@
 # Open-HotSpot delivery manifest
 
-**Candidate:** `luci-app-open-hotspot 1.2.0-r100`
+**Candidate:** `luci-app-open-hotspot 1.2.0-r112`
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
-**SHA-256:** `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r100 installed for controlled UI trial; r99 and r60 remain rollback paths.
-**Decision:** r100 is the canonical UI candidate based on merged main/r99,
-adding distinct device identity presentation and responsive device actions;
-r100 is installed for controlled trial and r99 rollback evidence is preserved.
+**SHA-256:** `c2b0c6a5fbe7de36286a0731234f856c1c5aeef9c1140d036a8f304ae4c0ea30`
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r112 is installed with the dedicated captive plane restored; r111 is the immediate rollback checkpoint, followed by r110, r109, r108, r107, r106, r105, r104, r103, r102, r101, r100, r99, and r60.
+**Decision:** r112 corrects the openNDS 11 UCI section lookup used by the service-plane guard. Guarded target deployment and post-install health validation completed; physical acceptance remains pending.
 
-The r100 package is the installed controlled-trial candidate and its checksum is
-recorded in the release ledger. The r99 package remains the rollback candidate.
+The r112 package is the reproducible source and installed candidate. The r111 package is the
+immediate rollback checkpoint. The r102 package is the earlier reproducible field candidate. The r101 package is
+the previous controlled-trial checkpoint and its checksum is recorded in the
+release ledger. The r99 package remains a rollback candidate.
 Its historical artifact checksum is recorded in the release ledger. The prior
 artifact checksum is recorded in the release ledger. The prior r98 package contains
 the device-lifecycle and failure-observability changes from the reviewed source
@@ -110,7 +110,7 @@ These are deliberately not marked closed from source inspection alone:
 | T088/T090 | The complete quickstart passes on the reset target and the evidence is recorded. |
 
 The historical target evidence is recorded in E-009 through E-012 of
-[`field-evidence-20260918.md`](field-evidence-20260918.md). Do not mark the
+[`archive/evidence/field-evidence-20260918.md`](archive/evidence/field-evidence-20260918.md). Do not mark the
 candidate as a production baseline while the openNDS service gate is open.
 
 r59/r60 add the restore policy and target-specific live-client resolution. The
@@ -141,7 +141,7 @@ on a disposable router. Only after its evidence is attached to
 declared the v1.2 production baseline. r60 remains the rollback baseline.
 
 The first live A/B attempt is recorded in
-[`field-evidence-20260918.md`](field-evidence-20260918.md). It proved the
+[`archive/evidence/field-evidence-20260918.md`](archive/evidence/field-evidence-20260918.md). It proved the
 partition discovery, backup, boot selection, and management-address transition.
 The follow-up run restored SSH on the current slot and installed earlier
 checkpoints; r67 is the source-built candidate, and live client gates remain

@@ -1,11 +1,24 @@
 # Open-HotSpot project status
 
-**As of:** 2026-10-03
-**Installed field candidate:** Open-HotSpot 1.2.0-r100
-**Current source candidate:** Open-HotSpot 1.2.0-r100 (controlled trial)
-**Previous candidate:** Open-HotSpot 1.2.0-r99
+**As of:** 2026-10-10
+**Installed field candidate:** Open-HotSpot 1.2.0-r112
+**Current source candidate:** Open-HotSpot 1.2.0-r112 (openNDS 11 UCI-layout correction)
+**Previous candidate:** Open-HotSpot 1.2.0-r111
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
+
+## Network service-plane safety checkpoint (2026-10-09)
+
+The field evidence shows that the shared service/management bridge must not be
+used as the openNDS captive gateway. The source now contains an activation and
+preflight service-plane guard: its default `protected` profile refuses that
+overlap, while an explicitly acknowledged and future-dated temporary profile
+is limited to controlled diagnosis. This is **Implemented** and **Tested** by
+local contract tests. r112 is installed on the target and confirms the target
+openNDS 11 `setup` section resolves to the dedicated `br-hotspot` bridge. The
+earlier shared-LAN U1 attempt was rolled back; no service-port exception has
+been added. The remaining multi-plane, pre-auth denial, post-auth service,
+rollback, and IoT gates remain **Pending Hardware Validation**.
 
 ## What is established
 
@@ -20,47 +33,15 @@
   `specs/001-open-hotspot/research.md` and `quickstart.md`.
 - The two-slot router layout is treated as rollback capability, not shared
   application state.
-- The installation, integration, and troubleshooting chain is centralized in
-  [`installation-and-integration-runbook.md`](installation-and-integration-runbook.md),
-  [`integration-gap-register.md`](integration-gap-register.md), and the
-  read-only `/usr/lib/open-hotspot/diagnose.sh` command shipped in r70; r71
-  adds versioned openNDS adapter contracts and stale-session diagnostics. r74
-  unifies period/renewal handling across FAS, BinAuth, cycle, and restore and
-  hardens manager-side SQLite invocation defaults; r75 adds zero-client stale
-  manager-session reconciliation; r76 expires abandoned pending FAS
-  transactions during cycle/maintenance; r77 resolves target-specific live
-  deauthentication through IP lookup; r78 correlates the target's empty
-  deauth custom marker to the active session; r79 enables the manager service
-  when local FAS is activated or an enabled installation is upgraded; r81
-  hardens manager-state backup and live-state file permissions; r82 adds the
-  conditional dnsmasq-full capability gate and detects/repairs malformed
-  OpenWrt Wi-Fi board metadata without embedding a router address; r84 adds
-  the executable compatibility bridge for the openNDS 11 reauth-helper path
-  mismatch; r85 adds bounded Reassign error reasons instead of flattening all
-  safety/database failures to `validation`; r86 applies the exact upstream
-  openNDS 11 reauth syntax correction with rollback; r87 contains native
-  openNDS `auth_restore` clients that have no manager SQLite session when
-  manager Restore is disabled; r88 corrected the optional-file success return in
-  the database permission hardening path, and r89 fixes the source-compatible
-  reauth bridge that previously bypassed custombinauth on the target; r90
-  accepts the explicit native quota-deauth names emitted by the target
-  openNDS 11 dispatcher. The installed r92 field candidate (hardware
-  validation pending) provides candidate implementation and
-  automated regression tests for the reported 3-4 minute client eviction
-  (case-insensitive MAC queries, authenticated-only client reconciliation,
-  policy_period_start initialization, non-disruptive daemon readiness check;
-  cycle stability tests are simulation/contract tests of algorithm logic),
-  reproducible APK packaging via deterministic SOURCE_DATE_EPOCH (clean git archive build
-  verified with SHA-256 `a93ab78f04315017c2c4e0fd1d5ac5595024634de8d9d31b5c86aafb0ad655db`), safe
-  reconciliation error reporting, reconciled release metadata, and a read-only
-  DEV diagnostics LuCI page. r100 is now installed on the target and passed
-  guarded post-install preflight/diagnostics, but it does not close any
-  hardware gate without the required client-session evidence.
+  The installation, integration, and troubleshooting chain is centralized in
+  the runbooks, release matrix, and operational ledger. Historical r70–r111
+  implementation details remain in the release history and are not repeated
+  in the current status page.
 
 ## What is not accepted yet
 
-The following are the current release-gate states after the r99 guarded
-deployment; the remaining physical gates are still open:
+The following are the current release-gate states for r112; the remaining
+physical gates are still open:
 
 | Gate | Current state | Required proof |
 |---|---|---|
@@ -91,17 +72,16 @@ open.
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the installed r93 field candidate
+1. Close the remaining physical-router gates against the installed r112 field candidate
    while preserving r60/openNDS 10.3.1 as the documented rollback baseline.
-   The r93 artifact is installed, post-install checks passed, and the
-   separated Events/DEV UI is present; publication remains blocked until the
+   The r112 artifact is installed, post-install checks passed, and publication remains blocked until the
    remaining physical acceptance gates are recorded.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-  baseline; r93 belongs on the disposable acceptance slot and remains a
+  baseline; r112 belongs on the disposable acceptance slot and remains a
   controlled candidate, not a frozen release. The deployment evidence confirms
-  candidate slot 02, openNDS 11.0.0, and r93 installed successfully; fresh
+  candidate slot 02, openNDS 11.0.0, and r112 installed successfully; fresh
   client-session, quota, restart, and failure-containment evidence remain open.
 
 ## Decision rule

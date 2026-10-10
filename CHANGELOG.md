@@ -1,7 +1,23 @@
 # Changelog
 
 This file summarizes user-visible and engineering-significant changes. The
-release ledger and field checkpoints remain in [`docs/release-history.md`](docs/release-history.md).
+historical release ledger remains in
+[`docs/archive/releases/release-history.md`](docs/archive/releases/release-history.md).
+
+## 1.2.0-r112 (installed field candidate; hardware acceptance pending)
+
+- Corrected the service-plane guard to read the openNDS 11 `setup` section
+  before the legacy configuration fallback.
+- Guarded target deployment and bounded post-install health validation passed;
+  physical acceptance remains pending.
+- This is a current controlled candidate, not a published production release.
+
+## 1.2.0-r101 (candidate; hardware acceptance pending)
+
+- Added a WAN-only forwarding policy for a dedicated non-captive IoT network.
+  It does not forward to the management LAN and does not create an openNDS MAC bypass.
+- Added `network-audit.sh`, a read-only route/Tailscale/IoT-path diagnostic for
+  field investigation before any NAS, PBX, modem, or overlay firewall exception.
 
 ## 1.2.0-r100 (candidate; hardware acceptance pending)
 
@@ -169,5 +185,5 @@ release ledger and field checkpoints remain in [`docs/release-history.md`](docs/
 ## Historical checkpoints
 
 Detailed r16–r60 package checkpoints and target evidence are preserved in
-[`docs/release-history.md`](docs/release-history.md) and
-[`docs/field-evidence-20260918.md`](docs/field-evidence-20260918.md).
+[`docs/archive/releases/release-history.md`](docs/archive/releases/release-history.md) and
+[`docs/archive/evidence/field-evidence-20260918.md`](docs/archive/evidence/field-evidence-20260918.md).

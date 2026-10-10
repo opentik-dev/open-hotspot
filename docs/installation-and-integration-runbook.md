@@ -141,7 +141,7 @@ that can be a stale openNDS state, VPN path, or an untracked session.
 ## 8. Evidence and release rule
 
 Attach the diagnostic output, sanitized service/config summary, screenshots,
-and exact package SHA-256 to `docs/field-evidence-YYYYMMDD.md`. Update the
+and exact package SHA-256 to `docs/archive/evidence/field-evidence-YYYYMMDD.md`. Update the
 matching row in [`integration-gap-register.md`](integration-gap-register.md),
 `release-acceptance-matrix.md`, and `release-gates.md` in the same change.
 

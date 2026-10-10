@@ -1,11 +1,12 @@
 # Open-HotSpot release-gate register
 
-This register is the operational release decision register. `r90` is the
-last field-tested acceptance candidate with router-access isolation, runtime
-readiness recovery, and a packaged read-only integration diagnostic. `r100` is
-the current installed controlled-trial candidate; r99 is the preserved rollback
-candidate. Neither is a production release until the physical gates below have
-evidence.
+This register is the operational release decision register. `r112` is the
+current installed field candidate and contains the openNDS 11 service-plane
+lookup correction; its guarded post-install health validation passed. `r111` is
+the immediate rollback checkpoint and `r60` remains the protected cross-version
+rollback baseline. r99 and r100 remain historical candidate/rollback records.
+The current candidate is not a production release until the physical gates
+below have evidence.
 Neither is a production release
 until every critical gate below has evidence from the physical target.
 
@@ -32,11 +33,10 @@ until every critical gate below has evidence from the physical target.
 
 ## Current decision
 
-`r60` remains the protected rollback baseline. `r99` is the preserved previous
-candidate and `r100` is installed on the controlled target for UI trial,
-containing the device identity/UI correction.
-Hardware validation remains pending.
-Neither is approved as a production baseline. The next field session
+`r60` remains the protected rollback baseline. `r111` is the immediate rollback
+checkpoint, while `r112` is the current installed controlled candidate.
+Hardware validation remains pending, and r112 is not approved as a production
+baseline. The next field session
 must prioritize the disposable client flow, counter/quota mapping, and restart
 behavior; code changes must not claim those gates closed without target evidence.
 
@@ -60,4 +60,5 @@ them. The observed authenticated client did not disconnect during a controlled
 4-minute observation, so the reported 3–4 minute eviction still requires a
 reproducible account-specific field trace.
 The partial A/B execution, including the SCP/SFTP and SSH-access failures, is
-recorded in [`field-evidence-20260918.md`](field-evidence-20260918.md).
+recorded in
+[`archive/evidence/field-evidence-20260918.md`](archive/evidence/field-evidence-20260918.md).

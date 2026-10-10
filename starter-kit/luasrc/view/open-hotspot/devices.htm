@@ -5,6 +5,18 @@
 <% if page_message ~= "" then %><div class="alert-message <%=page_message:match('^Error:') and 'danger' or 'success'%>"><%=pcdata(page_message)%></div><% end %>
 
 <p><%:A blocked device cannot authenticate. Removing is allowed only when no session or usage history references the device (for historical devices, use Reassign; for live sessions, Disconnect first).%></p>
+<p class="alert-message"><%:The managed-device list contains authenticated Open-HotSpot devices. The live network inventory below also includes DHCP clients on LAN, guest, hotspot, and IoT networks. Hostnames are supplied by the client; privacy MAC randomization or silent clients may remain unidentified.%></p>
+<h3><%:Live network clients%></h3>
+<div class="oh-table-wrap">
+<table class="table cbi-section-table oh-device-table">
+<tr class="tr table-titles"><th><%:Network%></th><th><%:Device / hostname%></th><th><%:IP address%></th><th><%:MAC address%></th><th><%:Lease remaining%></th></tr>
+<% for _, client in ipairs(network_clients or {}) do %>
+<tr class="tr"><td><%=pcdata(client.network)%></td><td><strong><%=pcdata(client.hostname or "Unknown device")%></strong></td><td><code><%=pcdata(client.ip)%></code></td><td><code><%=pcdata(client.mac)%></code></td><td><%=client.lease_seconds%> s</td></tr>
+<% end %>
+<% if #(network_clients or {}) == 0 then %><tr class="tr"><td class="oh-empty" colspan="5"><%:No DHCP clients reported.%></td></tr><% end %>
+</table>
+</div>
+<h3><%:Managed Open-HotSpot devices%></h3>
 <div class="oh-table-wrap">
 <table class="table cbi-section-table oh-device-table">
 <tr class="tr table-titles"><th><%:Device name%></th><th><%:Account%></th><th><%:MAC address%></th><th><%:Status%></th><th><%:First seen%></th><th><%:Last seen%></th><th><%:Live sessions%></th><th><%:Actions%></th></tr>
@@ -12,7 +24,7 @@
 <tr class="tr oh-device-card-row">
 <td colspan="8"><div class="oh-device-card">
 <div class="oh-device-grid">
-<div class="oh-device-field oh-device-primary"><span><%:Device name%></span><strong><%=pcdata(device.device_name or ("Device #" .. device.id))%></strong></div>
+<div class="oh-device-field oh-device-primary"><span><%:Device name%></span><strong><%=pcdata(device.device_name or ("Device #" .. device.id))%></strong><span class="oh-state-badge is-<%=pcdata(device.connection_state or "offline")%>" title="<%=pcdata(device.connection_label or "Offline")%>"><span aria-hidden="true">●</span> <%=pcdata(device.connection_label or "Offline")%></span></div>
 <div class="oh-device-field"><span><%:Account%></span><strong><%=pcdata(device.username)%></strong></div>
 <div class="oh-device-field"><span><%:MAC address%></span><code><%=pcdata(device.mac)%></code></div>
 <div class="oh-device-field"><span><%:Status%></span><strong><%=pcdata(device.status)%><% if device.has_history then %> <span class="badge" title="<%:Historical device retained for accounting; use Reassign. Archive is planned separately.%>">(<%:Historical%>)</span><% end %></strong></div>
@@ -48,6 +60,6 @@
 <% end %>
 </table>
 </div>
-<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css">
+<link rel="stylesheet" href="/luci-static/resources/open-hotspot.css?v=110">
 </div>
 <%+footer%>

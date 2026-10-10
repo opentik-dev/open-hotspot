@@ -3,7 +3,7 @@
 #
 # The historical filename is retained for compatibility. Set
 # CANDIDATE_RELEASE and CANDIDATE_SHA256 for a newer candidate; defaults remain
-# r100 so the newly built candidate is distinct from the installed r99 field artifact.
+# r112 so the newly built candidate is distinct from the installed r111 field artifact.
 #
 # Operational requirements:
 # 1. Strict bash error handling (set -euo pipefail).
@@ -23,7 +23,7 @@
 # 6. Strict fail-closed rollback taxonomy:
 #    - Cross-verifies installed Open-HotSpot package version with openNDS daemon version:
 #      r60 + openNDS 10.3.x -> r60-opennds10.3-production-baseline
-#      r90-r100 + openNDS 11.0.x -> r90-r100-opennds11.0-field-candidate
+#      r90-r112 + openNDS 11.0.x -> r90-r112-opennds11.0-field-candidate
 #    - Rejects and aborts on unknown package version or mismatched openNDS version.
 # 7. Exact local and remote SHA-256 validation against documented hash.
 # 8. Conditional installation: executed only after every single barrier passes.
@@ -34,8 +34,8 @@ set -euo pipefail
 
 PROJECT=$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CANDIDATE_VERSION="${CANDIDATE_VERSION:-1.2.0}"
-CANDIDATE_RELEASE="${CANDIDATE_RELEASE:-100}"
-EXPECTED_SHA="${CANDIDATE_SHA256:-bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a}"
+CANDIDATE_RELEASE="${CANDIDATE_RELEASE:-112}"
+EXPECTED_SHA="${CANDIDATE_SHA256:-c2b0c6a5fbe7de36286a0731234f856c1c5aeef9c1140d036a8f304ae4c0ea30}"
 CANDIDATE_LABEL="${CANDIDATE_VERSION}-r${CANDIDATE_RELEASE}"
 DEFAULT_APK="$PROJECT/dist/luci-app-open-hotspot-${CANDIDATE_LABEL}.apk"
 APK_PATH="${APK_PATH:-}"
@@ -137,10 +137,11 @@ fi
 ROUTER_IP="${ROUTER_IP:-192.168.50.1}"
 ROUTER_USER="${ROUTER_USER:-root}"
 SSH_BIN="${SSH_BIN:-ssh}"
+SSH_CONFIG_FILE="${SSH_CONFIG_FILE:-/dev/null}"
 SSH_TARGET="${ROUTER_USER}@${ROUTER_IP}"
 SSH_CMD=("$SSH_BIN")
 if [ "$SSH_BIN" = "ssh" ]; then
-	SSH_CMD+=(-o BatchMode=yes -o ConnectTimeout=5)
+	SSH_CMD+=(-F "$SSH_CONFIG_FILE" -o BatchMode=yes -o ConnectTimeout=5)
 fi
 SSH_CMD+=("$SSH_TARGET")
 
@@ -302,11 +303,11 @@ if echo "$INSTALLED_VERSION" | grep -qE "r60($|[^0-9])"; then
 		echo "FAIL: Rollback classification rejected: r60 installed but openNDS is not 10.3.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
-elif echo "$INSTALLED_VERSION" | grep -qE "r(9[0-9]|100)($|[^0-9])"; then
+elif echo "$INSTALLED_VERSION" | grep -qE "r(9[0-9]|1[0-1][0-9])($|[^0-9])"; then
 	if echo "$OPENNDS_VER" | grep -qE "11\.0(\.[0-9]+)?"; then
-		ROLLBACK_CLASSIFICATION="r90-r100-opennds11.0-field-candidate"
+	ROLLBACK_CLASSIFICATION="r90-r112-opennds11.0-field-candidate"
 	else
-		echo "FAIL: Rollback classification rejected: r90-r100 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
+		echo "FAIL: Rollback classification rejected: r90-r102 installed but openNDS is not 11.0.x ($OPENNDS_VER). Aborting." >&2
 		exit 1
 	fi
 else
@@ -316,10 +317,10 @@ fi
 echo "  Rollback Classification:  $ROLLBACK_CLASSIFICATION"
 
 # r60 is the preserved rollback baseline and must never be upgraded in place.
-# Candidates may only be deployed over the isolated r90-r100/openNDS 11.0.x
+# Candidates may only be deployed over the isolated r90-r103/openNDS 11.0.x
 # candidate slot.
-if [ "$ROLLBACK_CLASSIFICATION" != "r90-r100-opennds11.0-field-candidate" ]; then
-	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90-r100/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
+if [ "$ROLLBACK_CLASSIFICATION" != "r90-r112-opennds11.0-field-candidate" ]; then
+	echo "FAIL: ${CANDIDATE_LABEL} deployment is restricted to the r90-r112/openNDS 11.0.x candidate slot; preserve r60 as rollback." >&2
 	exit 1
 fi
 

@@ -19,7 +19,10 @@ uci_get() {
 }
 
 gateway_device() {
-	device=$(uci_get opennds.@opennds[0].gatewayinterface)
+	# openNDS 11 on the acceptance target stores options in the `setup`
+	# section; retain the legacy section only as a compatibility fallback.
+	device=$(uci_get opennds.setup.gatewayinterface)
+	[ -n "$device" ] || device=$(uci_get opennds.@opennds[0].gatewayinterface)
 	[ -n "$device" ] || device=$(uci_get network.lan.device)
 	[ -n "$device" ] || device=$(uci_get network.lan.ifname)
 	[ -n "$device" ] || return 1

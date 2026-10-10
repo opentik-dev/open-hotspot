@@ -13,6 +13,7 @@ cat > "$mock_uci" <<'EOF'
 #!/bin/sh
 case "$3" in
 opennds.@opennds\[0\].gatewayinterface) printf '%s\n' "${MOCK_GATEWAY:-br-lan}" ;;
+opennds.setup.gatewayinterface) printf '%s\n' "${MOCK_GATEWAY_SETUP:-}" ;;
 network.lan.device) printf '%s\n' "${MOCK_MANAGEMENT:-br-lan}" ;;
 network.lan.ifname) exit 1 ;;
 open-hotspot.global.captive_plane_profile) printf '%s\n' "${MOCK_PROFILE:-protected}" ;;
@@ -47,6 +48,14 @@ MOCK_PROFILE=isolated MOCK_GATEWAY=br-hotspot MOCK_MANAGEMENT=br-lan \
 	}
 grep -Fx 'captive_gateway_interface=br-hotspot' "$tmp/out" >/dev/null
 grep -Fx 'service_plane=ok' "$tmp/out" >/dev/null
+
+MOCK_PROFILE=isolated MOCK_GATEWAY=br-lan MOCK_GATEWAY_SETUP=br-hotspot MOCK_MANAGEMENT=br-lan \
+	OPEN_HOTSPOT_UCI_BIN="$mock_uci" "$guard" check >"$tmp/out" 2>"$tmp/err" || {
+	cat "$tmp/out" >&2
+	cat "$tmp/err" >&2
+	exit 1
+	}
+grep -Fx 'captive_gateway_interface=br-hotspot' "$tmp/out" >/dev/null
 
 MOCK_PROFILE=temporary-shared-service MOCK_GATEWAY=br-lan MOCK_MANAGEMENT=br-lan \
 	MOCK_UNTIL=2026-10-10 MOCK_ACK=I_ACCEPT_PREAUTH_SERVICE_EXPOSURE \

@@ -1,6 +1,6 @@
 # Open-HotSpot current state
 
-**As of:** 2026-10-09
+**As of:** 2026-10-10
 
 This is the short operational truth for agents and release reviewers. The
 specification, release-gate register, and field evidence remain authoritative
@@ -8,9 +8,10 @@ for detailed acceptance decisions.
 
 ## Baselines
 
-The current installed field candidate is r103. The current source candidate is
-r103, which adds activation readiness containment; r102, r101, and r99 remain
-preserved rollback checkpoints.
+The current installed and source field candidate is r112. It corrects the
+openNDS 11 `setup`-section lookup used by the service-plane guard and is
+verified on the dedicated `br-hotspot` plane. r111 remains the immediate
+rollback checkpoint; r60 remains the protected cross-version rollback baseline.
 
 Controlled account switching is isolated on the source branch
 `codex/controlled-account-switching`, based on merged `main`. It is not part
@@ -19,9 +20,9 @@ hardware validation.
 
 | Role | Package/openNDS | Purpose | Status |
 |---|---|---|---|
-| Installed field candidate | Open-HotSpot r103 / openNDS 11.0.0 | EA8300 candidate; U1 temporarily stages openNDS on `br-lan` | Readiness verified; pre-auth denial, post-auth service, and rollback acceptance pending |
-| Source candidate | Open-HotSpot r103 / openNDS 11.0.0 | Reproducible installed candidate | Fail-closed captive service-plane guard plus activation readiness containment; production acceptance pending |
-| Previous candidate | Open-HotSpot r99 / openNDS 11.0.0 | Previous installed candidate and rollback | Superseded by r100 trial; preserve as rollback |
+| Installed field candidate | Open-HotSpot r112 / openNDS 11.0.0 | EA8300 candidate on dedicated `br-hotspot` | Target UCI lookup and service-plane health verified; multi-plane acceptance pending |
+| Source candidate | Open-HotSpot r112 / openNDS 11.0.0 | Reproducible installed candidate | Fail-closed service-plane guard reads the target `setup` section; production acceptance pending |
+| Previous candidate | Open-HotSpot r111 / openNDS 11.0.0 | Immediate rollback checkpoint | Devices stylesheet cache-bust; preserve as rollback |
 | Rollback baseline | Open-HotSpot r60 / openNDS 10.3.1-r3 | A/B recovery and compatibility comparison | Preserved; do not upgrade it in place |
 
 The two baselines are not interchangeable. A result from r60/openNDS 10.3.1

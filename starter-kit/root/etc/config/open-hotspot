@@ -21,3 +21,12 @@ config manager 'global'
 	option captive_plane_profile 'protected'
 	option captive_plane_temporary_until ''
 	option captive_plane_temporary_ack ''
+
+# Disabled by default. This is configuration for a future, separately verified
+# Family Captive plane; it does not create a bridge, SSID, firewall policy, or
+# second openNDS daemon on its own.
+config family_captive 'family_captive'
+	option state 'disabled'
+	option device ''
+	option network ''
+	option enforcement_adapter ''

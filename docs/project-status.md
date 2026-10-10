@@ -1,9 +1,9 @@
 # Open-HotSpot project status
 
-**As of:** 2026-10-09
-**Installed field candidate:** Open-HotSpot 1.2.0-r103
-**Current source candidate:** Open-HotSpot 1.2.0-r103 (activation-readiness candidate)
-**Previous candidate:** Open-HotSpot 1.2.0-r102
+**As of:** 2026-10-10
+**Installed field candidate:** Open-HotSpot 1.2.0-r112
+**Current source candidate:** Open-HotSpot 1.2.0-r112 (openNDS 11 UCI-layout correction)
+**Previous candidate:** Open-HotSpot 1.2.0-r111
 **Target baseline:** Linksys EA8300 / OpenWrt 25.12.5 / `ipq40xx/generic` / openNDS 11.0.0
 **Status:** Pre-production acceptance candidate
 
@@ -14,10 +14,11 @@ used as the openNDS captive gateway. The source now contains an activation and
 preflight service-plane guard: its default `protected` profile refuses that
 overlap, while an explicitly acknowledged and future-dated temporary profile
 is limited to controlled diagnosis. This is **Implemented** and **Tested** by
-local contract tests. r103 is installed on the target and U1 has reached a
-ready openNDS state on `br-lan`; no service-port exception has been added. The
-remaining pre-auth denial, post-auth service, rollback, and IoT gates remain
-**Pending Hardware Validation**.
+local contract tests. r112 is installed on the target and confirms the target
+openNDS 11 `setup` section resolves to the dedicated `br-hotspot` bridge. The
+earlier shared-LAN U1 attempt was rolled back; no service-port exception has
+been added. The remaining multi-plane, pre-auth denial, post-auth service,
+rollback, and IoT gates remain **Pending Hardware Validation**.
 
 ## What is established
 
@@ -103,17 +104,16 @@ open.
 
 ## Active workstreams
 
-1. Close the remaining physical-router gates against the installed r93 field candidate
+1. Close the remaining physical-router gates against the installed r112 field candidate
    while preserving r60/openNDS 10.3.1 as the documented rollback baseline.
-   The r93 artifact is installed, post-install checks passed, and the
-   separated Events/DEV UI is present; publication remains blocked until the
+   The r112 artifact is installed, post-install checks passed, and publication remains blocked until the
    remaining physical acceptance gates are recorded.
 2. Improve agent governance and traceability without rewriting historical
    evidence.
 3. Keep the openNDS 11 compatibility record separate from the r60 rollback
-  baseline; r93 belongs on the disposable acceptance slot and remains a
+  baseline; r112 belongs on the disposable acceptance slot and remains a
   controlled candidate, not a frozen release. The deployment evidence confirms
-  candidate slot 02, openNDS 11.0.0, and r93 installed successfully; fresh
+  candidate slot 02, openNDS 11.0.0, and r112 installed successfully; fresh
   client-session, quota, restart, and failure-containment evidence remain open.
 
 ## Decision rule

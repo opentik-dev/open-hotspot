@@ -101,6 +101,16 @@ function decode_fas_payload(string $encoded): array
     if ($encoded === '') {
         fail_page('بيانات FAS الناقصة.');
     }
+    // openNDS 10.3.1 deployments in the field may send the query value
+    // without URL-encoding '+' (PHP then exposes it as a space), or use the
+    // URL-safe alphabet and omit padding. Normalize those transport variants
+    // before strict decoding; the decoded fields are still validated below.
+    $encoded = preg_replace('/\s+/', '+', $encoded) ?? $encoded;
+    $encoded = strtr($encoded, '-_', '+/');
+    $padding = strlen($encoded) % 4;
+    if ($padding !== 0) {
+        $encoded .= str_repeat('=', 4 - $padding);
+    }
     $decoded = base64_decode($encoded, true);
     if ($decoded === false || $decoded === '') {
         fail_page('بيانات FAS غير صالحة.');

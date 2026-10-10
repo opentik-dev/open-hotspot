@@ -125,6 +125,21 @@ cpd=$(REQUEST_METHOD=POST OH_BODY="username=ahmed&pin=123456&fas=$encoded_cpd_lo
 printf '%s' "$cpd" | grep -F '/opennds_auth/' >/dev/null
 printf '%s' "$cpd" | grep -Eq 'name="custom" value="[0-9a-f]{32}"'
 
+encoded_transport_variant=$(python3 - "$encoded" <<'PY'
+import base64
+import sys
+from urllib.parse import unquote
+
+raw = unquote(sys.argv[1]).replace('+', ' ')
+raw = base64.b64decode(raw).decode()
+variant = base64.urlsafe_b64encode(raw.encode()).decode().rstrip('=')
+print(variant)
+PY
+)
+transport_variant=$(REQUEST_METHOD=POST OH_BODY="username=ahmed&pin=123456&fas=$encoded_transport_variant" run_fas)
+printf '%s' "$transport_variant" | grep -F '/opennds_auth/' >/dev/null
+printf '%s' "$transport_variant" | grep -Eq 'name="custom" value="[0-9a-f]{32}"'
+
 voucher_code=ABCDEF0123456789ABCD
 python3 - "$OPEN_HOTSPOT_DB_PATH" "$voucher_code" <<'PY'
 import sqlite3

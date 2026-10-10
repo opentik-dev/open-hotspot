@@ -117,10 +117,19 @@ opennds_reload() {
 		sleep 1
 	done
 	rm -f /tmp/ndsctl.sock
-	"$service" start >/dev/null 2>&1 || return 1
+	# openNDS 10.3.1 can return a transient procd failure while its firewall
+	# hook respawns the daemon. The target log shows the daemon becoming ready
+	# moments later; readiness, not the transient wrapper status, is the
+	# acceptance signal. A stopped daemon is never accepted without ndsctl
+	# reporting a live version below.
+	start_rc=0
+	"$service" start >/dev/null 2>&1 || start_rc=$?
 	# The target can take 80–100 seconds to finish startup after a cold
 	# boot while br-lan, firewall, and dnsmasq become ready.
-	opennds_wait_ready
+	if opennds_wait_ready; then
+		return 0
+	fi
+	return "$start_rc"
 }
 
 opennds_deauth() {

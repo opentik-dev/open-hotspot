@@ -4,11 +4,11 @@
 **Artifact:** Local reproducible APK built with the OpenWrt SDK fakeroot path;
 CI run 37161270915 passed; GitHub Release publication remains pending release-gate closure.
 **SHA-256:** `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5`
-**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r111 remains installed with the dedicated captive plane restored; r110 is the rollback checkpoint, followed by r109, r108, r107, r106, r105, r104, r103, r102, r101, r100, r99, and r60.
-**Decision:** r112 corrects the openNDS 11 UCI section lookup used by the service-plane guard. Target deployment is prepared but pending guarded validation.
+**Target checkpoint:** Linksys EA8300, OpenWrt 25.12.5, `ipq40xx/generic`, openNDS 11.0.0; r112 is installed with the dedicated captive plane restored; r111 is the immediate rollback checkpoint, followed by r110, r109, r108, r107, r106, r105, r104, r103, r102, r101, r100, r99, and r60.
+**Decision:** r112 corrects the openNDS 11 UCI section lookup used by the service-plane guard. Guarded target deployment and post-install health validation completed; physical acceptance remains pending.
 
-The r103 package is the reproducible source and installed candidate. The r102 package is the
-previous reproducible field candidate. The r101 package is
+The r112 package is the reproducible source and installed candidate. The r111 package is the
+immediate rollback checkpoint. The r102 package is the earlier reproducible field candidate. The r101 package is
 the previous controlled-trial checkpoint and its checksum is recorded in the
 release ledger. The r99 package remains a rollback candidate.
 Its historical artifact checksum is recorded in the release ledger. The prior

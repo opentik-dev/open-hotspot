@@ -19,8 +19,8 @@ in native openNDS session limits, building on r103's activation readiness
 containment and r102's fail-closed service-plane guard.
 Dedicated-plane captive login/Internet validation is recorded, while broader
 hardware validation remains pending. The installed controlled-trial candidate
-is `1.2.0-r111`; r112 deployment is pending guarded validation.
-barriers, and its bounded post-install health probe passed. The prior
+is `1.2.0-r112`; guarded deployment and its bounded post-install health probe
+passed. The prior
 `1.2.0-r102` candidate is retained. The previous `1.2.0-r100` artifact checksum is
 `bcc0fffff8f71d8c8d60cf27c0310e1b75b3996afead7ba3f0708a78300ccf5a`; its
 guarded post-install diagnostic and `ndsctl status` were healthy.
@@ -140,7 +140,7 @@ final release freeze.
 | r109 | `25c148db309c7af7151bf0739e0dacbabea2de8e8e39e79cf40824bd56c0e6b7` | Links managed devices to live DHCP clients by MAC, prefers current DHCP hostnames over generated labels, and adds explicit authenticated/connected/offline/blocked indicators. Guarded deployment completed; target verification passed. |
 | r110 | `2b716003abf2fae050e03c9a4c85f77c367dcc8cd1e2eada9290bb8ebc1e04c0` | Makes managed-device state a visible colored badge with explicit text, preserving the MAC-linked hostname and state logic. Guarded deployment completed; final target diagnostic passed. |
 | r111 | `da4b37a84e8b4175dc15f6b4f039394258117f70f2bcc500935f7b624d86c021` | Cache-busts the Devices stylesheet so state badge colors load after upgrades. Guarded deployment completed on the EA8300; final diagnostic passed. |
-| r112 | `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5` | Corrects the service-plane guard to read the openNDS 11 `setup` section before legacy fallback. Local package built; guarded target deployment pending. |
+| r112 | `cb992b6063b7aa918a0d2b4da7567d5613892fcc34074b223157e1e884f845d5` | Corrects the service-plane guard to read the openNDS 11 `setup` section before legacy fallback. Guarded target deployment completed with post-install diagnostic health verified; physical acceptance remains pending. |
 
 ## Existing GitHub history
 
